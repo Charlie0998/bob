@@ -1,0 +1,57 @@
+{
+	"name": "ReefKeepers",
+	"tree": {
+		"$className": "DataModel",
+		"ReplicatedStorage": {
+			"Shared": {
+				"$path": "src/shared"
+			}
+		},
+		"ServerScriptService": {
+			"Server": {
+				"$path": "src/server"
+			}
+		},
+		"StarterPlayer": {
+			"StarterPlayerScripts": {
+				"Client": {
+					"$path": "src/client"
+				}
+			}
+		},
+		"Workspace": {
+			"$properties": {
+				"StreamingEnabled": true
+			},
+			"Seafloor": {
+				"$className": "Part",
+				"$properties": {
+					"Anchored": true,
+					"Size": [512, 1, 512],
+					"Position": [0, -0.5, 0],
+					"Color": [0.93, 0.86, 0.66],
+					"Material": "Sand"
+				}
+			},
+			"SpawnLocation": {
+				"$className": "SpawnLocation",
+				"$properties": {
+					"Anchored": true,
+					"Size": [8, 1, 8],
+					"Position": [0, 0.5, 0],
+					"Color": [0.35, 0.75, 0.8]
+				}
+			}
+		},
+		"Lighting": {
+			"$properties": {
+				"ClockTime": 14,
+				"Ambient": [0.35, 0.5, 0.55],
+				"OutdoorAmbient": [0.4, 0.6, 0.65],
+				"FogColor": [0.25, 0.55, 0.65],
+				"FogStart": 40,
+				"FogEnd": 450
+			}
+		}
+	}
+}

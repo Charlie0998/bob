@@ -1,0 +1,62 @@
+{
+	"version": 1,
+	"startingPearls": 20,
+	"startingSlots": 6,
+	"maxSlots": 40,
+	"slotCostBase": 25,
+	"slotCostGrowth": 1.5,
+	"offlineCapSeconds": 28800,
+	"starterCoral": "Staghorn",
+	"corals": {
+		"Staghorn": {
+			"displayName": "Staghorn Coral",
+			"rarity": "Common",
+			"growSeconds": 120,
+			"pearls": 5,
+			"cost": 10,
+			"inShop": true,
+			"unlockSlots": 0,
+			"color": [255, 170, 120]
+		},
+		"Brain": {
+			"displayName": "Brain Coral",
+			"rarity": "Uncommon",
+			"growSeconds": 900,
+			"pearls": 40,
+			"cost": 120,
+			"inShop": true,
+			"unlockSlots": 8,
+			"color": [240, 120, 170]
+		},
+		"Fan": {
+			"displayName": "Fan Coral",
+			"rarity": "Rare",
+			"growSeconds": 7200,
+			"pearls": 400,
+			"cost": 1500,
+			"inShop": false,
+			"unlockSlots": 12,
+			"color": [150, 110, 230]
+		},
+		"GlowingTube": {
+			"displayName": "Glowing Tube Coral",
+			"rarity": "Epic",
+			"growSeconds": 28800,
+			"pearls": 2500,
+			"cost": 0,
+			"inShop": false,
+			"unlockSlots": 0,
+			"color": [90, 230, 210]
+		},
+		"Crystal": {
+			"displayName": "Crystal Coral",
+			"rarity": "Legendary",
+			"growSeconds": 86400,
+			"pearls": 15000,
+			"cost": 0,
+			"inShop": false,
+			"unlockSlots": 0,
+			"color": [200, 240, 255]
+		}
+	}
+}

@@ -1,0 +1,3 @@
+# Toolchain manager config (also read by Rokit). Run `aftman install`.
+[tools]
+rojo = "rojo-rbx/rojo@7.4.4"
