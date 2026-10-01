@@ -8,6 +8,7 @@ local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
 local CoralRenderer = require(script.Parent.CoralRenderer)
+local CreatureRenderer = require(script.Parent.CreatureRenderer)
 
 local player = Players.LocalPlayer
 
@@ -186,6 +187,23 @@ local function onSlot(tile: BasePart, isMine: boolean)
 	end
 end
 
+local function onFeed(anchor: BasePart, shells: number, isMine: boolean)
+	CreatureRenderer.hop(anchor)
+	burst(anchor.Position, {
+		Texture = SPARKLE,
+		Color = ColorSequence.new(Color3.fromRGB(255, 160, 210), Color3.fromRGB(255, 240, 200)),
+		LightEmission = 1,
+		Size = NumberSequence.new(0.7, 0),
+		Lifetime = NumberRange.new(0.6, 1),
+		Speed = NumberRange.new(4, 7),
+		Drag = 3,
+	}, 16)
+	if isMine then
+		playSound("harvest")
+		floatingText(anchor.Position + Vector3.new(0, 2, 0), "+" .. shells .. " shells", Color3.fromRGB(255, 190, 230))
+	end
+end
+
 function Effects.start(remotes: Instance)
 	(remotes:WaitForChild("Effect") :: RemoteEvent).OnClientEvent:Connect(function(kind: string, target: Instance?, amount: number, actorId: number)
 		-- The target may not be streamed in on this client.
@@ -199,6 +217,10 @@ function Effects.start(remotes: Instance)
 			onPlant(target, isMine)
 		elseif kind == "slot" then
 			onSlot(target, isMine)
+		elseif kind == "feed" then
+			onFeed(target, amount, isMine)
+		elseif kind == "leave" then
+			CreatureRenderer.leave(target)
 		end
 	end)
 end

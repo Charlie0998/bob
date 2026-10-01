@@ -121,10 +121,13 @@ end
 
 -- Coral types a player may buy right now: the regular shop plus whatever the
 -- rotating rare shop has in stock.
-local function canBuy(coralType: string): boolean
+local function canBuy(coralType: string, data: PlayerStore.PlayerData?): boolean
 	local def = Balance.corals[coralType]
 	if not def then
 		return false
+	end
+	if data and (data.inventory[coralType] or 0) > 0 then
+		return true
 	end
 	if def.inShop then
 		return true
@@ -145,6 +148,75 @@ local function refreshHealth(player: Player)
 	player:SetAttribute("HealthMultiplier", tier.multiplier)
 end
 ReefService.refreshHealth = refreshHealth
+
+local function setShells(player: Player, shells: number)
+	local data = PlayerStore.get(player)
+	if data then
+		data.shells = shells
+		player:SetAttribute("Shells", shells)
+	end
+end
+
+-- Publishes the inventory as attributes ("Inv_GlowingTube" = 2) for the HUD.
+local function syncInventory(player: Player)
+	local data = PlayerStore.get(player)
+	if not data then
+		return
+	end
+	for coralType in Balance.corals do
+		player:SetAttribute("Inv_" .. coralType, data.inventory[coralType] or 0)
+	end
+end
+
+function ReefService.addCurrency(player: Player, pearls: number, shells: number, sku: string)
+	local data = PlayerStore.get(player)
+	if not data then
+		return
+	end
+	if pearls ~= 0 then
+		setPearls(player, data.pearls + pearls)
+		logPearls(player, Enum.AnalyticsEconomyFlowType.Source, pearls, data.pearls, sku)
+	end
+	if shells ~= 0 then
+		setShells(player, data.shells + shells)
+	end
+end
+
+function ReefService.addInventory(player: Player, coralType: string, count: number)
+	local data = PlayerStore.get(player)
+	if data then
+		data.inventory[coralType] = (data.inventory[coralType] or 0) + count
+		syncInventory(player)
+	end
+end
+
+function ReefService.getPlot(player: Player): Model?
+	local state = states[player]
+	return state and state.plot
+end
+
+function ReefService.toast(player: Player, text: string, kind: string?)
+	toast(player, text, kind)
+end
+
+function ReefService.effect(kind: string, target: Instance?, amount: number, actorId: number)
+	effectRemote:FireAllClients(kind, target, amount, actorId)
+end
+
+local discoveredSignal = Instance.new("BindableEvent")
+-- Fires with (player, kind, id) when something is discovered for the first time.
+ReefService.Discovered = discoveredSignal.Event
+
+function ReefService.discover(player: Player, kind: "corals" | "creatures", id: string): boolean
+	local data = PlayerStore.get(player)
+	if not data or data.discovered[kind][id] then
+		return false
+	end
+	data.discovered[kind][id] = true
+	player:SetAttribute("Found_" .. id, true)
+	discoveredSignal:Fire(player, kind, id)
+	return true
+end
 
 local function plotCFrame(index: number): CFrame
 	local ring = (index - 1) // PLOT_RING
@@ -372,24 +444,39 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 
 	local coralType = state.selected
 	local def = Balance.corals[coralType]
-	if not canBuy(coralType) then
+	if not canBuy(coralType, data) then
 		toast(player, def.displayName .. " is out of stock")
 		return
 	end
-	if data.slots < def.unlockSlots then
-		toast(player, def.displayName .. " unlocks at " .. def.unlockSlots .. " slots")
-		return
-	end
-	if data.pearls < def.cost then
-		toast(player, "Need " .. def.cost .. " pearls for " .. def.displayName)
-		return
+	local fromInventory = (data.inventory[coralType] or 0) > 0
+	if not fromInventory then
+		if data.slots < def.unlockSlots then
+			toast(player, def.displayName .. " unlocks at " .. def.unlockSlots .. " slots")
+			return
+		end
+		if data.pearls < def.cost then
+			toast(player, "Need " .. def.cost .. " pearls for " .. def.displayName)
+			return
+		end
 	end
 	local planted = { type = coralType, plantedAt = now, bornAt = now }
 	data.corals[key] = planted
 	setCoral(part, planted)
 	effectRemote:FireAllClients("plant", part, 0, player.UserId)
-	setPearls(player, data.pearls - def.cost)
-	logPearls(player, Enum.AnalyticsEconomyFlowType.Sink, def.cost, data.pearls, "Plant_" .. coralType)
+	if fromInventory then
+		data.inventory[coralType] -= 1
+		syncInventory(player)
+		if data.inventory[coralType] <= 0 and not Balance.corals[coralType].inShop then
+			state.selected = Balance.starterCoral
+			player:SetAttribute("SelectedCoral", state.selected)
+		end
+	else
+		setPearls(player, data.pearls - def.cost)
+		logPearls(player, Enum.AnalyticsEconomyFlowType.Sink, def.cost, data.pearls, "Plant_" .. coralType)
+	end
+	if ReefService.discover(player, "corals", coralType) then
+		toast(player, "New coral in your book: " .. def.displayName .. "!", "unlock")
+	end
 	if data.stats.planted == 0 then
 		logOnboarding(player, ONBOARDING.firstPlant)
 	end
@@ -438,7 +525,7 @@ local function onSelectCoral(player: Player, coralType: unknown)
 	if type(coralType) ~= "string" then
 		return
 	end
-	if not canBuy(coralType) then
+	if not canBuy(coralType, PlayerStore.get(player)) then
 		return
 	end
 	state.selected = coralType
@@ -483,6 +570,13 @@ local function onLoaded(player: Player)
 	player:SetAttribute("Slots", data.slots)
 	player:SetAttribute("PlotIndex", plotIndex)
 	refreshHealth(player)
+	setShells(player, data.shells)
+	syncInventory(player)
+	for _, found in data.discovered do
+		for id in found do
+			player:SetAttribute("Found_" .. id, true)
+		end
+	end
 
 	if data.stats.planted == 0 and data.stats.harvests == 0 then
 		logOnboarding(player, ONBOARDING.joined)

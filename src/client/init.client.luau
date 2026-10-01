@@ -11,7 +11,9 @@ local TweenService = game:GetService("TweenService")
 local Balance = require(ReplicatedStorage.Shared.Balance)
 local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
 local ShopRotation = require(ReplicatedStorage.Shared.ShopRotation)
+local Book = require(script.Book)
 local CoralRenderer = require(script.CoralRenderer)
+local CreatureRenderer = require(script.CreatureRenderer)
 local Effects = require(script.Effects)
 local Fish = require(script.Fish)
 local WorldDecor = require(script.WorldDecor)
@@ -19,6 +21,7 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 WorldDecor.start()
 CoralRenderer.start()
+CreatureRenderer.start()
 Effects.start(Remotes)
 task.spawn(Fish.start)
 
@@ -124,6 +127,61 @@ local nextLabel = make("TextLabel", {
 	Parent = gui,
 })
 
+-- Shells counter (second currency) ---------------------------------------
+
+local shellLabel = make("TextLabel", {
+	AnchorPoint = Vector2.new(0, 0),
+	Position = UDim2.new(0.5, 115, 0, 14),
+	Size = UDim2.fromOffset(110, 40),
+	BackgroundColor3 = COLORS.panel,
+	BackgroundTransparency = 0.15,
+	TextColor3 = Color3.fromRGB(255, 190, 230),
+	Font = Enum.Font.FredokaOne,
+	TextSize = 22,
+	Text = "0 shells",
+	Parent = gui,
+}, { corner(), stroke() })
+local function updateShells()
+	shellLabel.Text = string.format("%d shells", player:GetAttribute("Shells") or 0)
+end
+player:GetAttributeChangedSignal("Shells"):Connect(updateShells)
+updateShells()
+
+-- Side menu ---------------------------------------------------------------
+
+local menu = make("Frame", {
+	AnchorPoint = Vector2.new(0, 0.5),
+	Position = UDim2.new(0, 12, 0.5, 0),
+	Size = UDim2.fromOffset(84, 320),
+	BackgroundTransparency = 1,
+	Parent = gui,
+}, {
+	make("UIListLayout", { Padding = UDim.new(0, 8), VerticalAlignment = Enum.VerticalAlignment.Center }),
+})
+
+-- Adds a big, thumb-friendly menu button. Other systems call this too.
+local function addMenuButton(text: string, onActivated: () -> ()): TextButton
+	local scale = make("UIScale", {})
+	local button = make("TextButton", {
+		Size = UDim2.fromOffset(84, 56),
+		BackgroundColor3 = COLORS.panel,
+		BackgroundTransparency = 0.1,
+		TextColor3 = COLORS.text,
+		Font = Enum.Font.FredokaOne,
+		TextSize = 18,
+		Text = text,
+		Parent = menu,
+	}, { corner(), stroke(), scale })
+	button.Activated:Connect(function()
+		bump(scale, 0.85)
+		onActivated()
+	end)
+	return button
+end
+
+Book.start(gui, Remotes)
+addMenuButton("Book", Book.toggle)
+
 -- Reef health meter ------------------------------------------------------
 
 local HEALTH_COLORS = {
@@ -213,10 +271,10 @@ updatePearls()
 -- Coral picker -----------------------------------------------------------
 
 local shopCorals = {}
-for name, def in Balance.corals do
-	if def.inShop or table.find(Balance.shopRotation.pool, name) then
-		table.insert(shopCorals, name)
-	end
+for name in Balance.corals do
+	-- Shop corals, the rotating rare coral, and corals that can sit in the
+	-- inventory (creature drops, prestige shop) all get a button.
+	table.insert(shopCorals, name)
 end
 table.sort(shopCorals, function(a, b)
 	return Balance.corals[a].cost < Balance.corals[b].cost
@@ -282,7 +340,13 @@ local function updatePicker()
 		local def = Balance.corals[name]
 		local locked = slots < def.unlockSlots
 		local text = button:GetAttribute("Label")
-		if locked then
+		local owned = player:GetAttribute("Inv_" .. name) or 0
+		local inRotation = table.find(Balance.shopRotation.pool, name) ~= nil
+		button.Visible = def.inShop or inRotation or owned > 0
+		if owned > 0 then
+			locked = false
+			text = string.format("%s\n%d owned", def.displayName, owned)
+		elseif locked then
 			text = string.format("%s\nUnlocks at %d slots", def.displayName, def.unlockSlots)
 		elseif not def.inShop then
 			-- Rotating rare shop: in stock for the rest of this period, or restocking.

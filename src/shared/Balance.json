@@ -110,5 +110,752 @@
 				"multiplier": 1.25
 			}
 		]
-	}
+	},
+	"creatures": {
+		"Clownfish": {
+			"displayName": "Clownfish",
+			"kind": "fish",
+			"rarity": "Common",
+			"shells": 2,
+			"color": [
+				255,
+				140,
+				40
+			],
+			"accent": [
+				255,
+				255,
+				255
+			],
+			"conditions": {
+				"corals": {
+					"Staghorn": 3
+				}
+			}
+		},
+		"BlueTang": {
+			"displayName": "Blue Tang",
+			"kind": "fish",
+			"rarity": "Common",
+			"shells": 2,
+			"color": [
+				60,
+				120,
+				255
+			],
+			"accent": [
+				255,
+				220,
+				60
+			],
+			"conditions": {
+				"totalCorals": 4
+			}
+		},
+		"YellowTang": {
+			"displayName": "Yellow Tang",
+			"kind": "fish",
+			"rarity": "Common",
+			"shells": 2,
+			"color": [
+				255,
+				225,
+				60
+			],
+			"accent": [
+				255,
+				250,
+				200
+			],
+			"conditions": {
+				"totalCorals": 6
+			}
+		},
+		"Chromis": {
+			"displayName": "Green Chromis",
+			"kind": "fish",
+			"rarity": "Common",
+			"shells": 2,
+			"color": [
+				90,
+				220,
+				170
+			],
+			"accent": [
+				40,
+				120,
+				110
+			],
+			"conditions": {
+				"variety": 2
+			}
+		},
+		"Butterflyfish": {
+			"displayName": "Butterflyfish",
+			"kind": "fish",
+			"rarity": "Common",
+			"shells": 2,
+			"color": [
+				255,
+				235,
+				120
+			],
+			"accent": [
+				30,
+				30,
+				30
+			],
+			"conditions": {
+				"corals": {
+					"Brain": 1
+				}
+			}
+		},
+		"Damselfish": {
+			"displayName": "Damselfish",
+			"kind": "fish",
+			"rarity": "Common",
+			"shells": 2,
+			"color": [
+				110,
+				90,
+				255
+			],
+			"accent": [
+				200,
+				200,
+				255
+			],
+			"conditions": {
+				"totalCorals": 8
+			}
+		},
+		"HermitCrab": {
+			"displayName": "Hermit Crab",
+			"kind": "crab",
+			"rarity": "Common",
+			"shells": 3,
+			"color": [
+				220,
+				90,
+				60
+			],
+			"accent": [
+				240,
+				220,
+				190
+			],
+			"conditions": {
+				"health": 30
+			}
+		},
+		"RedStarfish": {
+			"displayName": "Red Starfish",
+			"kind": "star",
+			"rarity": "Common",
+			"shells": 3,
+			"color": [
+				230,
+				60,
+				60
+			],
+			"accent": [
+				255,
+				170,
+				150
+			],
+			"conditions": {
+				"corals": {
+					"Staghorn": 5
+				}
+			}
+		},
+		"Goby": {
+			"displayName": "Goby",
+			"kind": "fish",
+			"rarity": "Common",
+			"shells": 2,
+			"color": [
+				240,
+				200,
+				160
+			],
+			"accent": [
+				120,
+				90,
+				70
+			],
+			"conditions": {
+				"totalCorals": 10
+			}
+		},
+		"Cardinalfish": {
+			"displayName": "Cardinalfish",
+			"kind": "fish",
+			"rarity": "Common",
+			"shells": 3,
+			"color": [
+				230,
+				80,
+				90
+			],
+			"accent": [
+				255,
+				210,
+				210
+			],
+			"conditions": {
+				"corals": {
+					"Brain": 2,
+					"Staghorn": 2
+				}
+			}
+		},
+		"Angelfish": {
+			"displayName": "Angelfish",
+			"kind": "fish",
+			"rarity": "Uncommon",
+			"shells": 5,
+			"color": [
+				60,
+				80,
+				200
+			],
+			"accent": [
+				255,
+				210,
+				60
+			],
+			"conditions": {
+				"variety": 3
+			}
+		},
+		"Parrotfish": {
+			"displayName": "Parrotfish",
+			"kind": "fish",
+			"rarity": "Uncommon",
+			"shells": 5,
+			"color": [
+				80,
+				200,
+				150
+			],
+			"accent": [
+				240,
+				120,
+				200
+			],
+			"conditions": {
+				"corals": {
+					"Brain": 4
+				}
+			}
+		},
+		"Pufferfish": {
+			"displayName": "Pufferfish",
+			"kind": "puffer",
+			"rarity": "Uncommon",
+			"shells": 6,
+			"color": [
+				235,
+				215,
+				140
+			],
+			"accent": [
+				120,
+				100,
+				60
+			],
+			"conditions": {
+				"health": 50
+			}
+		},
+		"Lionfish": {
+			"displayName": "Lionfish",
+			"kind": "fish",
+			"rarity": "Uncommon",
+			"shells": 6,
+			"color": [
+				220,
+				80,
+				60
+			],
+			"accent": [
+				255,
+				240,
+				230
+			],
+			"conditions": {
+				"totalCorals": 14
+			}
+		},
+		"MoorishIdol": {
+			"displayName": "Moorish Idol",
+			"kind": "fish",
+			"rarity": "Uncommon",
+			"shells": 6,
+			"color": [
+				250,
+				245,
+				230
+			],
+			"accent": [
+				30,
+				30,
+				30
+			],
+			"conditions": {
+				"corals": {
+					"Fan": 1
+				}
+			}
+		},
+		"SeaTurtle": {
+			"displayName": "Sea Turtle",
+			"kind": "turtle",
+			"rarity": "Uncommon",
+			"shells": 8,
+			"color": [
+				110,
+				150,
+				90
+			],
+			"accent": [
+				160,
+				120,
+				70
+			],
+			"conditions": {
+				"health": 60,
+				"totalCorals": 12
+			}
+		},
+		"SpottedRay": {
+			"displayName": "Spotted Ray",
+			"kind": "ray",
+			"rarity": "Uncommon",
+			"shells": 8,
+			"color": [
+				90,
+				100,
+				130
+			],
+			"accent": [
+				230,
+				230,
+				255
+			],
+			"conditions": {
+				"totalCorals": 16
+			}
+		},
+		"BlueStarfish": {
+			"displayName": "Blue Starfish",
+			"kind": "star",
+			"rarity": "Uncommon",
+			"shells": 6,
+			"color": [
+				60,
+				110,
+				240
+			],
+			"accent": [
+				150,
+				190,
+				255
+			],
+			"conditions": {
+				"corals": {
+					"Fan": 1,
+					"Brain": 2
+				}
+			}
+		},
+		"MoonJelly": {
+			"displayName": "Moon Jelly",
+			"kind": "jelly",
+			"rarity": "Uncommon",
+			"shells": 6,
+			"color": [
+				200,
+				210,
+				255
+			],
+			"accent": [
+				255,
+				200,
+				240
+			],
+			"conditions": {
+				"totalCorals": 18
+			}
+		},
+		"Octopus": {
+			"displayName": "Octopus",
+			"kind": "octopus",
+			"rarity": "Uncommon",
+			"shells": 8,
+			"color": [
+				220,
+				110,
+				90
+			],
+			"accent": [
+				250,
+				200,
+				180
+			],
+			"conditions": {
+				"health": 70,
+				"variety": 3
+			}
+		},
+		"Seahorse": {
+			"displayName": "Seahorse",
+			"kind": "seahorse",
+			"rarity": "Rare",
+			"shells": 15,
+			"color": [
+				255,
+				170,
+				60
+			],
+			"accent": [
+				255,
+				230,
+				170
+			],
+			"conditions": {
+				"health": 80
+			}
+		},
+		"Mandarinfish": {
+			"displayName": "Mandarinfish",
+			"kind": "fish",
+			"rarity": "Rare",
+			"shells": 15,
+			"color": [
+				40,
+				140,
+				240
+			],
+			"accent": [
+				255,
+				130,
+				40
+			],
+			"conditions": {
+				"corals": {
+					"Fan": 2
+				},
+				"health": 60
+			},
+			"drops": {
+				"GlowingTube": 0.25
+			}
+		},
+		"MantaRay": {
+			"displayName": "Manta Ray",
+			"kind": "ray",
+			"rarity": "Rare",
+			"shells": 18,
+			"color": [
+				40,
+				50,
+				70
+			],
+			"accent": [
+				240,
+				240,
+				250
+			],
+			"conditions": {
+				"totalCorals": 24
+			},
+			"drops": {
+				"GlowingTube": 0.25
+			}
+		},
+		"GlowJelly": {
+			"displayName": "Glow Jelly",
+			"kind": "jelly",
+			"rarity": "Rare",
+			"shells": 18,
+			"color": [
+				90,
+				230,
+				210
+			],
+			"accent": [
+				200,
+				255,
+				250
+			],
+			"conditions": {
+				"corals": {
+					"GlowingTube": 1
+				}
+			}
+		},
+		"HawksbillTurtle": {
+			"displayName": "Hawksbill Turtle",
+			"kind": "turtle",
+			"rarity": "Rare",
+			"shells": 20,
+			"color": [
+				150,
+				110,
+				60
+			],
+			"accent": [
+				230,
+				190,
+				120
+			],
+			"conditions": {
+				"health": 85,
+				"totalCorals": 20
+			},
+			"drops": {
+				"GlowingTube": 0.3
+			}
+		},
+		"HarlequinShrimp": {
+			"displayName": "Harlequin Shrimp",
+			"kind": "crab",
+			"rarity": "Rare",
+			"shells": 15,
+			"color": [
+				250,
+				240,
+				240
+			],
+			"accent": [
+				60,
+				120,
+				255
+			],
+			"conditions": {
+				"corals": {
+					"Fan": 1,
+					"Brain": 3
+				}
+			},
+			"drops": {
+				"GlowingTube": 0.2
+			}
+		},
+		"LeafySeadragon": {
+			"displayName": "Leafy Seadragon",
+			"kind": "seahorse",
+			"rarity": "Rare",
+			"shells": 20,
+			"color": [
+				200,
+				200,
+				80
+			],
+			"accent": [
+				140,
+				170,
+				60
+			],
+			"conditions": {
+				"corals": {
+					"Fan": 3
+				},
+				"health": 75
+			},
+			"drops": {
+				"GlowingTube": 0.3
+			}
+		},
+		"CrystalJelly": {
+			"displayName": "Crystal Jelly",
+			"kind": "jelly",
+			"rarity": "Legendary",
+			"shells": 50,
+			"color": [
+				200,
+				240,
+				255
+			],
+			"accent": [
+				255,
+				255,
+				255
+			],
+			"conditions": {
+				"corals": {
+					"Crystal": 1
+				}
+			}
+		},
+		"GoldenSeahorse": {
+			"displayName": "Golden Seahorse",
+			"kind": "seahorse",
+			"rarity": "Legendary",
+			"shells": 50,
+			"color": [
+				255,
+				210,
+				60
+			],
+			"accent": [
+				255,
+				250,
+				200
+			],
+			"conditions": {
+				"health": 95,
+				"variety": 4
+			},
+			"drops": {
+				"GlowingTube": 0.5
+			}
+		},
+		"WhaleShark": {
+			"displayName": "Whale Shark",
+			"kind": "shark",
+			"rarity": "Legendary",
+			"shells": 60,
+			"color": [
+				60,
+				80,
+				110
+			],
+			"accent": [
+				230,
+				235,
+				245
+			],
+			"conditions": {
+				"totalCorals": 32,
+				"health": 80
+			},
+			"drops": {
+				"GlowingTube": 0.5
+			}
+		}
+	},
+	"creatureOrder": [
+		"Clownfish",
+		"BlueTang",
+		"YellowTang",
+		"Chromis",
+		"Butterflyfish",
+		"Damselfish",
+		"HermitCrab",
+		"RedStarfish",
+		"Goby",
+		"Cardinalfish",
+		"Angelfish",
+		"Parrotfish",
+		"Pufferfish",
+		"Lionfish",
+		"MoorishIdol",
+		"SeaTurtle",
+		"SpottedRay",
+		"BlueStarfish",
+		"MoonJelly",
+		"Octopus",
+		"Seahorse",
+		"Mandarinfish",
+		"MantaRay",
+		"GlowJelly",
+		"HawksbillTurtle",
+		"HarlequinShrimp",
+		"LeafySeadragon",
+		"CrystalJelly",
+		"GoldenSeahorse",
+		"WhaleShark"
+	],
+	"creatureVisits": {
+		"checkSeconds": 40,
+		"firstCheckSeconds": 20,
+		"spawnChance": 0.6,
+		"maxVisitors": 3,
+		"visitSeconds": [
+			180,
+			300
+		],
+		"feedPearlsPerShell": 10,
+		"discoverBonusShells": 5,
+		"rarityWeights": {
+			"Common": 10,
+			"Uncommon": 5,
+			"Rare": 2,
+			"Legendary": 0.7
+		}
+	},
+	"book": [
+		{
+			"id": "corals",
+			"title": "Corals",
+			"entries": [
+				"Brain",
+				"Crystal",
+				"Fan",
+				"GlowingTube",
+				"Staghorn"
+			],
+			"rewardShells": 50,
+			"kind": "corals"
+		},
+		{
+			"id": "reefFish",
+			"title": "Reef Regulars",
+			"entries": [
+				"Clownfish",
+				"BlueTang",
+				"YellowTang",
+				"Chromis",
+				"Butterflyfish",
+				"Damselfish",
+				"HermitCrab",
+				"RedStarfish",
+				"Goby",
+				"Cardinalfish"
+			],
+			"rewardShells": 100,
+			"kind": "creatures"
+		},
+		{
+			"id": "visitors",
+			"title": "Visitors",
+			"entries": [
+				"Angelfish",
+				"Parrotfish",
+				"Pufferfish",
+				"Lionfish",
+				"MoorishIdol",
+				"SeaTurtle",
+				"SpottedRay",
+				"BlueStarfish",
+				"MoonJelly",
+				"Octopus"
+			],
+			"rewardShells": 200,
+			"kind": "creatures"
+		},
+		{
+			"id": "rare",
+			"title": "Rare Finds",
+			"entries": [
+				"Seahorse",
+				"Mandarinfish",
+				"MantaRay",
+				"GlowJelly",
+				"HawksbillTurtle",
+				"HarlequinShrimp",
+				"LeafySeadragon",
+				"CrystalJelly",
+				"GoldenSeahorse",
+				"WhaleShark"
+			],
+			"rewardShells": 400,
+			"kind": "creatures"
+		}
+	],
+	"startingShells": 0
 }

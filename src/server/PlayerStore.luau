@@ -27,6 +27,11 @@ export type PlayerData = {
 	-- Keyed by slot index as a string so the table stays a dictionary in DataStore.
 	corals: { [string]: CoralSave },
 	stats: { harvests: number, planted: number },
+	shells: number,
+	-- Corals owned but not planted (creature drops, prestige shop), by type.
+	inventory: { [string]: number },
+	discovered: { corals: { [string]: boolean }, creatures: { [string]: boolean } },
+	bookClaimed: { [string]: boolean },
 }
 
 type Profile = { data: PlayerData, key: string }
@@ -58,6 +63,10 @@ local function newData(): PlayerData
 		slots = Balance.startingSlots,
 		corals = {},
 		stats = { harvests = 0, planted = 0 },
+		shells = Balance.startingShells,
+		inventory = {},
+		discovered = { corals = { [Balance.starterCoral] = true }, creatures = {} },
+		bookClaimed = {},
 	}
 	-- First session: the player spawns with one starter coral already growing.
 	data.corals["1"] = { type = Balance.starterCoral, plantedAt = os.time(), bornAt = os.time() }
