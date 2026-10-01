@@ -1,6 +1,7 @@
 -- Server entry point. Services listen for PlayerStore.Loaded, so they must
 -- start before PlayerStore begins loading players.
 
+local AdminCommands = require(script.AdminCommands)
 local BookService = require(script.BookService)
 local CreatureService = require(script.CreatureService)
 local DailyService = require(script.DailyService)
@@ -35,4 +36,5 @@ MarketService.start()
 TutorialService.start()
 FindsService.start()
 Nametags.start()
+AdminCommands.start()
 PlayerStore.start()
