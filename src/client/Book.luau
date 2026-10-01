@@ -196,7 +196,7 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 				else CreatureRules.describe(def.conditions, coralNames)
 			if not isCoral and known and def.boost then
 				hint = "Boost: " .. def.boost.text
-			elseif isCoral and def.zone then
+			elseif isCoral and def.zone ~= "" then
 				hint = "Sold in the " .. def.zone .. " market"
 			end
 			local card = make("Frame", {

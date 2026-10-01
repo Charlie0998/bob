@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
+local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
 local UIKit = require(script.Parent.UIKit)
 
 local player = Players.LocalPlayer
@@ -211,7 +212,33 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 		local home = UIKit.button("Go home", "accent", { Position = UDim2.fromOffset(12, 60), Parent = top })
 		home.Activated:Connect(function()
 			visitRemote:FireServer(nil)
+			panel.toggle()
 		end)
+
+		-- Deep zones, unlocked by reef level.
+		local ReefLevel = require(game:GetService("ReplicatedStorage").Shared.ReefLevel)
+		local travelRemote = remotes:WaitForChild("TravelZone") :: RemoteEvent
+		local level = player:GetAttribute("Level") or 1
+		local zoneCard = UIKit.card(panel.body, 64, 0)
+		zoneCard.BackgroundTransparency = 1
+		local zoneRow = make("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = zoneCard }, {
+			make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }),
+		})
+		for _, zoneId in { "KelpForest", "Shipwreck", "DeepSea" } do
+			local at = ReefLevel.levelFor("zone", zoneId, Balance.levels) or 0
+			local open = level >= at
+			local button = UIKit.button(
+				if open then Balance.zones[zoneId].name else string.format("%s (Lv %d)", Balance.zones[zoneId].name, at),
+				if open then "gold" else "muted",
+				{ Size = UDim2.new(1 / 3, -4, 0, 56), TextSize = 15, TextWrapped = true, Parent = zoneRow }
+			)
+			button.Activated:Connect(function()
+				travelRemote:FireServer(zoneId)
+				if open then
+					panel.toggle()
+				end
+			end)
+		end
 		local invite = UIKit.button("Invite friends", "gold", { Position = UDim2.fromOffset(184, 60), Parent = top })
 		invite.Activated:Connect(function()
 			pcall(SocialService.PromptGameInvite, SocialService, player)
@@ -268,13 +295,13 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 			end)
 		end
 	end
-	panel = UIKit.panel(gui, "Friends & Visits", refresh)
+	panel = UIKit.panel(gui, "Travel", refresh)
 	Players.PlayerAdded:Connect(refresh)
 	Players.PlayerRemoving:Connect(function()
 		task.defer(refresh)
 	end)
 	player.AttributeChanged:Connect(function(name)
-		if name == "FriendsHere" or name == "LikesReceived" then
+		if name == "FriendsHere" or name == "LikesReceived" or name == "Level" then
 			refresh()
 		end
 	end)
@@ -562,6 +589,66 @@ function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () 
 		end
 	end)
 	return panel.toggle
+end
+
+-- The market at each deep zone's stall. Corals go to your inventory.
+function Panels.zoneMarket(gui: ScreenGui, remotes: Instance)
+	local openRemote = remotes:WaitForChild("OpenZoneMarket") :: RemoteEvent
+	local buyRemote = remotes:WaitForChild("BuyZoneCoral") :: RemoteEvent
+	local zoneId = ""
+	local panel
+	local function refresh()
+		if not panel or not panel.isOpen() or zoneId == "" then
+			return
+		end
+		UIKit.clear(panel.body)
+		local zone = Balance.zones[zoneId]
+		panel.title.Text = zone.name .. " Market"
+		UIKit.label("Corals you buy here go to your coral bar. Plant them at home!", {
+			Size = UDim2.new(1, -8, 0, 36),
+			TextSize = 15,
+			TextColor3 = COLORS.hint,
+			Parent = panel.body,
+		})
+		for i, coralId in zone.market do
+			local def = Balance.corals[coralId]
+			local card = UIKit.card(panel.body, 64, i)
+			make("Frame", {
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, 12, 0.5, 0),
+				Size = UDim2.fromOffset(26, 26),
+				BackgroundColor3 = Color3.fromRGB(def.color[1], def.color[2], def.color[3]),
+				Parent = card,
+			}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+			UIKit.label(string.format("%s (%s)", def.displayName, def.rarity), { Position = UDim2.fromOffset(48, 4), Size = UDim2.new(1, -230, 0, 28), Parent = card })
+			UIKit.label(string.format("%d pearls every %s", def.pearls, ReefMath.formatDuration(def.growSeconds)), {
+				Position = UDim2.fromOffset(48, 32),
+				Size = UDim2.new(1, -230, 0, 24),
+				TextSize = 13,
+				Font = Enum.Font.Gotham,
+				TextColor3 = COLORS.hint,
+				Parent = card,
+			})
+			local affordable = (player:GetAttribute("Pearls") or 0) >= def.cost
+			local buy = UIKit.button(string.format("%d pearls", def.cost), if affordable then "gold" else "muted", {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -10, 0.5, 0),
+				Parent = card,
+			})
+			buy.Activated:Connect(function()
+				buyRemote:FireServer(zoneId, coralId)
+			end)
+		end
+	end
+	panel = UIKit.panel(gui, "Market", refresh)
+	openRemote.OnClientEvent:Connect(function(id: string)
+		zoneId = id
+		if not panel.isOpen() then
+			panel.toggle()
+		end
+		refresh()
+	end)
+	player:GetAttributeChangedSignal("Pearls"):Connect(refresh)
 end
 
 -- A popup announcing today's login reward.

@@ -229,6 +229,86 @@ builders.Pearlescent = function(model, rng, color)
 	shimmer(model, Color3.fromRGB(255, 240, 250), 3)
 end
 
+-- Kelp Forest: clusters of little green grapes on short stems.
+builders.SeaGrape = function(model, rng, color)
+	for i = 1, 7 do
+		local yaw = i / 7 * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local top = Vector3.new(0, 0.3, 0) + tilted(yaw, rng:NextNumber(0.2, 0.6)) * rng:NextNumber(1.2, 2.2)
+		limb(model, Vector3.new(0, 0.3, 0), top, 0.1, shade(color, -0.3))
+		for g = 0, 2 do
+			ball(model, top + Vector3.new(rng:NextNumber(-0.25, 0.25), g * 0.32, rng:NextNumber(-0.25, 0.25)), 0.42, shade(color, g * 0.1))
+		end
+	end
+end
+
+-- Kelp Forest: tall leaning blades with glowing bulbs.
+builders.KelpBloom = function(model, rng, color)
+	for i = 1, 5 do
+		local yaw = i / 5 * math.pi * 2 + rng:NextNumber(-0.4, 0.4)
+		local height = rng:NextNumber(2.6, 3.8)
+		local lean = rng:NextNumber(0.1, 0.3)
+		local blade = ellipsoid(model, Vector3.new(0.5, height, 0.12), CFrame.Angles(0, yaw, 0) * CFrame.Angles(lean, 0, 0) * CFrame.new(0, height / 2 + 0.2, 0.3), shade(color, -0.25))
+		blade.Name = "Blade"
+		ball(model, (CFrame.Angles(0, yaw, 0) * CFrame.Angles(lean, 0, 0) * CFrame.new(0, height + 0.2, 0.3)).Position, 0.5, shade(color, 0.3), Enum.Material.Neon)
+	end
+end
+
+-- Shipwreck: chunky orange tube sponges with dark openings.
+builders.AnchorSponge = function(model, rng, color)
+	for i = 1, 4 do
+		local angle = i / 4 * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local base = Vector3.new(math.cos(angle) * 0.7, 0, math.sin(angle) * 0.7)
+		local height = rng:NextNumber(1.6, 2.8)
+		local top = base + tilted(angle, 0.2) * height
+		limb(model, base, top, 0.5, color, Enum.Material.Sand)
+		limb(model, top - (top - base).Unit * 0.05, top + (top - base).Unit * 0.02, 0.32, shade(color, -0.7))
+	end
+end
+
+-- Shipwreck: gleaming gold branches tipped with coins.
+builders.TreasureCoral = function(model, rng, color)
+	for i = 1, 5 do
+		local yaw = i / 5 * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local elbow = Vector3.new(0, 0.3, 0) + tilted(yaw, rng:NextNumber(0.4, 0.8)) * rng:NextNumber(1, 1.4)
+		limb(model, Vector3.new(0, 0.3, 0), elbow, 0.22, color, Enum.Material.Metal)
+		local tip = elbow + tilted(yaw, 0.2) * rng:NextNumber(1, 1.5)
+		limb(model, elbow, tip, 0.18, color, Enum.Material.Metal)
+		newPart(model, {
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(0.12, 0.6, 0.6),
+			CFrame = CFrame.new(tip) * CFrame.Angles(0, yaw, math.pi / 2 + 0.3),
+			Color = shade(color, 0.3),
+			Material = Enum.Material.Neon,
+		})
+	end
+	shimmer(model, Color3.fromRGB(255, 230, 120), 3)
+end
+
+-- Deep Sea: a glowing bulb on a stalk, ringed by tentacles.
+builders.LanternAnemone = function(model, rng, color)
+	limb(model, Vector3.new(0, 0, 0), Vector3.new(0, 2.2, 0), 0.3, shade(color, -0.5))
+	ball(model, Vector3.new(0, 2.7, 0), 1.2, color, Enum.Material.Neon)
+	for i = 1, 8 do
+		local yaw = i / 8 * math.pi * 2
+		limb(model, Vector3.new(0, 2.2, 0), Vector3.new(0, 2.2, 0) + tilted(yaw, rng:NextNumber(1.0, 1.4)) * 1.1, 0.07, shade(color, 0.2), Enum.Material.Neon)
+	end
+	glow(model, color, 12, 2)
+end
+
+-- Deep Sea: thin dark spiky branches dotted with white polyps.
+builders.BlackCoral = function(model, rng, color)
+	local polyp = Color3.fromRGB(240, 240, 250)
+	for i = 1, 6 do
+		local yaw = i / 6 * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local start = Vector3.new(0, 0.3, 0)
+		local tip = start + tilted(yaw, rng:NextNumber(0.2, 0.5)) * rng:NextNumber(2.4, 3.4)
+		limb(model, start, tip, 0.09, color)
+		for k = 1, 3 do
+			ball(model, start + (tip - start) * (k / 3.3), 0.22, polyp, Enum.Material.Neon)
+		end
+	end
+end
+
 -- A plain blob for any coral type without its own builder yet.
 local function fallback(model: Model, _rng: Random, color: Color3)
 	ellipsoid(model, Vector3.new(2.6, 2.4, 2.6), CFrame.new(0, 1.2, 0), color)

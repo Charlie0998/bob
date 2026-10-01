@@ -239,11 +239,12 @@ Book.start(gui, Remotes)
 -- opens from the Shop.
 addMenuButton("Shop", Panels.shop(gui, Remotes, Panels.tide(gui, Remotes)))
 addMenuButton("Book", Book.toggle)
-addMenuButton("Friends", Panels.friends(gui, Remotes, Panels.trade(gui, Remotes)))
+addMenuButton("Travel", Panels.friends(gui, Remotes, Panels.trade(gui, Remotes)))
 addMenuButton("Goals", Panels.goals(gui, Remotes))
 addMenuButton("Photo", PhotoMode.start(gui))
 Panels.project(gui)
 Panels.streakPopup(gui)
+Panels.zoneMarket(gui, Remotes)
 EventFX.start(gui)
 
 -- Reef health meter ------------------------------------------------------

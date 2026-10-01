@@ -7,6 +7,7 @@ local RunService = game:GetService("RunService")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
 local CoralModels = require(ReplicatedStorage.Shared.CoralModels)
+local DecorModels = require(ReplicatedStorage.Shared.DecorModels)
 
 local SEED = 2026
 local SURFACE_HEIGHT = 95
@@ -244,6 +245,188 @@ local function buildSurface()
 	})
 end
 
+-- One kelp stalk; it joins the shared sway animation.
+local function addKelp(rng: Random, position: Vector3, segments: number, color: Color3)
+	local segment = rng:NextNumber(1.6, 2.2)
+	local kelp: Kelp = {
+		parts = {},
+		base = CFrame.new(position) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0),
+		segment = segment,
+		phase = rng:NextNumber(0, math.pi * 2),
+		sway = rng:NextNumber(0.05, 0.1),
+	}
+	for s = 1, segments do
+		table.insert(
+			kelp.parts,
+			newPart({
+				Name = "Kelp",
+				Size = Vector3.new(0.15, segment, math.max(0.4, 1.1 - s * 0.03)),
+				Color = color:Lerp(Color3.fromRGB(170, 200, 90), s / segments * 0.5),
+				CastShadow = false,
+			})
+		)
+	end
+	table.insert(kelps, kelp)
+end
+
+local function zoneCenter(zoneId: string): Vector3
+	local c = Balance.zones[zoneId].center
+	return Vector3.new(c[1], 0, c[2])
+end
+
+-- A random spot in a zone, keeping the market stall area open.
+local function zoneSpot(rng: Random, center: Vector3, radius: number): Vector3
+	for _ = 1, 20 do
+		local angle = rng:NextNumber(0, math.pi * 2)
+		local r = rng:NextNumber(0, radius)
+		local spot = center + Vector3.new(math.cos(angle) * r, 0, math.sin(angle) * r)
+		if (spot - center).Magnitude > 22 then
+			return spot
+		end
+	end
+	return center + Vector3.new(radius, 0, 0)
+end
+
+local function rock(rng: Random, position: Vector3, size: number, color: Color3, material: Enum.Material)
+	newPart({
+		Name = "Rock",
+		Size = Vector3.new(size * rng:NextNumber(1, 1.7), size * rng:NextNumber(0.5, 1), size),
+		CFrame = CFrame.new(position) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, math.pi * 2), rng:NextNumber(-0.3, 0.3)),
+		Color = color,
+		Material = material,
+		CanCollide = true,
+	})
+end
+
+local function buildKelpForest(rng: Random)
+	local center = zoneCenter("KelpForest")
+	local greens = { Color3.fromRGB(60, 130, 60), Color3.fromRGB(90, 150, 70), Color3.fromRGB(120, 140, 50) }
+	for _ = 1, 90 do
+		addKelp(rng, zoneSpot(rng, center, 85), rng:NextInteger(12, 20), greens[rng:NextInteger(1, #greens)])
+	end
+	for _ = 1, 20 do
+		rock(rng, zoneSpot(rng, center, 85), rng:NextNumber(2, 6), Color3.fromRGB(90, 110, 90), Enum.Material.Slate)
+	end
+	for i = 1, 8 do
+		local model = CoralModels.build(if i % 2 == 0 then "SeaGrape" else "KelpBloom", Balance.corals[if i % 2 == 0 then "SeaGrape" else "KelpBloom"].color, SEED + 100 + i)
+		model:PivotTo(CFrame.new(zoneSpot(rng, center, 60)))
+		model:ScaleTo(rng:NextNumber(1, 1.6))
+		model.Parent = folder
+	end
+end
+
+local function buildShipwreck(rng: Random)
+	local center = zoneCenter("Shipwreck")
+	local wood = Color3.fromRGB(105, 75, 50)
+	local dark = Color3.fromRGB(70, 50, 35)
+	-- The ship lies on its side behind the market, half sunk in the sand.
+	local ship = CFrame.lookAt(center, Vector3.zero) * CFrame.new(0, 0, 45) * CFrame.Angles(0, math.rad(70), math.rad(18))
+	local function plank(size: Vector3, offset: CFrame, color: Color3?)
+		newPart({ Name = "Wreck", Size = size, CFrame = ship * offset, Color = color or wood, Material = Enum.Material.WoodPlanks, CanCollide = true })
+	end
+	plank(Vector3.new(44, 3, 14), CFrame.new(0, 1, 0)) -- hull bottom
+	plank(Vector3.new(44, 8, 1.5), CFrame.new(0, 5, 7)) -- side
+	plank(Vector3.new(44, 8, 1.5), CFrame.new(0, 4, -7) * CFrame.Angles(0.3, 0, 0), dark)
+	plank(Vector3.new(14, 9, 1.5), CFrame.new(-22, 5, 0) * CFrame.Angles(0, math.pi / 2, 0)) -- stern
+	plank(Vector3.new(10, 6, 12), CFrame.new(-16, 9, 0), dark) -- cabin
+	plank(Vector3.new(30, 0.8, 13), CFrame.new(4, 8.5, 0)) -- deck
+	-- Broken mast and a tattered sail.
+	newPart({ Name = "Mast", Shape = Enum.PartType.Cylinder, Size = Vector3.new(26, 1.2, 1.2), CFrame = ship * CFrame.new(6, 18, 2) * CFrame.Angles(0, 0, math.rad(70)), Color = dark, Material = Enum.Material.Wood })
+	newPart({ Name = "Sail", Size = Vector3.new(0.2, 9, 11), CFrame = ship * CFrame.new(9, 20, 6) * CFrame.Angles(0.3, 0, 0.2), Color = Color3.fromRGB(220, 210, 180), Material = Enum.Material.Fabric, Transparency = 0.15 })
+	-- Scattered barrels, crates, cannons, and treasure.
+	for _ = 1, 14 do
+		local spot = zoneSpot(rng, center, 55)
+		local roll = rng:NextNumber()
+		if roll < 0.4 then
+			newPart({ Name = "Barrel", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.4, 2, 2), CFrame = CFrame.new(spot + Vector3.new(0, 1, 0)) * CFrame.Angles(0, rng:NextNumber(0, 6), math.pi / 2 * (if rng:NextNumber() < 0.5 then 1 else 0)), Color = Color3.fromRGB(130, 90, 55), Material = Enum.Material.Wood, CanCollide = true })
+		elseif roll < 0.75 then
+			newPart({ Name = "Crate", Size = Vector3.one * 2.2, CFrame = CFrame.new(spot + Vector3.new(0, 1, 0)) * CFrame.Angles(0.1, rng:NextNumber(0, 6), 0.1), Color = Color3.fromRGB(150, 110, 70), Material = Enum.Material.WoodPlanks, CanCollide = true })
+		elseif roll < 0.9 then
+			newPart({ Name = "Cannon", Shape = Enum.PartType.Cylinder, Size = Vector3.new(4, 1.2, 1.2), CFrame = CFrame.new(spot + Vector3.new(0, 0.6, 0)) * CFrame.Angles(0, rng:NextNumber(0, 6), 0), Color = Color3.fromRGB(45, 45, 50), Material = Enum.Material.Metal })
+		else
+			local chest = DecorModels.build("TreasureChest")
+			chest:PivotTo(CFrame.new(spot) * CFrame.Angles(0, rng:NextNumber(0, 6), 0))
+			chest.Parent = folder
+		end
+	end
+	for _ = 1, 10 do
+		rock(rng, zoneSpot(rng, center, 80), rng:NextNumber(2, 5), Color3.fromRGB(110, 110, 100), Enum.Material.Slate)
+	end
+	for i = 1, 6 do
+		local kind = if i % 2 == 0 then "AnchorSponge" else "TreasureCoral"
+		local model = CoralModels.build(kind, Balance.corals[kind].color, SEED + 200 + i)
+		model:PivotTo(CFrame.new(zoneSpot(rng, center, 50)))
+		model.Parent = folder
+	end
+end
+
+local function buildDeepSea(rng: Random)
+	local center = zoneCenter("DeepSea")
+	for _ = 1, 30 do
+		rock(rng, zoneSpot(rng, center, 85), rng:NextNumber(3, 9), Color3.fromRGB(40, 45, 60), Enum.Material.Basalt)
+	end
+	-- Glowing mushrooms in blues, teals, and purples.
+	local glows = { Color3.fromRGB(90, 240, 220), Color3.fromRGB(120, 140, 255), Color3.fromRGB(200, 110, 255) }
+	for i = 1, 26 do
+		local spot = zoneSpot(rng, center, 75)
+		local height = rng:NextNumber(1.5, 4)
+		local color = glows[rng:NextInteger(1, #glows)]
+		newPart({ Name = "Stalk", Shape = Enum.PartType.Cylinder, Size = Vector3.new(height, 0.5, 0.5), CFrame = CFrame.new(spot + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(200, 200, 210) })
+		local cap = newPart({ Name = "Cap", Size = Vector3.new(2.4, 0.9, 2.4), CFrame = CFrame.new(spot + Vector3.new(0, height, 0)), Color = color, Material = Enum.Material.Neon })
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = cap
+		if i % 3 == 0 then
+			local light = Instance.new("PointLight")
+			light.Color = color
+			light.Range = 14
+			light.Brightness = 1.5
+			light.Parent = cap
+		end
+	end
+	for i = 1, 6 do
+		local kind = if i % 2 == 0 then "LanternAnemone" else "BlackCoral"
+		local model = CoralModels.build(kind, Balance.corals[kind].color, SEED + 300 + i)
+		model:PivotTo(CFrame.new(zoneSpot(rng, center, 55)))
+		model:ScaleTo(rng:NextNumber(1, 1.5))
+		model.Parent = folder
+	end
+	for _ = 1, 4 do
+		local vent = newPart({ Name = "Vent", Size = Vector3.new(3, 1.6, 3), CFrame = CFrame.new(zoneSpot(rng, center, 70) + Vector3.new(0, 0.5, 0)), Color = Color3.fromRGB(50, 50, 60), Material = Enum.Material.Basalt })
+		bubbleEmitter(vent, 4)
+	end
+end
+
+-- Each zone tints the water while you're in it; the Deep Sea is dark.
+local function runZoneMood()
+	local tint = Instance.new("ColorCorrectionEffect")
+	tint.Name = "ZoneTint"
+	tint.Parent = game:GetService("Lighting")
+	local TweenService = game:GetService("TweenService")
+	local current = ""
+	while true do
+		task.wait(0.5)
+		local character = game:GetService("Players").LocalPlayer.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		local inside = ""
+		if root then
+			for zoneId in Balance.zones do
+				if (Vector3.new(root.Position.X, 0, root.Position.Z) - zoneCenter(zoneId)).Magnitude < 110 then
+					inside = zoneId
+				end
+			end
+		end
+		if inside ~= current then
+			current = inside
+			local zone = Balance.zones[inside]
+			local goal = if zone
+				then { TintColor = Color3.fromRGB(zone.tint[1], zone.tint[2], zone.tint[3]), Brightness = if inside == "DeepSea" then -0.12 else 0 }
+				else { TintColor = Color3.new(1, 1, 1), Brightness = 0 }
+			TweenService:Create(tint, TweenInfo.new(1.5), goal):Play()
+		end
+	end
+end
+
 function WorldDecor.start()
 	local rng = Random.new(SEED)
 	buildGarden(rng)
@@ -253,6 +436,10 @@ function WorldDecor.start()
 	buildBubbleVents(rng)
 	buildPlankton()
 	buildSurface()
+	buildKelpForest(rng)
+	buildShipwreck(rng)
+	buildDeepSea(rng)
+	task.spawn(runZoneMood)
 	folder.Parent = workspace
 
 	local camera = workspace.CurrentCamera

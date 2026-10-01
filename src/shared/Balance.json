@@ -20,7 +20,8 @@
 				255,
 				170,
 				120
-			]
+			],
+			"zone": ""
 		},
 		"Brain": {
 			"displayName": "Brain Coral",
@@ -34,7 +35,8 @@
 				240,
 				120,
 				170
-			]
+			],
+			"zone": ""
 		},
 		"Fan": {
 			"displayName": "Fan Coral",
@@ -48,7 +50,8 @@
 				150,
 				110,
 				230
-			]
+			],
+			"zone": ""
 		},
 		"GlowingTube": {
 			"displayName": "Glowing Tube Coral",
@@ -62,7 +65,8 @@
 				90,
 				230,
 				210
-			]
+			],
+			"zone": ""
 		},
 		"Crystal": {
 			"displayName": "Crystal Coral",
@@ -76,7 +80,8 @@
 				200,
 				240,
 				255
-			]
+			],
+			"zone": ""
 		},
 		"Pearlescent": {
 			"displayName": "Pearlescent Oyster",
@@ -90,7 +95,98 @@
 				245,
 				230,
 				250
-			]
+			],
+			"zone": ""
+		},
+		"SeaGrape": {
+			"displayName": "Sea Grape",
+			"rarity": "Uncommon",
+			"growSeconds": 600,
+			"pearls": 30,
+			"cost": 200,
+			"inShop": false,
+			"unlockSlots": 0,
+			"color": [
+				110,
+				200,
+				90
+			],
+			"zone": "Kelp Forest"
+		},
+		"KelpBloom": {
+			"displayName": "Kelp Bloom",
+			"rarity": "Rare",
+			"growSeconds": 3600,
+			"pearls": 260,
+			"cost": 1200,
+			"inShop": false,
+			"unlockSlots": 0,
+			"color": [
+				200,
+				220,
+				80
+			],
+			"zone": "Kelp Forest"
+		},
+		"AnchorSponge": {
+			"displayName": "Anchor Sponge",
+			"rarity": "Uncommon",
+			"growSeconds": 1200,
+			"pearls": 70,
+			"cost": 600,
+			"inShop": false,
+			"unlockSlots": 0,
+			"color": [
+				220,
+				130,
+				60
+			],
+			"zone": "Shipwreck"
+		},
+		"TreasureCoral": {
+			"displayName": "Treasure Coral",
+			"rarity": "Rare",
+			"growSeconds": 5400,
+			"pearls": 450,
+			"cost": 2500,
+			"inShop": false,
+			"unlockSlots": 0,
+			"color": [
+				255,
+				200,
+				70
+			],
+			"zone": "Shipwreck"
+		},
+		"LanternAnemone": {
+			"displayName": "Lantern Anemone",
+			"rarity": "Rare",
+			"growSeconds": 7200,
+			"pearls": 700,
+			"cost": 5000,
+			"inShop": false,
+			"unlockSlots": 0,
+			"color": [
+				90,
+				240,
+				220
+			],
+			"zone": "Deep Sea"
+		},
+		"BlackCoral": {
+			"displayName": "Black Coral",
+			"rarity": "Epic",
+			"growSeconds": 14400,
+			"pearls": 1500,
+			"cost": 9000,
+			"inShop": false,
+			"unlockSlots": 0,
+			"color": [
+				60,
+				40,
+				80
+			],
+			"zone": "Deep Sea"
 		}
 	},
 	"shopRotation": {
@@ -949,6 +1045,20 @@
 			],
 			"rewardShells": 400,
 			"kind": "creatures"
+		},
+		{
+			"id": "zones",
+			"title": "Deep Zones",
+			"kind": "corals",
+			"entries": [
+				"SeaGrape",
+				"KelpBloom",
+				"AnchorSponge",
+				"TreasureCoral",
+				"LanternAnemone",
+				"BlackCoral"
+			],
+			"rewardShells": 300
 		}
 	],
 	"startingShells": 0,
@@ -1466,5 +1576,55 @@
 			"shark",
 			"dolphin"
 		]
+	},
+	"zones": {
+		"KelpForest": {
+			"name": "Kelp Forest",
+			"center": [
+				-430,
+				0
+			],
+			"market": [
+				"SeaGrape",
+				"KelpBloom"
+			],
+			"tint": [
+				215,
+				245,
+				210
+			]
+		},
+		"Shipwreck": {
+			"name": "Shipwreck",
+			"center": [
+				0,
+				430
+			],
+			"market": [
+				"AnchorSponge",
+				"TreasureCoral"
+			],
+			"tint": [
+				225,
+				225,
+				205
+			]
+		},
+		"DeepSea": {
+			"name": "Deep Sea",
+			"center": [
+				430,
+				0
+			],
+			"market": [
+				"LanternAnemone",
+				"BlackCoral"
+			],
+			"tint": [
+				150,
+				170,
+				230
+			]
+		}
 	}
 }
