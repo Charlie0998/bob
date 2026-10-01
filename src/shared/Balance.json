@@ -191,9 +191,7 @@
 	},
 	"shopRotation": {
 		"periodSeconds": 600,
-		"pool": [
-			"Fan"
-		],
+		"pool": [],
 		"stockChance": 0.6,
 		"daily": [
 			{
@@ -1626,5 +1624,91 @@
 				230
 			]
 		}
+	},
+	"market": {
+		"slots": 6,
+		"periodSeconds": 600,
+		"restockShells": 25,
+		"restockMaxShells": 200,
+		"rarityWeights": {
+			"Common": 40,
+			"Uncommon": 30,
+			"Rare": 18,
+			"Epic": 9,
+			"Legendary": 3
+		},
+		"shellPrices": {
+			"Epic": 150,
+			"Legendary": 400
+		},
+		"exclude": [
+			"Pearlescent"
+		]
+	},
+	"decorShop": [
+		{
+			"id": "TreasureChest",
+			"shells": 40
+		},
+		{
+			"id": "SeaLantern",
+			"shells": 60
+		},
+		{
+			"id": "ShellArch",
+			"shells": 80
+		},
+		{
+			"id": "Anchor",
+			"shells": 100
+		},
+		{
+			"id": "CoralStatue",
+			"shells": 150
+		},
+		{
+			"id": "BubbleFountain",
+			"shells": 200
+		},
+		{
+			"id": "GoldenTrident",
+			"shells": 400
+		}
+	],
+	"world": {
+		"plaza": {
+			"angle": 22.5,
+			"radius": 48,
+			"size": 20
+		},
+		"landmarks": {
+			"ruin": {
+				"angle": 45,
+				"radius": 250,
+				"size": 38
+			},
+			"vents": {
+				"angle": 135,
+				"radius": 250,
+				"size": 26
+			},
+			"whale": {
+				"angle": 225,
+				"radius": 255,
+				"size": 40
+			},
+			"clam": {
+				"angle": 315,
+				"radius": 245,
+				"size": 16
+			},
+			"lighthouse": {
+				"angle": 135,
+				"radius": 520,
+				"size": 34
+			}
+		},
+		"surfaceHeight": 95,
+		"dayLengthSeconds": 960
 	}
 }

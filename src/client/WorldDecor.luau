@@ -57,9 +57,27 @@ for _, radius in PLOT_RADII do
 	end
 end
 
+-- The Market plaza and landmarks (Balance.json > world), kept clear of decor.
+local landmarkSpots: { { center: Vector3, radius: number } } = {}
+do
+	local function add(cfg: any)
+		local a = math.rad(cfg.angle)
+		table.insert(landmarkSpots, { center = Vector3.new(math.cos(a) * cfg.radius, 0, math.sin(a) * cfg.radius), radius = cfg.size })
+	end
+	add(Balance.world.plaza)
+	for _, cfg in Balance.world.landmarks do
+		add(cfg)
+	end
+end
+
 local function isClear(position: Vector3, margin: number): boolean
 	if Vector3.new(position.X, 0, position.Z).Magnitude < 10 + margin then
 		return false -- keep the spawn point open
+	end
+	for _, spot in landmarkSpots do
+		if (Vector3.new(position.X, 0, position.Z) - spot.center).Magnitude < spot.radius + margin + 4 then
+			return false
+		end
 	end
 	for _, center in plotCenters do
 		if (Vector3.new(position.X, 0, position.Z) - center).Magnitude < PLOT_CLEARANCE + margin then

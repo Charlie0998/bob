@@ -498,7 +498,7 @@ function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () 
 			Size = UDim2.new(1, -190, 0, 30),
 			TextSize = 13,
 			TextColor3 = COLORS.hint,
-			Font = Enum.Font.Gotham,
+			Font = UIKit.FONTS.body,
 			Parent = card,
 		})
 		local button = UIKit.button(buttonText, style, {
@@ -521,27 +521,6 @@ function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () 
 			order += 1
 			return order
 		end
-
-		-- Rare Coral Today: changes every UTC day, one per player per day.
-		local ShopRotation = require(game:GetService("ReplicatedStorage").Shared.ShopRotation)
-		local now = workspace:GetServerTimeNow()
-		local offer, day, endsAt = ShopRotation.daily(Balance.shopRotation, now)
-		local coral = Balance.corals[offer.coral]
-		local bought = player:GetAttribute("DailyCoralDay") == day
-		local hours = math.floor((endsAt - now) / 3600)
-		itemRow(
-			nextOrder(),
-			"Rare Coral Today: " .. coral.displayName,
-			string.format("%s · new coral in %dh %dm", coral.rarity, hours, math.floor((endsAt - now) % 3600 / 60)),
-			if bought then "Bought today" else string.format("%d shells", offer.shells),
-			if bought then "muted" else "gold",
-			function()
-				if not bought then
-					(remotes:WaitForChild("BuyDailyCoral") :: RemoteEvent):FireServer()
-				end
-			end,
-			"rare_coral_bundle"
-		)
 
 		local speedups = player:GetAttribute("SpeedUps") or 0
 		itemRow(nextOrder(), string.format("Growth speed-ups: %d", speedups), "Instantly finishes the coral closest to ready", "Use one", if speedups > 0 then "accent" else "muted", function()
@@ -639,7 +618,7 @@ function Panels.zoneMarket(gui: ScreenGui, remotes: Instance)
 				Position = UDim2.fromOffset(48, 32),
 				Size = UDim2.new(1, -230, 0, 24),
 				TextSize = 13,
-				Font = Enum.Font.Gotham,
+				Font = UIKit.FONTS.body,
 				TextColor3 = COLORS.hint,
 				Parent = card,
 			})

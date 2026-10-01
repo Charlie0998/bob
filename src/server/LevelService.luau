@@ -35,7 +35,14 @@ local function buildDecor(player: Player)
 	local folder = plot:FindFirstChild("Decor") or Instance.new("Folder")
 	folder.Name = "Decor"
 	folder:ClearAllChildren()
+	-- Level-unlocked decorations plus any bought in the Market.
 	local decor = ReefLevel.unlocked(data.level, "decor", CONFIG)
+	for id in data.decorOwned do
+		if not table.find(decor, id) then
+			table.insert(decor, id)
+		end
+	end
+	table.sort(decor)
 	local spacing = math.min(8, (base.Size.X - 6) / math.max(1, #decor))
 	for i, id in decor do
 		local model = DecorModels.build(id)
@@ -67,6 +74,10 @@ local function applyReward(player: Player, reward: any)
 	if reward.zone and data then
 		player:SetAttribute("Zones", table.concat(ReefLevel.unlocked(data.level, "zone", CONFIG), ","))
 	end
+end
+
+function LevelService.refreshDecor(player: Player)
+	buildDecor(player)
 end
 
 function LevelService.addXp(player: Player, amount: number)

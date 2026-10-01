@@ -59,6 +59,12 @@ UIKit.COLORS = {
 	blue = Color3.fromRGB(46, 108, 190),
 	green = Color3.fromRGB(39, 124, 73),
 	orange = Color3.fromRGB(159, 91, 31),
+	-- Rarity outlines (Market cards)
+	rarityCommon = Color3.fromRGB(150, 170, 180),
+	rarityUncommon = Color3.fromRGB(90, 200, 120),
+	rarityRare = Color3.fromRGB(80, 150, 255),
+	rarityEpic = Color3.fromRGB(190, 110, 255),
+	rarityLegendary = Color3.fromRGB(255, 200, 60),
 	-- Meters
 	xp = Color3.fromRGB(120, 230, 255),
 	healthStruggling = Color3.fromRGB(240, 110, 90),
@@ -71,6 +77,12 @@ UIKit.COLORS = {
 	previewAmbient = Color3.fromRGB(170, 170, 170),
 	previewLight = Color3.fromRGB(255, 255, 255),
 	silhouette = Color3.fromRGB(0, 0, 0),
+}
+
+-- Fonts: rounded display font for titles and buttons, a clean font for body text.
+UIKit.FONTS = {
+	title = Enum.Font.FredokaOne,
+	body = Enum.Font.GothamMedium,
 }
 
 function UIKit.make(className: string, props: { [string]: any }, children: { Instance }?): any

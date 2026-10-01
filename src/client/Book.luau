@@ -6,9 +6,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
-local CoralModels = require(ReplicatedStorage.Shared.CoralModels)
-local CreatureModels = require(ReplicatedStorage.Shared.CreatureModels)
 local CreatureRules = require(ReplicatedStorage.Shared.CreatureRules)
+local Preview = require(script.Parent.Preview)
 local UIKit = require(script.Parent.UIKit)
 
 local player = Players.LocalPlayer
@@ -39,40 +38,6 @@ end
 local coralNames: { [string]: string } = {}
 for coralType, def in Balance.corals do
 	coralNames[coralType] = def.displayName
-end
-
--- A small 3D preview of a coral or creature. Undiscovered entries show as a
--- solid black silhouette, so players can see the shape they're hunting.
-local function preview(card: Frame, id: string, isCoral: boolean, known: boolean)
-	local viewport = make("ViewportFrame", {
-		Position = UDim2.fromOffset(4, 4),
-		Size = UDim2.new(1, -8, 0, 62),
-		BackgroundTransparency = 1,
-		Ambient = if known then COLORS.previewAmbient else COLORS.silhouette,
-		LightColor = if known then COLORS.previewLight else COLORS.silhouette,
-		LightDirection = Vector3.new(-1, -2, -1),
-		Parent = card,
-	})
-	local def = if isCoral then Balance.corals[id] else Balance.creatures[id]
-	local model = if isCoral then CoralModels.build(id, def.color, 7) else CreatureModels.build(def.kind, def.color, def.accent)
-	for _, item in model:GetDescendants() do
-		if item:IsA("Light") or item:IsA("ParticleEmitter") then
-			item:Destroy()
-		elseif item:IsA("BasePart") and not known and item.Transparency < 1 then
-			item.Color = COLORS.silhouette
-			item.Material = Enum.Material.SmoothPlastic
-			item.Transparency = 0
-		end
-	end
-	model.Parent = viewport
-	local cframe, size = model:GetBoundingBox()
-	local radius = size.Magnitude / 2
-	local camera = Instance.new("Camera")
-	camera.FieldOfView = 40
-	local direction = if isCoral then Vector3.new(1, 0.6, 1).Unit else Vector3.new(1, 0.4, -1).Unit
-	camera.CFrame = CFrame.lookAt(cframe.Position + direction * radius * 2.6, cframe.Position)
-	camera.Parent = viewport
-	viewport.CurrentCamera = camera
 end
 
 function Book.start(gui: ScreenGui, remotes: Instance)
@@ -208,7 +173,7 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 					Position = UDim2.fromOffset(6, 88),
 					Size = UDim2.new(1, -12, 0, 36),
 					BackgroundTransparency = 1,
-					Font = Enum.Font.Gotham,
+					Font = UIKit.FONTS.body,
 					TextSize = 11,
 					TextWrapped = true,
 					TextYAlignment = Enum.TextYAlignment.Top,
@@ -216,7 +181,7 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 					Text = (def.rarity or "") .. " · " .. hint,
 				}),
 			})
-			preview(card, id, isCoral, known)
+			Preview.attach(card, id, isCoral, known, UDim2.fromOffset(4, 4), UDim2.new(1, -8, 0, 62))
 			-- Found swimmers can become your pet.
 			if not isCoral and known and table.find(Balance.pets.allowedKinds, def.kind) then
 				local isPet = player:GetAttribute("Pet") == id

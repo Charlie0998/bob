@@ -19,6 +19,8 @@ local CreatureRenderer = require(script.CreatureRenderer)
 local Effects = require(script.Effects)
 local EventFX = require(script.EventFX)
 local Fish = require(script.Fish)
+local Landmarks = require(script.Landmarks)
+local Market = require(script.Market)
 local Panels = require(script.Panels)
 local SoundFX = require(script.SoundFX)
 local PetRenderer = require(script.PetRenderer)
@@ -109,7 +111,7 @@ local nextLabel = make("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = COLORS.text,
 	TextStrokeTransparency = 0,
-	Font = Enum.Font.GothamMedium,
+	Font = UIKit.FONTS.body,
 	TextSize = 16,
 	Text = "",
 	Parent = gui,
@@ -257,7 +259,10 @@ Book.start(gui, Remotes)
 -- opens from the Shop.
 addMenuButton("Shop", Panels.shop(gui, Remotes, Panels.tide(gui, Remotes)), "shop")
 addMenuButton("Book", Book.toggle, "book")
-addMenuButton("Travel", Panels.friends(gui, Remotes, Panels.trade(gui, Remotes)), "travel")
+local travelToggle = Panels.friends(gui, Remotes, Panels.trade(gui, Remotes))
+addMenuButton("Market", Market.start(gui, Remotes, travelToggle), "market")
+addMenuButton("Travel", travelToggle, "travel")
+Landmarks.start(Market.open)
 addMenuButton("Goals", Panels.goals(gui, Remotes), "goals")
 addMenuButton("Photo", PhotoMode.start(gui), "photo")
 Panels.project(gui)
@@ -297,7 +302,7 @@ local healthLabel = make("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = COLORS.text,
 	TextStrokeTransparency = 0,
-	Font = Enum.Font.GothamBold,
+	Font = UIKit.FONTS.body,
 	TextSize = 14,
 	Text = "",
 	Parent = gui,
