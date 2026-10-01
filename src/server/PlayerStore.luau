@@ -19,7 +19,7 @@ local AUTOSAVE_SECONDS = 120
 
 -- plantedAt starts the current harvest cycle; bornAt is when the coral was
 -- first planted (drives its visual size) and is missing from older saves.
-export type CoralSave = { type: string, plantedAt: number, bornAt: number? }
+export type CoralSave = { type: string, plantedAt: number, bornAt: number?, mutation: string? }
 export type PlayerData = {
 	version: number,
 	pearls: number,

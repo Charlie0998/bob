@@ -261,6 +261,7 @@ local function setCoral(tile: BasePart, coral: PlayerStore.CoralSave?)
 	tile:SetAttribute("CoralType", if coral then coral.type else "")
 	tile:SetAttribute("PlantedAt", if coral then coral.plantedAt else 0)
 	tile:SetAttribute("BornAt", if coral then coral.bornAt or coral.plantedAt else 0)
+	tile:SetAttribute("Mutation", if coral then coral.mutation or "" else "")
 end
 
 local function createSlot(player: Player, state: PlayerState, slot: number)
@@ -427,7 +428,7 @@ function ReefService.harvestTile(player: Player, part: BasePart, quiet: boolean)
 	local now = os.time()
 	local def = Balance.corals[coral.type]
 	local gained, newPlantedAt = ReefMath.harvest(coral.plantedAt, now, def.growSeconds, def.pearls, Balance.offlineCapSeconds)
-	gained = math.floor(gained * ReefService.incomeMultiplier(player))
+	gained = math.floor(gained * ReefService.incomeMultiplier(player) * ReefService.mutationMultiplierFor(coral.mutation))
 	if gained == 0 then
 		if not quiet then
 			local left = ReefMath.secondsUntilReady(coral.plantedAt, now, def.growSeconds)
@@ -503,6 +504,59 @@ function ReefService.maxSlots(player: Player): number
 	return Balance.maxSlots + (player:GetAttribute("BonusSlots") :: number? or 0)
 end
 
+-- Mutation chance multipliers registered by other systems (events, creatures).
+local mutationSources: { [string]: (Player) -> number } = {}
+function ReefService.addMutationSource(name: string, source: (Player) -> number)
+	mutationSources[name] = source
+end
+
+local mutationRng = Random.new()
+
+-- Rolls the rarest mutation first, so each keeps its own odds.
+function ReefService.rollMutation(player: Player): any
+	local factor = 1
+	for _, source in mutationSources do
+		factor *= source(player)
+	end
+	for i = #Balance.mutations, 1, -1 do
+		local mutation = Balance.mutations[i]
+		if mutationRng:NextNumber() < mutation.chance * factor then
+			return mutation
+		end
+	end
+	return nil
+end
+
+function ReefService.mutationMultiplierFor(mutationId: string?): number
+	for _, mutation in Balance.mutations do
+		if mutation.id == mutationId then
+			return mutation.multiplier
+		end
+	end
+	return 1
+end
+
+-- Moves coral timers forward (events and creature boosts make corals grow
+-- faster). `extraFor(coralType)` returns the extra seconds of growth.
+function ReefService.advanceGrowth(player: Player, extraFor: (string) -> number)
+	local data = PlayerStore.get(player)
+	local plot = ReefService.getPlot(player)
+	if not data or not plot then
+		return
+	end
+	for key, coral in data.corals do
+		local extra = extraFor(coral.type)
+		if extra > 0 then
+			coral.plantedAt -= extra
+			coral.bornAt = (coral.bornAt or coral.plantedAt) - extra
+			local tile = plot:FindFirstChild("Slot" .. key) :: BasePart?
+			if tile then
+				setCoral(tile, coral)
+			end
+		end
+	end
+end
+
 -- Adds one slot for free (level rewards). Returns false if the reef is full.
 function ReefService.grantSlot(player: Player): boolean
 	local state = states[player]
@@ -564,7 +618,14 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 			return
 		end
 	end
-	local planted = { type = coralType, plantedAt = now, bornAt = now }
+	local planted: PlayerStore.CoralSave = { type = coralType, plantedAt = now, bornAt = now }
+	-- A small chance the new coral grows mutated, worth much more.
+	local mutation = ReefService.rollMutation(player)
+	if mutation then
+		planted.mutation = mutation.id
+		toast(player, string.format("Your %s grew %s! It earns x%d pearls.", def.displayName, mutation.text, mutation.multiplier), "unlock")
+		ReefService.activity(player, "mutation", 1)
+	end
 	data.corals[key] = planted
 	setCoral(part, planted)
 	effectRemote:FireAllClients("plant", part, 0, player.UserId)

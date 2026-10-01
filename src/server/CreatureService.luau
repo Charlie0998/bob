@@ -109,6 +109,23 @@ local function feed(feeder: Player, owner: Player, visit: Visit)
 	ReefService.activity(feeder, "feed", 1)
 end
 
+-- Boosts from creatures visiting this player's reef right now.
+function CreatureService.activeBoosts(player: Player): { growth: { [string]: number }, income: number, mutation: number }
+	local boosts = { growth = {}, income = 0, mutation = 1 }
+	local list: { Visit } = visits[player] or {}
+	for _, visit in list do
+		local boost = Balance.creatures[visit.creature].boost
+		if boost then
+			if boost.growth then
+				boosts.growth[boost.growth.coral] = (boosts.growth[boost.growth.coral] or 0) + boost.growth.amount
+			end
+			boosts.income += boost.income or 0
+			boosts.mutation *= boost.mutation or 1
+		end
+	end
+	return boosts
+end
+
 local function spawnVisitor(owner: Player): boolean
 	local list = visits[owner]
 	local plot = ReefService.getPlot(owner)
@@ -170,11 +187,12 @@ local function spawnVisitor(owner: Player): boolean
 
 	local seen = PlayerStore.get(owner)
 	local isNew = seen ~= nil and not seen.discovered.creatures[creature]
+	local boostText = if def.boost then " (" .. def.boost.text .. " while it's here)" else ""
 	ReefService.toast(
 		owner,
-		if isNew then string.format("A new creature! A %s is visiting. Tap it to feed it.", def.displayName)
-			else string.format("A %s is visiting your reef", def.displayName),
-		if isNew then "unlock" else "info"
+		if isNew then string.format("A new creature! A %s is visiting%s. Tap it to feed it.", def.displayName, boostText)
+			else string.format("A %s is visiting your reef%s", def.displayName, boostText),
+		if isNew or def.boost then "unlock" else "info"
 	)
 	return true
 end
@@ -198,6 +216,12 @@ local function runPlayer(player: Player)
 end
 
 function CreatureService.start()
+	ReefService.addMultiplier("creatures", function(player)
+		return 1 + CreatureService.activeBoosts(player).income
+	end)
+	ReefService.addMutationSource("creatures", function(player)
+		return CreatureService.activeBoosts(player).mutation
+	end)
 	PlayerStore.Loaded:Connect(function(player)
 		task.spawn(runPlayer, player)
 	end)

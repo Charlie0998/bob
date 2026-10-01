@@ -162,6 +162,13 @@
 				"corals": {
 					"Staghorn": 3
 				}
+			},
+			"boost": {
+				"growth": {
+					"coral": "Staghorn",
+					"amount": 0.25
+				},
+				"text": "Staghorn grows 25% faster"
 			}
 		},
 		"BlueTang": {
@@ -240,6 +247,13 @@
 				"corals": {
 					"Brain": 1
 				}
+			},
+			"boost": {
+				"growth": {
+					"coral": "Brain",
+					"amount": 0.25
+				},
+				"text": "Brain coral grows 25% faster"
 			}
 		},
 		"Damselfish": {
@@ -380,6 +394,13 @@
 				"corals": {
 					"Brain": 4
 				}
+			},
+			"boost": {
+				"growth": {
+					"coral": "Brain",
+					"amount": 0.4
+				},
+				"text": "Brain coral grows 40% faster"
 			}
 		},
 		"Pufferfish": {
@@ -439,6 +460,13 @@
 				"corals": {
 					"Fan": 1
 				}
+			},
+			"boost": {
+				"growth": {
+					"coral": "Fan",
+					"amount": 0.25
+				},
+				"text": "Fan coral grows 25% faster"
 			}
 		},
 		"SeaTurtle": {
@@ -459,6 +487,10 @@
 			"conditions": {
 				"health": 60,
 				"totalCorals": 12
+			},
+			"boost": {
+				"income": 0.1,
+				"text": "+10% pearls"
 			}
 		},
 		"SpottedRay": {
@@ -539,6 +571,10 @@
 			"conditions": {
 				"health": 70,
 				"variety": 3
+			},
+			"boost": {
+				"income": 0.1,
+				"text": "+10% pearls"
 			}
 		},
 		"Seahorse": {
@@ -558,6 +594,10 @@
 			],
 			"conditions": {
 				"health": 80
+			},
+			"boost": {
+				"income": 0.15,
+				"text": "+15% pearls"
 			}
 		},
 		"Mandarinfish": {
@@ -605,6 +645,13 @@
 			},
 			"drops": {
 				"GlowingTube": 0.25
+			},
+			"boost": {
+				"growth": {
+					"coral": "*",
+					"amount": 0.2
+				},
+				"text": "All corals grow 20% faster"
 			}
 		},
 		"GlowJelly": {
@@ -626,6 +673,10 @@
 				"corals": {
 					"GlowingTube": 1
 				}
+			},
+			"boost": {
+				"mutation": 2,
+				"text": "Mutations twice as likely"
 			}
 		},
 		"HawksbillTurtle": {
@@ -720,6 +771,10 @@
 				"corals": {
 					"Crystal": 1
 				}
+			},
+			"boost": {
+				"mutation": 3,
+				"text": "Mutations three times as likely"
 			}
 		},
 		"GoldenSeahorse": {
@@ -743,6 +798,10 @@
 			},
 			"drops": {
 				"GlowingTube": 0.5
+			},
+			"boost": {
+				"income": 0.2,
+				"text": "+20% pearls"
 			}
 		},
 		"WhaleShark": {
@@ -766,6 +825,10 @@
 			},
 			"drops": {
 				"GlowingTube": 0.5
+			},
+			"boost": {
+				"income": 0.25,
+				"text": "+25% pearls"
 			}
 		}
 	},
@@ -1250,6 +1313,86 @@
 				"shells": 500,
 				"text": "500 shells"
 			}
+		}
+	},
+	"mutations": [
+		{
+			"id": "Glowing",
+			"chance": 0.03,
+			"multiplier": 2,
+			"text": "Glowing"
+		},
+		{
+			"id": "Rainbow",
+			"chance": 0.01,
+			"multiplier": 3,
+			"text": "Rainbow"
+		},
+		{
+			"id": "Crystalline",
+			"chance": 0.004,
+			"multiplier": 5,
+			"text": "Crystalline"
+		}
+	],
+	"events": {
+		"minGapSeconds": 720,
+		"maxGapSeconds": 1200,
+		"durationSeconds": 240,
+		"list": [
+			{
+				"id": "Bloom",
+				"name": "Coral Bloom",
+				"text": "All corals grow twice as fast!",
+				"weight": 4,
+				"growth": 1.0,
+				"mutation": 1
+			},
+			{
+				"id": "NightGlow",
+				"name": "Night Glow",
+				"text": "The reef lights up, and mutations are twice as likely!",
+				"weight": 3,
+				"mutation": 2,
+				"growth": 0
+			},
+			{
+				"id": "Storm",
+				"name": "Storm",
+				"text": "A storm is rolling in... treasure will wash up when it passes!",
+				"weight": 2,
+				"growth": 0,
+				"mutation": 1
+			}
+		],
+		"treasure": {
+			"lifetimeSeconds": 300,
+			"loot": [
+				{
+					"coral": "Fan",
+					"weight": 40,
+					"text": "a Fan Coral",
+					"shells": 0
+				},
+				{
+					"coral": "GlowingTube",
+					"weight": 30,
+					"text": "a Glowing Tube Coral",
+					"shells": 0
+				},
+				{
+					"coral": "Crystal",
+					"weight": 5,
+					"text": "a Crystal Coral",
+					"shells": 0
+				},
+				{
+					"shells": 100,
+					"weight": 25,
+					"text": "100 shells",
+					"coral": ""
+				}
+			]
 		}
 	}
 }

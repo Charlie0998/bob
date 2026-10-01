@@ -16,6 +16,7 @@ local SCALE_STEP = 0.02 -- only rescale when growth moves this much
 
 type Entry = {
 	model: Model?,
+	rainbow: { BasePart }?,
 	readyFx: ParticleEmitter?,
 	scale: number,
 	animating: boolean,
@@ -24,6 +25,62 @@ type Entry = {
 local CoralRenderer = {}
 
 local entries: { [BasePart]: Entry } = {}
+local nightGlow = false
+
+local function addNightLight(model: Model)
+	local root = model.PrimaryPart
+	if root and not root:FindFirstChild("NightGlow") then
+		local light = Instance.new("PointLight")
+		light.Name = "NightGlow"
+		light.Range = 9
+		light.Brightness = 1.2
+		local first = model:FindFirstChildWhichIsA("BasePart")
+		light.Color = if first then first.Color else Color3.new(1, 1, 1)
+		light.Parent = root
+	end
+end
+
+-- Mutated corals look special: Glowing turns neon, Rainbow cycles through
+-- colors, Crystalline turns to sparkling glass.
+local function applyMutation(model: Model, mutation: string, entry: Entry)
+	local parts = {}
+	for _, part in model:GetChildren() do
+		if part:IsA("BasePart") and part.Name ~= "Root" and part.Name ~= "Mound" then
+			table.insert(parts, part)
+		end
+	end
+	local root = model.PrimaryPart :: BasePart
+	if mutation == "Glowing" then
+		for _, part in parts do
+			part.Material = Enum.Material.Neon
+		end
+		local light = Instance.new("PointLight")
+		light.Range = 12
+		light.Brightness = 2
+		light.Color = if parts[1] then parts[1].Color else Color3.new(1, 1, 1)
+		light.Parent = root
+	elseif mutation == "Rainbow" then
+		for _, part in parts do
+			part.Material = Enum.Material.Neon
+		end
+		entry.rainbow = parts
+	elseif mutation == "Crystalline" then
+		for _, part in parts do
+			part.Material = Enum.Material.Glass
+			part.Transparency = math.max(part.Transparency, 0.3)
+			part.Color = part.Color:Lerp(Color3.fromRGB(220, 250, 255), 0.6)
+		end
+		local emitter = Instance.new("ParticleEmitter")
+		emitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		emitter.LightEmission = 1
+		emitter.Size = NumberSequence.new(0.4, 0)
+		emitter.Lifetime = NumberRange.new(1, 1.6)
+		emitter.Rate = 6
+		emitter.Speed = NumberRange.new(1, 2)
+		emitter.SpreadAngle = Vector2.new(180, 180)
+		emitter.Parent = root
+	end
+end
 
 -- Tiles are cylinders turned on their side; this is the upright frame on top.
 local function uprightFrame(tile: BasePart): CFrame
@@ -97,6 +154,14 @@ local function rebuild(tile: BasePart, entry: Entry)
 	model.Name = "CoralVisual"
 	model:PivotTo(uprightFrame(tile))
 	entry.readyFx = makeReadyFx(model)
+	entry.rainbow = nil
+	local mutation = tile:GetAttribute("Mutation")
+	if type(mutation) == "string" and mutation ~= "" then
+		applyMutation(model, mutation, entry)
+	end
+	if nightGlow then
+		addNightLight(model)
+	end
 	model.Parent = tile
 	entry.model = model
 	entry.scale = 1
@@ -108,10 +173,13 @@ local function onTileAdded(instance: Instance)
 		return
 	end
 	local tile = instance :: BasePart
-	local entry: Entry = { model = nil, readyFx = nil, scale = 1, animating = false }
+	local entry: Entry = { model = nil, rainbow = nil, readyFx = nil, scale = 1, animating = false }
 	entries[tile] = entry
 	rebuild(tile, entry)
 	tile:GetAttributeChangedSignal("CoralType"):Connect(function()
+		rebuild(tile, entry)
+	end)
+	tile:GetAttributeChangedSignal("Mutation"):Connect(function()
 		rebuild(tile, entry)
 	end)
 end
@@ -170,7 +238,43 @@ function CoralRenderer.topOf(tile: BasePart): Vector3
 	return uprightFrame(tile).Position + Vector3.new(0, height, 0)
 end
 
+-- Night Glow event: every coral gets a soft light in its own color.
+function CoralRenderer.setNightGlow(on: boolean)
+	nightGlow = on
+	for _, entry in entries do
+		local model = entry.model
+		if model then
+			if on then
+				addNightLight(model)
+			else
+				local root = model.PrimaryPart
+				local light = root and root:FindFirstChild("NightGlow")
+				if light then
+					light:Destroy()
+				end
+			end
+		end
+	end
+end
+
 function CoralRenderer.start()
+	-- Rainbow corals cycle their hue smoothly.
+	local accumulator = 0
+	RunService.Heartbeat:Connect(function(dt)
+		accumulator += dt
+		if accumulator < 1 / 20 then
+			return
+		end
+		accumulator = 0
+		local t = os.clock()
+		for _, entry in entries do
+			if entry.rainbow then
+				for i, part in entry.rainbow do
+					part.Color = Color3.fromHSV((t * 0.15 + i * 0.07) % 1, 0.6, 1)
+				end
+			end
+		end
+	end)
 	CollectionService:GetInstanceAddedSignal("ReefSlot"):Connect(onTileAdded)
 	CollectionService:GetInstanceRemovedSignal("ReefSlot"):Connect(onTileRemoved)
 	for _, tile in CollectionService:GetTagged("ReefSlot") do

@@ -16,6 +16,7 @@ local Book = require(script.Book)
 local CoralRenderer = require(script.CoralRenderer)
 local CreatureRenderer = require(script.CreatureRenderer)
 local Effects = require(script.Effects)
+local EventFX = require(script.EventFX)
 local Fish = require(script.Fish)
 local Panels = require(script.Panels)
 local PhotoMode = require(script.PhotoMode)
@@ -241,6 +242,7 @@ addMenuButton("Goals", Panels.goals(gui, Remotes))
 addMenuButton("Photo", PhotoMode.start(gui))
 Panels.project(gui)
 Panels.streakPopup(gui)
+EventFX.start(gui)
 
 -- Reef health meter ------------------------------------------------------
 
@@ -516,13 +518,15 @@ while true do
 		end
 		local plantedAt = part:GetAttribute("PlantedAt") or now
 		local cycles = ReefMath.readyCycles(plantedAt, now, def.growSeconds, Balance.offlineCapSeconds)
+		local mutation = part:GetAttribute("Mutation")
+		local prefix = if type(mutation) == "string" and mutation ~= "" then mutation .. " " else ""
 		if cycles > 0 then
 			readyCount += 1
-			label.Text = if cycles > 1 then string.format("Ready! x%d", cycles) else "Ready!"
+			label.Text = prefix .. (if cycles > 1 then string.format("Ready! x%d", cycles) else "Ready!")
 			label.TextColor3 = COLORS.ready
 		else
 			local left = ReefMath.secondsUntilReady(plantedAt, now, def.growSeconds)
-			label.Text = ReefMath.formatDuration(left)
+			label.Text = prefix .. ReefMath.formatDuration(left)
 			label.TextColor3 = COLORS.text
 			if soonest == nil or left < soonest then
 				soonest = left

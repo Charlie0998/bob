@@ -248,7 +248,7 @@ function CoralModels.build(coralType: string, color: { number }, seed: number): 
 	local rng = Random.new(seed)
 	local base = Color3.fromRGB(color[1], color[2], color[3])
 	-- A small rock mound grounds every coral.
-	ellipsoid(model, Vector3.new(2.4, 0.7, 2.4), CFrame.new(0, 0.05, 0), Color3.fromRGB(125, 125, 135), Enum.Material.Slate)
+	ellipsoid(model, Vector3.new(2.4, 0.7, 2.4), CFrame.new(0, 0.05, 0), Color3.fromRGB(125, 125, 135), Enum.Material.Slate).Name = "Mound"
 	local builder: Builder = builders[coralType] or fallback
 	builder(model, rng, base)
 	return model
