@@ -165,6 +165,7 @@ local function syncInventory(player: Player)
 	end
 	for coralType in Balance.corals do
 		player:SetAttribute("Inv_" .. coralType, data.inventory[coralType] or 0)
+		player:SetAttribute("Locked_" .. coralType, data.untradeable[coralType] or 0)
 	end
 end
 
@@ -478,6 +479,8 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 	effectRemote:FireAllClients("plant", part, 0, player.UserId)
 	if fromInventory then
 		data.inventory[coralType] -= 1
+		-- Plant tradeable copies first, so Robux-bought ones stay locked to the owner.
+		data.untradeable[coralType] = math.min(data.untradeable[coralType] or 0, data.inventory[coralType])
 		syncInventory(player)
 		if data.inventory[coralType] <= 0 and not Balance.corals[coralType].inShop then
 			state.selected = Balance.starterCoral

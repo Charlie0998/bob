@@ -953,5 +953,39 @@
 		"friendBoostMaxFriends": 3,
 		"boardSize": 10,
 		"boardRefreshSeconds": 120
+	},
+	"trade": {
+		"minAccountAgeDays": 3,
+		"tradesPerDay": 10,
+		"maxPerItem": 20,
+		"values": {
+			"Common": 10,
+			"Uncommon": 120,
+			"Rare": 1500,
+			"Epic": 4000,
+			"Legendary": 15000
+		}
+	},
+	"groupProject": {
+		"rewardShells": 60,
+		"rewardCoral": "GlowingTube",
+		"perPlayerScale": 0.75,
+		"projects": [
+			{
+				"text": "Plant %d corals together",
+				"activity": "plant",
+				"target": 30
+			},
+			{
+				"text": "Feed %d creatures together",
+				"activity": "feed",
+				"target": 15
+			},
+			{
+				"text": "Harvest %d times together",
+				"activity": "harvest",
+				"target": 200
+			}
+		]
 	}
 }

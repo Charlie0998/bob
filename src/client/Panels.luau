@@ -161,7 +161,7 @@ function Panels.tide(gui: ScreenGui, remotes: Instance): () -> ()
 	return panel.toggle
 end
 
-function Panels.friends(gui: ScreenGui, remotes: Instance): () -> ()
+function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: number) -> ()): () -> ()
 	local SocialService = game:GetService("SocialService")
 	local visitRemote = remotes:WaitForChild("VisitReef") :: RemoteEvent
 	local likeRemote = remotes:WaitForChild("LikeReef") :: RemoteEvent
@@ -212,13 +212,22 @@ function Panels.friends(gui: ScreenGui, remotes: Instance): () -> ()
 			local card = UIKit.card(panel.body, 60, i + 1)
 			UIKit.label(other.DisplayName .. (if friendCache[other.UserId] then "  (friend)" else ""), {
 				Position = UDim2.fromOffset(12, 0),
-				Size = UDim2.new(1, -250, 1, 0),
+				Size = UDim2.new(1, -300, 1, 0),
 				Parent = card,
 			})
+			local trade = UIKit.button("Trade", "muted", {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -196, 0.5, 0),
+				Size = UDim2.fromOffset(88, 46),
+				Parent = card,
+			})
+			trade.Activated:Connect(function()
+				onTrade(other.UserId)
+			end)
 			local visit = UIKit.button("Visit", "accent", {
 				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -124, 0.5, 0),
-				Size = UDim2.fromOffset(110, 46),
+				Position = UDim2.new(1, -102, 0.5, 0),
+				Size = UDim2.fromOffset(88, 46),
 				Parent = card,
 			})
 			visit.Activated:Connect(function()
@@ -228,7 +237,7 @@ function Panels.friends(gui: ScreenGui, remotes: Instance): () -> ()
 			local like = UIKit.button("Like", "gold", {
 				AnchorPoint = Vector2.new(1, 0.5),
 				Position = UDim2.new(1, -8, 0.5, 0),
-				Size = UDim2.fromOffset(110, 46),
+				Size = UDim2.fromOffset(88, 46),
 				Parent = card,
 			})
 			like.Activated:Connect(function()
@@ -247,6 +256,201 @@ function Panels.friends(gui: ScreenGui, remotes: Instance): () -> ()
 		end
 	end)
 	return panel.toggle
+end
+
+-- Trading. Returns a function that sends a trade request to a player.
+function Panels.trade(gui: ScreenGui, remotes: Instance): (userId: number) -> ()
+	local actionRemote = remotes:WaitForChild("Trade") :: RemoteEvent
+	local updateRemote = remotes:WaitForChild("TradeUpdate") :: RemoteEvent
+	local inviteRemote = remotes:WaitForChild("TradeInvite") :: RemoteEvent
+	local state: any = nil
+	local panel
+
+	local function offerLines(offer: { [string]: number }): string
+		local lines = {}
+		for coralType, count in offer do
+			local def = Balance.corals[coralType]
+			table.insert(lines, string.format("%d x %s (%s)", count, def.displayName, def.rarity))
+		end
+		table.sort(lines)
+		return if #lines == 0 then "Nothing yet" else table.concat(lines, "\n")
+	end
+
+	local function refresh()
+		if not panel then
+			return
+		end
+		UIKit.clear(panel.body)
+		if not state then
+			return
+		end
+		panel.title.Text = "Trading with " .. state.partnerName
+
+		-- Your side: a stepper for every coral you can trade.
+		UIKit.label("You give", { Size = UDim2.new(1, -8, 0, 26), TextSize = 20, LayoutOrder = 0, Parent = panel.body })
+		local order = 1
+		local any = false
+		for coralType, def in Balance.corals do
+			local available = (player:GetAttribute("Inv_" .. coralType) or 0) - (player:GetAttribute("Locked_" .. coralType) or 0)
+			if available <= 0 then
+				continue
+			end
+			any = true
+			local offered = state.mine[coralType] or 0
+			local card = UIKit.card(panel.body, 54, order)
+			order += 1
+			UIKit.label(string.format("%s: %d / %d", def.displayName, offered, available), {
+				Position = UDim2.fromOffset(12, 0),
+				Size = UDim2.new(1, -140, 1, 0),
+				Parent = card,
+			})
+			for i, delta in { -1, 1 } do
+				local step = UIKit.button(if delta < 0 then "-" else "+", "accent", {
+					AnchorPoint = Vector2.new(1, 0.5),
+					Position = UDim2.new(1, if i == 1 then -64 else -8, 0.5, 0),
+					Size = UDim2.fromOffset(50, 44),
+					TextSize = 24,
+					Parent = card,
+				})
+				step.Activated:Connect(function()
+					actionRemote:FireServer("offer", coralType, math.clamp(offered + delta, 0, available))
+				end)
+			end
+		end
+		if not any then
+			UIKit.label("You have no tradeable corals. Rare creatures and the server project give Glowing Tube corals.", {
+				Size = UDim2.new(1, -8, 0, 40),
+				TextSize = 14,
+				TextColor3 = COLORS.hint,
+				LayoutOrder = order,
+				Parent = panel.body,
+			})
+		end
+
+		-- Value summary of both sides, so a lopsided trade is obvious.
+		local summary = UIKit.card(panel.body, 150, 100)
+		UIKit.label(
+			string.format(
+				"You give (about %d pearls of value):\n%s\n\nYou get (about %d pearls of value):\n%s",
+				state.myValue,
+				offerLines(state.mine),
+				state.theirValue,
+				offerLines(state.theirs)
+			),
+			{ Position = UDim2.fromOffset(12, 6), Size = UDim2.new(1, -24, 1, -12), TextSize = 15, TextYAlignment = Enum.TextYAlignment.Top, Parent = summary }
+		)
+
+		local status = if state.stage == "offer"
+			then string.format("Step 1: both press Ready. You: %s, them: %s", if state.myReady then "ready" else "not ready", if state.theirReady then "ready" else "not ready")
+			else string.format("Step 2: check the summary and Confirm. You: %s, them: %s", if state.myConfirmed then "confirmed" else "waiting", if state.theirConfirmed then "confirmed" else "waiting")
+		UIKit.label(status, { Size = UDim2.new(1, -8, 0, 40), TextSize = 15, LayoutOrder = 101, Parent = panel.body })
+
+		local buttons = UIKit.card(panel.body, 60, 102)
+		buttons.BackgroundTransparency = 1
+		local primary = UIKit.button(
+			if state.stage == "offer" then "Ready" else "Confirm trade",
+			"gold",
+			{ Position = UDim2.fromOffset(0, 6), Size = UDim2.new(0.5, -6, 0, 48), Parent = buttons }
+		)
+		primary.Activated:Connect(function()
+			actionRemote:FireServer(if state.stage == "offer" then "ready" else "confirm")
+		end)
+		local cancel = UIKit.button("Cancel", "muted", { Position = UDim2.new(0.5, 6, 0, 6), Size = UDim2.new(0.5, -6, 0, 48), Parent = buttons })
+		cancel.Activated:Connect(function()
+			actionRemote:FireServer("cancel")
+		end)
+	end
+
+	panel = UIKit.panel(gui, "Trade", refresh)
+	-- Closing the window (the panel's X, its only direct TextButton) cancels the trade.
+	panel.frame:FindFirstChildWhichIsA("TextButton").Activated:Connect(function()
+		if state then
+			actionRemote:FireServer("cancel")
+		end
+	end)
+	updateRemote.OnClientEvent:Connect(function(newState)
+		state = newState
+		if state and not panel.isOpen() then
+			panel.toggle()
+		elseif not state and panel.isOpen() then
+			panel.toggle()
+		end
+		refresh()
+	end)
+	player.AttributeChanged:Connect(function(name)
+		if state and (string.sub(name, 1, 4) == "Inv_" or string.sub(name, 1, 7) == "Locked_") then
+			refresh()
+		end
+	end)
+
+	-- Incoming request popup.
+	local popup = make("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 140),
+		Size = UDim2.fromOffset(340, 110),
+		BackgroundColor3 = COLORS.panel,
+		Visible = false,
+		Parent = gui,
+	}, { UIKit.corner(14), make("UIStroke", { Color = COLORS.gold, Thickness = 2 }) })
+	local popupText = UIKit.label("", { Position = UDim2.fromOffset(12, 6), Size = UDim2.new(1, -24, 0, 40), Parent = popup })
+	local accept = UIKit.button("Accept", "gold", { Position = UDim2.fromOffset(12, 54), Size = UDim2.fromOffset(150, 46), Parent = popup })
+	local decline = UIKit.button("Decline", "muted", { Position = UDim2.fromOffset(176, 54), Size = UDim2.fromOffset(150, 46), Parent = popup })
+	local fromId: number? = nil
+	accept.Activated:Connect(function()
+		popup.Visible = false
+		if fromId then
+			actionRemote:FireServer("accept", fromId)
+		end
+	end)
+	decline.Activated:Connect(function()
+		popup.Visible = false
+	end)
+	inviteRemote.OnClientEvent:Connect(function(userId: number, name: string)
+		fromId = userId
+		popupText.Text = name .. " wants to trade with you"
+		popup.Visible = true
+		task.delay(30, function()
+			if fromId == userId then
+				popup.Visible = false
+			end
+		end)
+	end)
+
+	return function(userId: number)
+		actionRemote:FireServer("request", userId)
+	end
+end
+
+-- A small bar showing the server-wide reef project.
+function Panels.project(gui: ScreenGui)
+	local ReplicatedStorage_ = game:GetService("ReplicatedStorage")
+	local card = make("Frame", {
+		Position = UDim2.fromOffset(12, 8),
+		Size = UDim2.fromOffset(250, 52),
+		BackgroundColor3 = COLORS.panel,
+		BackgroundTransparency = 0.15,
+		Parent = gui,
+	}, { UIKit.corner(10) })
+	local text = UIKit.label("", { Position = UDim2.fromOffset(10, 2), Size = UDim2.new(1, -20, 0, 26), TextSize = 14, Parent = card })
+	local bar = make("Frame", {
+		Position = UDim2.fromOffset(10, 32),
+		Size = UDim2.new(1, -20, 0, 10),
+		BackgroundColor3 = COLORS.muted,
+		Parent = card,
+	}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	local fill = make("Frame", {
+		Size = UDim2.fromScale(0, 1),
+		BackgroundColor3 = COLORS.gold,
+		Parent = bar,
+	}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+	local function update()
+		local progress = ReplicatedStorage_:GetAttribute("ProjectProgress") or 0
+		local target = ReplicatedStorage_:GetAttribute("ProjectTarget") or 1
+		text.Text = string.format("Server project: %s (%d/%d)", ReplicatedStorage_:GetAttribute("ProjectText") or "...", progress, target)
+		fill.Size = UDim2.fromScale(math.clamp(progress / target, 0, 1), 1)
+	end
+	ReplicatedStorage_.AttributeChanged:Connect(update)
+	update()
 end
 
 return Panels

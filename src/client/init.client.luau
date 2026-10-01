@@ -184,7 +184,8 @@ Book.start(gui, Remotes)
 addMenuButton("Goals", Panels.goals(gui, Remotes))
 addMenuButton("Book", Book.toggle)
 addMenuButton("Tide", Panels.tide(gui, Remotes))
-addMenuButton("Friends", Panels.friends(gui, Remotes))
+addMenuButton("Friends", Panels.friends(gui, Remotes, Panels.trade(gui, Remotes)))
+Panels.project(gui)
 
 -- Reef health meter ------------------------------------------------------
 
