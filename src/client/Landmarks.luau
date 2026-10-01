@@ -77,9 +77,11 @@ local function light(p: BasePart, color: Color3, range: number, brightness: numb
 	l.Parent = p
 end
 
-local function sign(p: BasePart, text: string, height: number, color: Color3)
+-- A floating name sign `width` studs wide. It is sized in studs, not pixels,
+-- so far-away signs shrink instead of piling on top of each other.
+local function sign(p: BasePart, text: string, height: number, color: Color3, width: number)
 	local gui = Instance.new("BillboardGui")
-	gui.Size = UDim2.fromOffset(220, 46)
+	gui.Size = UDim2.fromScale(width, width * 0.21)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, height, 0)
 	gui.MaxDistance = 140
 	local label = Instance.new("TextLabel")
@@ -169,7 +171,7 @@ local function stall(parent: Instance, frame: CFrame, colors: { Color3 }, title:
 	part(parent, { Size = Vector3.one * 2.2, CFrame = frame * CFrame.new(-6.6, 1.1, 1) * CFrame.Angles(0, 0.3, 0), Color = Color3.fromRGB(160, 115, 70), Material = Enum.Material.WoodPlanks, CanCollide = true })
 	part(parent, { Size = Vector3.one * 1.6, CFrame = frame * CFrame.new(-6.4, 3, 1.1) * CFrame.Angles(0, -0.2, 0), Color = Color3.fromRGB(175, 125, 80), Material = Enum.Material.WoodPlanks })
 	part(parent, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.6, 2, 2), CFrame = frame * CFrame.new(6.6, 1.3, 1) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(120, 80, 50), Material = Enum.Material.Wood, CanCollide = true })
-	sign(counter, title, 9, Color3.fromRGB(255, 230, 150))
+	sign(counter, title, 8.5, Color3.fromRGB(255, 230, 150), 9)
 	promptOn(counter)
 end
 
@@ -196,7 +198,7 @@ local function buildShopkeeper(parent: Instance, frame: CFrame)
 	add(part(parent, { Shape = Enum.PartType.Ball, Size = Vector3.one * 0.25, Color = Color3.new(0, 0, 0) }), CFrame.new(0.35, 5, -0.72))
 	local name = part(parent, { Size = Vector3.one * 0.2, Transparency = 1 })
 	add(name, CFrame.new(0, 6.5, 0))
-	sign(name, "Marina the Merchant", 1.2, Color3.fromRGB(255, 255, 255))
+	sign(name, "Marina the Merchant", 1.2, Color3.fromRGB(255, 255, 255), 6)
 	shopkeeper = { parts = parts, offsets = offsets, base = frame, arm = armIndex }
 end
 
@@ -205,13 +207,14 @@ local function buildPlaza()
 	local model = group("MarketPlaza", center, true)
 	local facing = CFrame.lookAt(center, Vector3.new(0, 0, 0))
 	-- A round tiled floor with a sandstone rim.
-	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 40, 40), CFrame = CFrame.new(center + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(215, 195, 160), Material = Enum.Material.Pavement })
-	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.7, 14, 14), CFrame = CFrame.new(center + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(38, 172, 186), Material = Enum.Material.Pavement })
+	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 56, 56), CFrame = CFrame.new(center + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(215, 195, 160), Material = Enum.Material.Pavement })
+	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.7, 18, 18), CFrame = CFrame.new(center + Vector3.new(0, 0.25, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(38, 172, 186), Material = Enum.Material.Pavement })
 	-- Four stalls in an arc behind the plaza center, facing spawn.
 	local titles = { "Coral Market", "Rare Corals", "Daily Deal", "Decor & Trade" }
+	-- Spaced far enough apart that awnings and signs don't overlap.
 	for i = 1, 4 do
-		local angle = math.rad(-60 + (i - 1) * 40)
-		local frame = facing * CFrame.Angles(0, angle, 0) * CFrame.new(0, 0, 12)
+		local angle = math.rad(-72 + (i - 1) * 48)
+		local frame = facing * CFrame.Angles(0, angle, 0) * CFrame.new(0, 0, 20)
 		frame = CFrame.lookAt(frame.Position, center) -- counters face the plaza center
 		stall(model, frame * CFrame.Angles(0, math.pi, 0), AWNINGS[i], titles[i])
 		if i == 2 then
@@ -221,7 +224,7 @@ local function buildPlaza()
 	end
 	-- Lantern posts at the entrance.
 	for _, side in { -1, 1 } do
-		local base = (facing * CFrame.new(side * 9, 0, -12)).Position
+		local base = (facing * CFrame.new(side * 10, 0, -26)).Position
 		part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(7, 0.5, 0.5), CFrame = CFrame.new(base + Vector3.new(0, 3.5, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = DARK_WOOD, Material = Enum.Material.Wood })
 		local glow = part(model, { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.4, CFrame = CFrame.new(base + Vector3.new(0, 7.4, 0)), Color = Color3.fromRGB(255, 220, 150), Material = Enum.Material.Neon })
 		light(glow, Color3.fromRGB(255, 210, 140), 16, 1.6)

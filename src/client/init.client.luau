@@ -225,15 +225,35 @@ updateShells()
 
 -- Side menu ---------------------------------------------------------------
 
+-- Sits between the server project card (top) and the mute button (bottom),
+-- and shrinks on short screens so the buttons never overlap them.
+local MENU_TOP = 58
+local MENU_BOTTOM = 64
+local MENU_PADDING = 8
+local menuScale = make("UIScale", {})
 local menu = make("Frame", {
-	AnchorPoint = Vector2.new(0, 0.5),
-	Position = UDim2.new(0, 12, 0.5, 0),
-	Size = UDim2.fromOffset(70, 420),
+	Position = UDim2.fromOffset(12, MENU_TOP),
+	Size = UDim2.fromOffset(70, 0),
 	BackgroundTransparency = 1,
 	Parent = gui,
 }, {
-	make("UIListLayout", { Padding = UDim.new(0, 8), VerticalAlignment = Enum.VerticalAlignment.Center }),
+	menuScale,
+	make("UIListLayout", { Padding = UDim.new(0, MENU_PADDING) }),
 })
+local function fitMenu()
+	local content = 0
+	for _, child in menu:GetChildren() do
+		if child:IsA("GuiButton") then
+			content += child.Size.Y.Offset + MENU_PADDING
+		end
+	end
+	content = math.max(content - MENU_PADDING, 1)
+	menu.Size = UDim2.fromOffset(70, content)
+	local available = gui.AbsoluteSize.Y - MENU_TOP - MENU_BOTTOM
+	menuScale.Scale = math.clamp(available / content, 0.5, 1)
+end
+menu.ChildAdded:Connect(fitMenu)
+gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(fitMenu)
 
 -- Adds a big, thumb-friendly menu button. Other systems call this too.
 -- With its icon uploaded, a button is the icon with a small caption;
@@ -504,7 +524,7 @@ local function attachBillboard(part: BasePart, offset: number): TextLabel
 		Name = "ReefLabel",
 		Size = UDim2.fromOffset(120, 36),
 		StudsOffset = Vector3.new(0, offset, 0),
-		MaxDistance = 120,
+		MaxDistance = 80,
 		AlwaysOnTop = true,
 		-- Parented locally to the part, so it streams out with it.
 		Parent = part,
@@ -547,14 +567,26 @@ while true do
 	local soonestName = ""
 	local readyCount = 0
 
+	-- Only the first empty slot says "Tap to plant", so the labels don't pile up.
+	local firstEmpty = math.huge
+	for part in slotLabels do
+		local coralType = part:GetAttribute("CoralType")
+		if not (coralType and Balance.corals[coralType]) then
+			firstEmpty = math.min(firstEmpty, part:GetAttribute("Slot") or math.huge)
+		end
+	end
+
 	for part, label in slotLabels do
 		local coralType = part:GetAttribute("CoralType")
 		local def = coralType and Balance.corals[coralType]
+		local billboard = label.Parent :: BillboardGui
 		if not def then
+			billboard.Enabled = part:GetAttribute("Slot") == firstEmpty
 			label.Text = "Tap to plant"
 			label.TextColor3 = COLORS.text
 			continue
 		end
+		billboard.Enabled = true
 		local plantedAt = part:GetAttribute("PlantedAt") or now
 		local cycles = ReefMath.readyCycles(plantedAt, now, def.growSeconds, Balance.offlineCapSeconds)
 		local mutation = part:GetAttribute("Mutation")

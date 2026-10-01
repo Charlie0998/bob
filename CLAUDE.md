@@ -8,7 +8,7 @@ Cozy co-op Roblox reef tycoon. Rojo project; Luau code in `src/`, design doc in 
 - New images/sounds: the user uploads them in Studio (Asset Manager → Bulk Import) and pastes back a CSV of `Name,Asset ID,...`. Put IDs into `src/shared/Icons.json`, `Sounds.json` (`{id, volume}`), or `Textures.json`.
 
 ## Layout
-- `src/shared/` → ReplicatedStorage.Shared: `Balance.json` (all tuning), pure modules (`ReefMath`, `ReefHealth`, `ShopRotation`, `ReefLevel`, `CreatureRules`), part-built models (`CoralModels`, `CreatureModels`, `DecorModels`), asset ID JSONs.
+- `src/shared/` → ReplicatedStorage.Shared: `Balance.json` (all tuning), pure modules (`ReefMath`, `ReefHealth`, `ShopRotation`, `ReefLevel`, `CreatureRules`, `PlotLayout` for where plots go), part-built models (`CoralModels`, `CreatureModels`, `DecorModels`), asset ID JSONs.
 - `src/server/` → one Service per system, started in order by `init.server.luau`. `ReefService` owns plots, harvesting, currencies (`addCurrency`, `addInventory`, `toast`, `effect`, `activity` signal, `addMultiplier`). `PlayerStore` saves data with session locking; add new fields to both the `PlayerData` type and `newData()`.
 - `src/client/` → `init.client.luau` builds the HUD and starts modules. `UIKit` holds `COLORS`, `FONTS`, `gloss`, `button`, `panel`, `icon`. Decoration and creatures are built on the client.
 - `src/first/LoadingScreen.client.luau` → ReplicatedFirst.

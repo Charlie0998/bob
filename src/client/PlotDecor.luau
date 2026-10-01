@@ -15,6 +15,7 @@ local RunService = game:GetService("RunService")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
 local CoralModels = require(ReplicatedStorage.Shared.CoralModels)
+local PlotLayout = require(ReplicatedStorage.Shared.PlotLayout)
 local WorldDecor = require(script.Parent.WorldDecor)
 
 local HIDE_DISTANCE = 360
@@ -28,14 +29,11 @@ local LANTERN = Color3.fromRGB(255, 215, 140)
 
 local player = Players.LocalPlayer
 
--- Every place a plot can be (must match ReefService's layout).
-local plotSites: { Vector3 } = {}
-for _, radius in { 100, 180 } do
-	for i = 0, 7 do
-		local a = i / 8 * math.pi * 2
-		table.insert(plotSites, Vector3.new(math.cos(a) * radius, 0, math.sin(a) * radius))
-	end
-end
+-- Every place a plot can be.
+local plotSites = PlotLayout.sites()
+-- The Market plaza; paths stop at its edge.
+local plaza = Balance.world.plaza
+local plazaCenter = Vector3.new(math.cos(math.rad(plaza.angle)) * plaza.radius, 0, math.sin(math.rad(plaza.angle)) * plaza.radius)
 
 local PlotDecor = {}
 
@@ -280,6 +278,9 @@ local function buildPath(plot: Plot, base: BasePart)
 			if (flat - Vector3.new(base.Position.X, 0, base.Position.Z)).Magnitude > 1 and (Vector3.new(p.X, 0, p.Z) - flat).Magnitude < 32 then
 				blocked = true
 			end
+		end
+		if (Vector3.new(p.X, 0, p.Z) - plazaCenter).Magnitude < plaza.size then
+			blocked = true
 		end
 		if blocked then
 			continue

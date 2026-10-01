@@ -7,6 +7,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
+local PlotLayout = require(ReplicatedStorage.Shared.PlotLayout)
 local ReefService = require(script.Parent.ReefService)
 
 local CONFIG = Balance.finds
@@ -26,12 +27,9 @@ local function spotClear(position: Vector3): boolean
 			return false
 		end
 	end
-	for _, radius in { 100, 180 } do
-		for i = 0, 7 do
-			local a = i / 8 * math.pi * 2
-			if (position - Vector3.new(math.cos(a) * radius, 0, math.sin(a) * radius)).Magnitude < 40 then
-				return false
-			end
+	for _, site in PlotLayout.sites() do
+		if (position - site).Magnitude < 45 then
+			return false
 		end
 	end
 	return true

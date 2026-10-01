@@ -8,6 +8,7 @@ local RunService = game:GetService("RunService")
 local Balance = require(ReplicatedStorage.Shared.Balance)
 local CoralModels = require(ReplicatedStorage.Shared.CoralModels)
 local DecorModels = require(ReplicatedStorage.Shared.DecorModels)
+local PlotLayout = require(ReplicatedStorage.Shared.PlotLayout)
 
 local SEED = 2026
 local SURFACE_HEIGHT = 95
@@ -18,17 +19,14 @@ local MOUNTAIN_COUNT = 22
 local MOUNTAIN_MIN_RADIUS = 610
 local MOUNTAIN_MAX_RADIUS = 770
 local HILL_COUNT = 12
-local HILL_MIN_RADIUS = 290
-local HILL_MAX_RADIUS = 400
+local HILL_MIN_RADIUS = 340
+local HILL_MAX_RADIUS = 440
 local PEAK_CLEARANCE = 10 -- keep every peak this far below the water surface
 local ZONE_CLEARANCE = 110 -- radius around each deep zone's center to keep clear
 local PLACEMENT_TRIES = 25
 local KELP_FPS = 20
 
--- Must match the plot layout in ReefService.luau.
-local PLOT_RING = 8
-local PLOT_RADII = { 100, 180 }
-local PLOT_CLEARANCE = 40
+local PLOT_CLEARANCE = 45
 
 local WorldDecor = {}
 
@@ -49,13 +47,7 @@ local function newPart(props: { [string]: any }): Part
 	return part
 end
 
-local plotCenters: { Vector3 } = {}
-for _, radius in PLOT_RADII do
-	for i = 0, PLOT_RING - 1 do
-		local angle = i / PLOT_RING * math.pi * 2
-		table.insert(plotCenters, Vector3.new(math.cos(angle) * radius, 0, math.sin(angle) * radius))
-	end
-end
+local plotCenters = PlotLayout.sites()
 
 -- The Market plaza and landmarks (Balance.json > world), kept clear of decor.
 local landmarkSpots: { { center: Vector3, radius: number } } = {}

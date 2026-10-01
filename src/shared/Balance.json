@@ -1676,10 +1676,17 @@
 		}
 	],
 	"world": {
+		"plots": {
+			"perRing": 8,
+			"radius": 150,
+			"ringStep": 120,
+			"ringTwist": 22.5,
+			"rings": 2
+		},
 		"plaza": {
 			"angle": 22.5,
-			"radius": 48,
-			"size": 20
+			"radius": 60,
+			"size": 30
 		},
 		"landmarks": {
 			"ruin": {

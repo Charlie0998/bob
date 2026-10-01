@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
 local ReefHealth = require(ReplicatedStorage.Shared.ReefHealth)
+local PlotLayout = require(ReplicatedStorage.Shared.PlotLayout)
 local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
 local ShopRotation = require(ReplicatedStorage.Shared.ShopRotation)
 local PlayerStore = require(script.Parent.PlayerStore)
@@ -18,9 +19,6 @@ local SLOT_TAG = "ReefSlot"
 local PAD_TAG = "ReefBuyPad"
 local GRID_COLUMNS = 8
 local CELL = 6
-local PLOT_RING = 8
-local PLOT_RADIUS = 100
-local RING_STEP = 80
 local MAX_REACH = 80 -- studs between the player and the part they tap
 -- The plot grid has room for the base cap plus the Extra Plot Slots pass.
 local GRID_CAPACITY = Balance.maxSlots + Balance.monetization.passes.ExtraSlots.slots
@@ -233,14 +231,6 @@ function ReefService.discover(player: Player, kind: "corals" | "creatures", id: 
 	return true
 end
 
-local function plotCFrame(index: number): CFrame
-	local ring = (index - 1) // PLOT_RING
-	local angle = ((index - 1) % PLOT_RING) / PLOT_RING * math.pi * 2
-	local radius = PLOT_RADIUS + ring * RING_STEP
-	local position = Vector3.new(math.cos(angle) * radius, 0.5, math.sin(angle) * radius)
-	return CFrame.lookAt(position, Vector3.new(0, 0.5, 0))
-end
-
 local function slotOffset(slot: number): CFrame
 	local rows = math.ceil(GRID_CAPACITY / GRID_COLUMNS)
 	local col = (slot - 1) % GRID_COLUMNS
@@ -321,32 +311,17 @@ local function buildPlot(player: Player, state: PlayerState)
 	local base = anchoredPart({
 		Name = "Base",
 		Size = Vector3.new(GRID_COLUMNS * CELL + 4, 1, rows * CELL + 4),
-		CFrame = plotCFrame(state.plotIndex),
+		CFrame = PlotLayout.cframe(state.plotIndex),
 		Color = Color3.fromRGB(200, 180, 130),
 		Material = Enum.Material.Sand,
 	})
 	base.Parent = model
 	model.PrimaryPart = base
 
-	-- The rim, pillars, arch, and other scenery are drawn by each client (PlotDecor).
+	-- The rim, pillars, arch, and the owner's name banner are drawn by each
+	-- client (PlotDecor).
 	local halfZ = base.Size.Z / 2
 	model:SetAttribute("OwnerId", player.UserId)
-
-	-- Name sign so visitors know whose reef this is.
-	local sign = Instance.new("BillboardGui")
-	sign.Size = UDim2.fromOffset(240, 50)
-	sign.StudsOffsetWorldSpace = Vector3.new(0, 14, 0)
-	sign.MaxDistance = 200
-	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.fromScale(1, 1)
-	nameLabel.BackgroundTransparency = 1
-	nameLabel.Font = Enum.Font.FredokaOne
-	nameLabel.TextScaled = true
-	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	nameLabel.TextStrokeTransparency = 0
-	nameLabel.Text = player.DisplayName .. "'s Reef"
-	nameLabel.Parent = sign
-	sign.Parent = base
 
 	-- Golden shell-like pad for buying slots.
 	local pad = anchoredPart({
