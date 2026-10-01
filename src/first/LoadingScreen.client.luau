@@ -15,6 +15,7 @@ local PANEL = Color3.fromRGB(12, 42, 60)
 local GOLD = Color3.fromRGB(255, 200, 60)
 local WHITE = Color3.new(1, 1, 1)
 
+local MIN_SECONDS = 7 -- always show the scene at least this long
 local PHRASES = { "Growing corals", "Waking up the fish", "Polishing pearls", "Filling the ocean", "Inviting sea creatures" }
 local TIPS = {
 	"Tip: Tap a swimming fish for a pearl!",
@@ -326,7 +327,7 @@ local started = os.clock()
 local connection = RunService.RenderStepped:Connect(function(dt)
 	local elapsed = os.clock() - started
 	local queued = ContentProvider.RequestQueueSize
-	local target = if ready then 1 else math.min(0.9, 0.15 + elapsed * 0.12 - math.min(queued, 50) * 0.002)
+	local target = if ready then 1 else math.min(0.9, elapsed / MIN_SECONDS * 0.9 - math.min(queued, 50) * 0.002)
 	progress += (math.max(target, progress) - progress) * math.min(1, dt * 4)
 	fill.Size = UDim2.fromScale(progress, 1)
 	pearl.Position = UDim2.fromScale(progress, 0.5)
@@ -340,6 +341,9 @@ if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
 player:WaitForChild("PlayerGui"):WaitForChild("ReefHud", 20)
+while os.clock() - started < MIN_SECONDS do
+	task.wait(0.1)
+end
 ready = true
 while progress < 0.99 do
 	task.wait()
