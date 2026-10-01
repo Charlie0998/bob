@@ -671,6 +671,23 @@ function WorldDecor.start()
 	task.spawn(runZoneMood)
 	folder.Parent = workspace
 
+	-- Glowing orbs circle slowly above the spawn disc, with a bubble column.
+	local orbs: { BasePart } = {}
+	for i = 1, 8 do
+		table.insert(orbs, newPart({ Name = "SpawnOrb", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.2, Color = Color3.fromHSV(i / 8, 0.45, 1), Material = Enum.Material.Neon }))
+	end
+	local column = newPart({ Name = "SpawnBubbles", Size = Vector3.one, CFrame = CFrame.new(0, 1, 0), Transparency = 1 })
+	local bubbles = Instance.new("ParticleEmitter")
+	bubbles.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	bubbles.Color = ColorSequence.new(Color3.fromRGB(230, 250, 255))
+	bubbles.Transparency = NumberSequence.new(0.4, 1)
+	bubbles.Size = NumberSequence.new(0.4, 1)
+	bubbles.Lifetime = NumberRange.new(5, 8)
+	bubbles.Rate = 6
+	bubbles.Speed = NumberRange.new(4, 7)
+	bubbles.SpreadAngle = Vector2.new(8, 8)
+	bubbles.Parent = column
+
 	local camera = workspace.CurrentCamera
 	local accumulator = 0
 	local parts: { BasePart } = {}
@@ -686,6 +703,10 @@ function WorldDecor.start()
 		end
 		accumulator = 0
 		local t = os.clock()
+		for i, orb in orbs do
+			local a = t * 0.4 + i / #orbs * math.pi * 2
+			orb.CFrame = CFrame.new(math.cos(a) * 14, 6 + math.sin(t * 1.5 + i) * 0.8, math.sin(a) * 14) -- wide enough to clear the Top Reefs board
+		end
 
 		-- Move every nearby kelp segment in one bulk call.
 		table.clear(parts)

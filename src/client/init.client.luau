@@ -284,6 +284,7 @@ local function addMenuButton(text: string, onActivated: () -> (), iconName: stri
 		}, {
 			scale,
 			make("ImageLabel", {
+				Name = "Icon",
 				Size = UDim2.fromOffset(58, 58),
 				BackgroundTransparency = 1,
 				Image = image,
@@ -317,6 +318,21 @@ local function addMenuButton(text: string, onActivated: () -> (), iconName: stri
 	end)
 	return button
 end
+
+-- Menu icons bob gently, each a little out of step with the next.
+game:GetService("RunService").Heartbeat:Connect(function()
+	if not menu.Visible then
+		return
+	end
+	local t = os.clock()
+	for i, child in menu:GetChildren() do
+		local icon = child:FindFirstChild("Icon")
+		if icon and icon:IsA("ImageLabel") then
+			icon.Position = UDim2.fromOffset(0, math.sin(t * 2 + i * 0.7) * 2)
+			icon.Rotation = math.sin(t * 1.4 + i) * 3
+		end
+	end
+end)
 
 Book.start(gui, Remotes)
 -- Five buttons at most (design pillar: understood in 10 seconds). Tide Reset

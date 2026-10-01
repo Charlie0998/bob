@@ -38,7 +38,7 @@ local plazaCenter = Vector3.new(math.cos(math.rad(plaza.angle)) * plaza.radius, 
 
 local PlotDecor = {}
 
-type Plot = { model: Model, folder: Folder, tierFolder: Folder, path: { BasePart }, center: Vector3, tier: number }
+type Plot = { model: Model, folder: Folder, tierFolder: Folder, path: { BasePart }, center: Vector3, tier: number, flags: { { part: BasePart, top: CFrame } }, lanterns: { PointLight } }
 local plots: { [Model]: Plot } = {}
 
 local function part(parent: Instance, props: { [string]: any }): Part
@@ -152,10 +152,12 @@ local function buildTier(plot: Plot, base: BasePart, tier: number)
 	local hx, hz = base.Size.X / 2, base.Size.Z / 2
 	if tier >= 1 then
 		-- Flags on every pillar.
+		table.clear(plot.flags)
 		for i, corner in { { -hx, -hz }, { hx, -hz }, { -hx, hz }, { hx, hz } } do
 			local top = cf * CFrame.new(corner[1], 9.5, corner[2])
 			part(folder, { Size = Vector3.new(0.2, 4, 0.2), CFrame = top, Color = Color3.fromRGB(90, 70, 50) })
-			part(folder, { Size = Vector3.new(0.1, 1.6, 2.4), CFrame = top * CFrame.new(0, 1.1, 1.2), Color = if i % 2 == 0 then TRIM else Color3.fromRGB(255, 200, 60), Material = Enum.Material.Fabric })
+			local flag = part(folder, { Size = Vector3.new(0.1, 1.6, 2.4), CFrame = top * CFrame.new(0, 1.1, 1.2), Color = if i % 2 == 0 then TRIM else Color3.fromRGB(255, 200, 60), Material = Enum.Material.Fabric })
+			table.insert(plot.flags, { part = flag, top = top * CFrame.new(0, 1.1, 0) })
 		end
 	end
 	if tier >= 2 then
@@ -323,7 +325,14 @@ local function onPlot(model: Instance)
 	local tierFolder = Instance.new("Folder")
 	tierFolder.Name = "Growth"
 	tierFolder.Parent = folder
-	local plot: Plot = { model = model, folder = folder, tierFolder = tierFolder, path = {}, center = base.Position, tier = -1 }
+	local plot: Plot = { model = model, folder = folder, tierFolder = tierFolder, path = {}, center = base.Position, tier = -1, flags = {}, lanterns = {} }
+	-- Walkway lanterns (built by the server) flicker like little flames.
+	for _, child in model:GetChildren() do
+		local light = child.Name == "Lantern" and child:FindFirstChildOfClass("PointLight")
+		if light then
+			table.insert(plot.lanterns, light)
+		end
+	end
 	plots[model] = plot
 	buildFrame(plot, base)
 	buildSurroundings(plot, base)
@@ -384,7 +393,7 @@ local function onTile(tile: Instance)
 end
 
 -- The buy pad becomes a giant open clam with a floating, spinning pearl.
-type Clam = { pad: BasePart, pearl: BasePart, home: CFrame }
+type Clam = { pad: BasePart, pearl: BasePart, home: CFrame, hinge: CFrame, lid: { { part: BasePart, offset: CFrame } }, phase: number }
 local clams: { [BasePart]: Clam } = {}
 
 local function onPad(pad: Instance)
@@ -397,11 +406,14 @@ local function onPad(pad: Instance)
 	local shell = Color3.fromRGB(240, 150, 175)
 	-- Bottom shell cupped under the pad, and the lid hinged open behind it.
 	ellipsoid(folder, Vector3.new(9, 1.6, 8.5), upright * CFrame.new(0, -0.6, 0), shell) -- rim peeks out around the pad
-	ellipsoid(folder, Vector3.new(9, 1.2, 8.5), upright * CFrame.new(0, 3.2, 4.4) * CFrame.Angles(math.rad(70), 0, 0), shell:Lerp(Color3.new(1, 1, 1), 0.15))
+	-- The lid and its ridges, posed from the hinge each frame (it breathes).
+	local lid: { { part: BasePart, offset: CFrame } } = {}
+	table.insert(lid, { part = ellipsoid(folder, Vector3.new(9, 1.2, 8.5), CFrame.identity, shell:Lerp(Color3.new(1, 1, 1), 0.15)), offset = CFrame.new(0, 0, -4.25) })
 	for i = -3, 3 do
-		-- Ridges on the lid.
-		part(folder, { Size = Vector3.new(0.25, 0.3, 7.5), CFrame = upright * CFrame.new(0, 3.2, 4.4) * CFrame.Angles(math.rad(70), math.rad(i * 9), 0) * CFrame.new(0, 0.55, 0), Color = Color3.fromRGB(255, 200, 215) })
+		local ridge = part(folder, { Size = Vector3.new(0.25, 0.3, 7.5), Color = Color3.fromRGB(255, 200, 215) })
+		table.insert(lid, { part = ridge, offset = CFrame.new(0, 0, -4.25) * CFrame.Angles(0, math.rad(i * 9), 0) * CFrame.new(0, 0.55, 0) })
 	end
+	local hinge = upright * CFrame.new(0, 0.4, 4.2)
 	local home = upright * CFrame.new(0, 3.4, 0)
 	local pearl = part(folder, { Name = "Pearl", Shape = Enum.PartType.Ball, Size = Vector3.one * 2.4, CFrame = home, Color = Color3.fromRGB(255, 250, 240), Reflectance = 0.3 })
 	local light = Instance.new("PointLight")
@@ -410,7 +422,7 @@ local function onPad(pad: Instance)
 	light.Brightness = 1.4
 	light.Parent = pearl
 	folder.Parent = pad
-	clams[pad] = { pad = pad, pearl = pearl, home = home }
+	clams[pad] = { pad = pad, pearl = pearl, home = home, hinge = hinge, lid = lid, phase = pad.Position.X * 0.1 }
 	pad.Destroying:Connect(function()
 		clams[pad] = nil
 	end)
@@ -454,6 +466,21 @@ function PlotDecor.start()
 		local t = os.clock()
 		for _, clam in clams do
 			clam.pearl.CFrame = clam.home * CFrame.new(0, math.sin(t * 2) * 0.4, 0) * CFrame.Angles(0, t, 0)
+			-- The lid slowly opens and closes, like the clam is breathing.
+			local frame = clam.hinge * CFrame.Angles(math.rad(105 + math.sin(t * 1.1 + clam.phase) * 12), 0, 0)
+			for _, piece in clam.lid do
+				piece.part.CFrame = frame * piece.offset
+			end
+		end
+		for _, plot in plots do
+			if plot.folder.Parent then
+				for i, flag in plot.flags do
+					flag.part.CFrame = flag.top * CFrame.Angles(0, math.sin(t * 3 + i) * 0.35, 0) * CFrame.new(0, 0, 1.2)
+				end
+				for i, light in plot.lanterns do
+					light.Brightness = 1 + math.sin(t * 9 + i * 1.7) * 0.15 + math.sin(t * 23 + i) * 0.1
+				end
+			end
 		end
 		for _, plot in plots do
 			if plot.model:GetAttribute("OwnerId") == player.UserId then

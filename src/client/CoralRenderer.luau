@@ -303,7 +303,13 @@ function CoralRenderer.start()
 		end
 		accumulator = 0
 		local t = os.clock()
-		for _, entry in entries do
+		local cameraPosition = workspace.CurrentCamera.CFrame.Position
+		for tile, entry in entries do
+			-- Nearby corals sway gently in the current.
+			if entry.model and not entry.animating and (tile.Position - cameraPosition).Magnitude < 140 then
+				local phase = tile.Position.X * 0.37 + tile.Position.Z * 0.21
+				entry.model:PivotTo(uprightFrame(tile) * CFrame.Angles(math.sin(t * 1.3 + phase) * 0.05, 0, math.sin(t * 1.1 + phase * 1.7) * 0.05))
+			end
 			-- Ready corals pulse.
 			if entry.readyGlow then
 				local pulse = (math.sin(t * 3.2) + 1) / 2
