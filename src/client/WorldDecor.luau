@@ -90,7 +90,12 @@ local function onPath(position: Vector3, margin: number): boolean
 	return false
 end
 
+local RING = Balance.world.plaza
+
 local function isClear(position: Vector3, margin: number): boolean
+	if math.abs(Vector3.new(position.X, 0, position.Z).Magnitude - RING.ringRadius) < RING.ringWidth / 2 + 2 + margin then
+		return false -- the ring road around the Market
+	end
 	if onPath(position, margin) then
 		return false
 	end

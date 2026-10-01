@@ -1688,7 +1688,9 @@
 		"plaza": {
 			"angle": 0,
 			"radius": 0,
-			"size": 30
+			"size": 30,
+			"ringRadius": 70,
+			"ringWidth": 10
 		},
 		"landmarks": {
 			"ruin": {
