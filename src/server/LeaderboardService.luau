@@ -10,6 +10,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
+local CoralModels = require(ReplicatedStorage.Shared.CoralModels)
 local PlayerStore = require(script.Parent.PlayerStore)
 
 local REFRESH_SECONDS = 120
@@ -56,28 +57,76 @@ local center = direction * AREA_RADIUS
 local folder = Instance.new("Folder")
 folder.Name = "LeaderboardArea"
 
--- A board on two posts in an arc on the far side of the platform, facing its
--- middle. Returns the label to write rows into.
+-- Coral-themed boards: a coral-pink sign framed in shell trim, topped with a
+-- scallop shell, on coral-pink posts, with real corals growing at its feet.
+-- Each sits in an arc on the far side of the platform, facing its middle.
+-- Returns the label to write rows into.
+local BOARD_LOOKS = {
+	{ sign = Color3.fromRGB(175, 50, 85), trim = Color3.fromRGB(255, 200, 170), corals = { "Staghorn", "Fan" } },
+	{ sign = Color3.fromRGB(150, 70, 170), trim = Color3.fromRGB(235, 205, 255), corals = { "GlowingTube", "Brain" } },
+	{ sign = Color3.fromRGB(30, 120, 140), trim = Color3.fromRGB(255, 240, 210), corals = { "Pearlescent", "Crystal" } },
+	{ sign = Color3.fromRGB(170, 75, 35), trim = Color3.fromRGB(255, 225, 160), corals = { "SeaGrape", "KelpBloom" } },
+}
+
+local function ellipsoid(props: { [string]: any }): Part
+	local part = newPart(props)
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere
+	mesh.Parent = part
+	return part
+end
+
 function LeaderboardService.makePanel(index: number, title: string): TextLabel
+	local look = BOARD_LOOKS[index] or BOARD_LOOKS[1]
 	local spread = (index - (PANELS + 1) / 2) * math.rad(52)
 	local frame = CFrame.lookAt(center, Vector3.zero) * CFrame.Angles(0, spread, 0) * CFrame.new(0, 0, 13)
 	frame = CFrame.lookAt(frame.Position, center)
-	local panel = newPart({ Name = title, Size = Vector3.new(11, 14, 0.6), CFrame = frame * CFrame.new(0, 8.4, 0), Color = Color3.fromRGB(20, 60, 80) })
-	for _, x in { -5.1, 5.1 } do
-		newPart({ Name = "Post", Size = Vector3.new(0.6, 15.4, 0.6), CFrame = frame * CFrame.new(x, 7.7, 0.5), Color = Color3.fromRGB(95, 65, 40), Material = Enum.Material.Wood }).Parent = folder
+	local floor = 1.3 -- the platform's top
+	local panel = newPart({ Name = title, Size = Vector3.new(11, 13, 0.6), CFrame = frame * CFrame.new(0, floor + 7.6, 0), Color = look.sign })
+	-- Shell trim around the sign, and a big scallop shell on top.
+	for _, edge in { { 0, 6.7, 11.8, 0.6 }, { 0, -6.7, 11.8, 0.6 }, { -5.8, 0, 0.6, 14 }, { 5.8, 0, 0.6, 14 } } do
+		newPart({ Name = "Trim", Size = Vector3.new(edge[3], edge[4], 0.8), CFrame = panel.CFrame * CFrame.new(edge[1], edge[2], 0), Color = look.trim }).Parent = folder
+	end
+	ellipsoid({ Name = "Shell", Size = Vector3.new(6, 4.4, 1), CFrame = panel.CFrame * CFrame.new(0, 8.4, 0), Color = look.trim }).Parent = folder
+	for k = -3, 3 do
+		newPart({ Name = "ShellRidge", Size = Vector3.new(0.25, 3.6, 1.1), CFrame = panel.CFrame * CFrame.new(0, 7, 0) * CFrame.Angles(0, 0, math.rad(k * 16)) * CFrame.new(0, 1.6, 0), Color = look.sign }).Parent = folder
+	end
+	-- Coral-pink posts.
+	for _, x in { -4.6, 4.6 } do
+		newPart({ Name = "Post", Size = Vector3.new(0.8, floor + 1.2, 0.8), CFrame = frame * CFrame.new(x, (floor + 1.2) / 2, 0.4), Color = Color3.fromRGB(240, 120, 140) }).Parent = folder
+	end
+	-- Corals growing at its feet.
+	for k, coralType in look.corals do
+		local def = Balance.corals[coralType]
+		if def then
+			local coral = CoralModels.build(coralType, def.color, index * 10 + k)
+			coral:PivotTo(frame * CFrame.new(if k == 1 then -4 else 4, floor, -1.5))
+			coral:ScaleTo(1.5)
+			for _, item in coral:GetDescendants() do
+				if item:IsA("BasePart") then
+					item.Anchored = true
+					item.CanCollide = false
+				end
+			end
+			coral.Parent = folder
+		end
 	end
 	local gui = Instance.new("SurfaceGui")
 	gui.Face = Enum.NormalId.Front
-	gui.CanvasSize = Vector2.new(440, 560)
+	gui.CanvasSize = Vector2.new(440, 520)
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundTransparency = 1
 	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.TextStrokeTransparency = 0.4
 	label.Font = Enum.Font.FredokaOne
 	label.TextSize = 28
 	label.TextWrapped = true
 	label.TextYAlignment = Enum.TextYAlignment.Top
 	label.Text = title .. "\n\nLoading..."
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0, 14)
+	padding.Parent = label
 	label.Parent = gui
 	gui.Parent = panel
 	panel.Parent = folder
@@ -90,10 +139,10 @@ local function buildArea()
 	newPart({ Name = "Platform", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, PLATFORM_SIZE + 2, PLATFORM_SIZE + 2), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(150, 125, 98) }).Parent = folder
 	newPart({ Name = "Platform", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.6, PLATFORM_SIZE, PLATFORM_SIZE), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(225, 205, 170) }).Parent = folder
 	local plaza = Balance.world.plaza
-	local pathStart = direction * (plaza.ringRadius + plaza.ringWidth / 2 - 0.5)
+	local pathStart = direction * (plaza.ringRadius + plaza.ringWidth / 2) -- starts at the ring road's edge
 	local pathEnd = center - direction * (PLATFORM_SIZE / 2 - 0.5)
 	local length = (pathEnd - pathStart).Magnitude
-	newPart({ Name = "Path", Size = Vector3.new(8, 1.6, length), CFrame = CFrame.lookAt((pathStart + pathEnd) / 2, pathEnd), Color = Color3.fromRGB(150, 162, 176) }).Parent = folder
+	newPart({ Name = "Path", Size = Vector3.new(8, 1.6, length), CFrame = CFrame.lookAt((pathStart + pathEnd) / 2, pathEnd), Color = Color3.fromRGB(200, 170, 135), Material = Enum.Material.Cobblestone }).Parent = folder
 	for i, board in BOARDS do
 		board.label = LeaderboardService.makePanel(i, board.title)
 	end

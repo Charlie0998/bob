@@ -500,7 +500,7 @@ local function buildJellies()
 	}
 	for i, look in looks do
 		local a = i / #looks * math.pi * 2
-		local home = area + Vector3.new(math.cos(a) * 9, 20 + i * 2, math.sin(a) * 9)
+		local home = area + Vector3.new(math.cos(a) * 9, 30 + i * 2, math.sin(a) * 9) -- tentacles clear the shell-topped boards
 		local bell = ellipsoid(model, Vector3.new(8, 5, 8), CFrame.new(home), look[1])
 		bell.Transparency = 0.35
 		local core = ellipsoid(model, Vector3.new(4.5, 2.6, 4.5), CFrame.new(home), look[2], Enum.Material.Neon)
