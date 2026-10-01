@@ -21,14 +21,36 @@ function Panels.goals(gui: ScreenGui, remotes: Instance): () -> ()
 			return
 		end
 		UIKit.clear(panel.body)
+		-- 7-day streak calendar; today's box is highlighted, day 7 is the big prize.
 		local streak = player:GetAttribute("Streak") or 0
-		local streakCard = UIKit.card(panel.body, 50, 0)
-		UIKit.label(string.format("Login streak: %d day%s. Come back tomorrow for more shells!", streak, if streak == 1 then "" else "s"), {
-			Position = UDim2.fromOffset(12, 0),
-			Size = UDim2.new(1, -24, 1, 0),
+		local today = player:GetAttribute("StreakDay") or 1
+		local streakCard = UIKit.card(panel.body, 104, 0)
+		UIKit.label(string.format("Login streak: %d day%s. Come back every day!", streak, if streak == 1 then "" else "s"), {
+			Position = UDim2.fromOffset(12, 2),
+			Size = UDim2.new(1, -24, 0, 26),
 			TextSize = 16,
 			Parent = streakCard,
 		})
+		local row = make("Frame", {
+			Position = UDim2.fromOffset(8, 32),
+			Size = UDim2.new(1, -16, 0, 64),
+			BackgroundTransparency = 1,
+			Parent = streakCard,
+		}, { make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 4) }) })
+		for day, reward in Balance.daily.streakRewards do
+			local box = make("Frame", {
+				Size = UDim2.new(1 / 7, -4, 1, 0),
+				BackgroundColor3 = if day == today then COLORS.gold elseif day < today then COLORS.accent else COLORS.muted,
+				Parent = row,
+			}, { UIKit.corner(8) })
+			UIKit.label(string.format("Day %d\n%s", day, if day == 7 then "BIG PRIZE" else reward.text), {
+				Size = UDim2.fromScale(1, 1),
+				TextScaled = true,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				TextColor3 = if day == today then COLORS.goldText else COLORS.text,
+				Parent = box,
+			})
+		end
 		for i = 1, Balance.daily.goalsPerDay do
 			local raw = player:GetAttribute("Goal" .. i)
 			if type(raw) ~= "string" then
@@ -67,7 +89,7 @@ function Panels.goals(gui: ScreenGui, remotes: Instance): () -> ()
 	end
 	panel = UIKit.panel(gui, "Daily Goals", refresh)
 	player.AttributeChanged:Connect(function(name)
-		if string.sub(name, 1, 4) == "Goal" or name == "Streak" then
+		if string.sub(name, 1, 4) == "Goal" or name == "Streak" or name == "StreakDay" then
 			refresh()
 		end
 	end)
@@ -463,6 +485,26 @@ function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () 
 			return order
 		end
 
+		-- Rare Coral Today: changes every UTC day, one per player per day.
+		local ShopRotation = require(game:GetService("ReplicatedStorage").Shared.ShopRotation)
+		local now = workspace:GetServerTimeNow()
+		local offer, day, endsAt = ShopRotation.daily(Balance.shopRotation, now)
+		local coral = Balance.corals[offer.coral]
+		local bought = player:GetAttribute("DailyCoralDay") == day
+		local hours = math.floor((endsAt - now) / 3600)
+		itemRow(
+			nextOrder(),
+			"Rare Coral Today: " .. coral.displayName,
+			string.format("%s · new coral in %dh %dm", coral.rarity, hours, math.floor((endsAt - now) % 3600 / 60)),
+			if bought then "Bought today" else string.format("%d shells", offer.shells),
+			if bought then "muted" else "gold",
+			function()
+				if not bought then
+					(remotes:WaitForChild("BuyDailyCoral") :: RemoteEvent):FireServer()
+				end
+			end
+		)
+
 		local speedups = player:GetAttribute("SpeedUps") or 0
 		itemRow(nextOrder(), string.format("Growth speed-ups: %d", speedups), "Instantly finishes the coral closest to ready", "Use one", if speedups > 0 then "accent" else "muted", function()
 			useSpeedUp:FireServer()
@@ -515,11 +557,53 @@ function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () 
 	end
 	panel = UIKit.panel(gui, "Shop", refresh)
 	player.AttributeChanged:Connect(function(name)
-		if name == "SpeedUps" or string.sub(name, 1, 5) == "Pass_" then
+		if name == "SpeedUps" or name == "DailyCoralDay" or name == "Shells" or string.sub(name, 1, 5) == "Pass_" then
 			refresh()
 		end
 	end)
 	return panel.toggle
+end
+
+-- A popup announcing today's login reward.
+function Panels.streakPopup(gui: ScreenGui)
+	local popup = make("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.42),
+		Size = UDim2.fromOffset(360, 150),
+		BackgroundColor3 = COLORS.panel,
+		Visible = false,
+		Parent = gui,
+	}, { UIKit.corner(18), make("UIStroke", { Color = COLORS.gold, Thickness = 3 }) })
+	local title = UIKit.label("", {
+		Position = UDim2.fromOffset(16, 10),
+		Size = UDim2.new(1, -32, 0, 34),
+		TextSize = 26,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		TextColor3 = COLORS.gold,
+		Parent = popup,
+	})
+	local body = UIKit.label("", {
+		Position = UDim2.fromOffset(16, 46),
+		Size = UDim2.new(1, -32, 0, 44),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Parent = popup,
+	})
+	local ok = UIKit.button("Collect!", "gold", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -12), Parent = popup })
+	ok.Activated:Connect(function()
+		popup.Visible = false
+	end)
+	local function show()
+		local raw = player:GetAttribute("StreakReward")
+		if type(raw) ~= "string" then
+			return
+		end
+		local day, text = string.match(raw, "^(%d+)|(.*)$")
+		title.Text = string.format("Daily reward: day %s of 7", day or "?")
+		body.Text = text or ""
+		popup.Visible = true
+	end
+	player:GetAttributeChangedSignal("StreakReward"):Connect(show)
+	show()
 end
 
 -- A small bar showing the server-wide reef project.

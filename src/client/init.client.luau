@@ -240,6 +240,7 @@ addMenuButton("Friends", Panels.friends(gui, Remotes, Panels.trade(gui, Remotes)
 addMenuButton("Goals", Panels.goals(gui, Remotes))
 addMenuButton("Photo", PhotoMode.start(gui))
 Panels.project(gui)
+Panels.streakPopup(gui)
 
 -- Reef health meter ------------------------------------------------------
 

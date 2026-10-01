@@ -94,11 +94,28 @@
 		}
 	},
 	"shopRotation": {
-		"periodSeconds": 1800,
+		"periodSeconds": 600,
 		"pool": [
 			"Fan"
 		],
-		"stockChance": 0.6
+		"stockChance": 0.6,
+		"daily": [
+			{
+				"coral": "Fan",
+				"shells": 40,
+				"weight": 5
+			},
+			{
+				"coral": "GlowingTube",
+				"shells": 150,
+				"weight": 3
+			},
+			{
+				"coral": "Crystal",
+				"shells": 400,
+				"weight": 1
+			}
+		]
 	},
 	"reefHealth": {
 		"varietyTarget": 4,
@@ -894,9 +911,7 @@
 		"badgeId": 0
 	},
 	"daily": {
-		"goalsPerDay": 3,
-		"streakShellsPerDay": 5,
-		"streakCap": 7,
+		"goalsPerDay": 4,
 		"templates": [
 			{
 				"id": "harvest",
@@ -957,6 +972,100 @@
 					1
 				],
 				"shells": 20
+			},
+			{
+				"id": "harvestStaghorn",
+				"text": "Harvest %d Staghorn corals",
+				"activity": "harvest_Staghorn",
+				"target": [
+					10,
+					20
+				],
+				"shells": 12
+			},
+			{
+				"id": "harvestBrain",
+				"text": "Harvest %d Brain corals",
+				"activity": "harvest_Brain",
+				"target": [
+					3,
+					6
+				],
+				"shells": 15
+			},
+			{
+				"id": "mutation",
+				"text": "Grow %d mutated coral",
+				"activity": "mutation",
+				"target": [
+					1,
+					1
+				],
+				"shells": 25
+			},
+			{
+				"id": "passer",
+				"text": "Tap %d passing visitor",
+				"activity": "passer",
+				"target": [
+					1,
+					1
+				],
+				"shells": 15
+			},
+			{
+				"id": "levelup",
+				"text": "Gain %d reef level",
+				"activity": "levelup",
+				"target": [
+					1,
+					1
+				],
+				"shells": 20
+			}
+		],
+		"streakRewards": [
+			{
+				"shells": 20,
+				"text": "20 shells",
+				"pearls": 0,
+				"coral": ""
+			},
+			{
+				"pearls": 300,
+				"text": "300 pearls",
+				"shells": 0,
+				"coral": ""
+			},
+			{
+				"shells": 30,
+				"text": "30 shells",
+				"pearls": 0,
+				"coral": ""
+			},
+			{
+				"coral": "Fan",
+				"text": "A Fan Coral",
+				"shells": 0,
+				"pearls": 0
+			},
+			{
+				"shells": 40,
+				"text": "40 shells",
+				"pearls": 0,
+				"coral": ""
+			},
+			{
+				"pearls": 1500,
+				"text": "1,500 pearls",
+				"shells": 0,
+				"coral": ""
+			},
+			{
+				"coral": "GlowingTube",
+				"shells": 100,
+				"text": "BIG PRIZE: Glowing Tube Coral + 100 shells",
+				"pearls": 0
 			}
 		]
 	},

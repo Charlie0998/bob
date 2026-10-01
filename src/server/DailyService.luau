@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
+local ShopRotation = require(ReplicatedStorage.Shared.ShopRotation)
 local PlayerStore = require(script.Parent.PlayerStore)
 local ReefService = require(script.Parent.ReefService)
 
@@ -44,6 +45,7 @@ local function publish(player: Player)
 		)
 	end
 	player:SetAttribute("Streak", data.daily.streak)
+	player:SetAttribute("StreakDay", (math.max(1, data.daily.streak) - 1) % #CONFIG.streakRewards + 1)
 end
 
 local function rollDay(player: Player)
@@ -56,9 +58,14 @@ local function rollDay(player: Player)
 	if daily.lastLoginDay ~= day then
 		daily.streak = if daily.lastLoginDay == day - 1 then daily.streak + 1 else 1
 		daily.lastLoginDay = day
-		local reward = math.min(daily.streak, CONFIG.streakCap) * CONFIG.streakShellsPerDay
-		ReefService.addCurrency(player, 0, reward, "Streak")
-		ReefService.toast(player, string.format("Day %d login streak: +%d shells!", daily.streak, reward), "unlock")
+		-- A 7-day cycle; day 7 is the big prize.
+		local cycleDay = (daily.streak - 1) % #CONFIG.streakRewards + 1
+		local reward = CONFIG.streakRewards[cycleDay]
+		ReefService.addCurrency(player, reward.pearls, reward.shells, "Streak")
+		if reward.coral ~= "" then
+			ReefService.addInventory(player, reward.coral, 1)
+		end
+		player:SetAttribute("StreakReward", string.format("%d|%s", cycleDay, reward.text))
 	end
 	if daily.day ~= day then
 		daily.day = day
@@ -109,13 +116,45 @@ local function onClaim(player: Player, index: unknown)
 	publish(player)
 end
 
+-- "Rare Coral Today": one purchase per player per day, for Shells.
+local function onBuyDailyCoral(player: Player)
+	local data = PlayerStore.get(player)
+	if not data then
+		return
+	end
+	local offer, day = ShopRotation.daily(Balance.shopRotation, os.time())
+	if data.dailyCoralDay == day then
+		ReefService.toast(player, "You already bought today's rare coral. New one tomorrow!")
+		return
+	end
+	if data.shells < offer.shells then
+		ReefService.toast(player, string.format("Need %d shells", offer.shells))
+		return
+	end
+	data.dailyCoralDay = day
+	ReefService.addCurrency(player, 0, -offer.shells, "DailyCoral")
+	ReefService.addInventory(player, offer.coral, 1)
+	player:SetAttribute("DailyCoralDay", day)
+	ReefService.toast(player, Balance.corals[offer.coral].displayName .. " added to your corals!", "unlock")
+end
+
 function DailyService.start()
+	local buyDaily = Instance.new("RemoteEvent")
+	buyDaily.Name = "BuyDailyCoral"
+	buyDaily.Parent = ReplicatedStorage:WaitForChild("Remotes")
+	buyDaily.OnServerEvent:Connect(onBuyDailyCoral)
 	local remote = Instance.new("RemoteEvent")
 	remote.Name = "ClaimGoal"
 	remote.Parent = ReplicatedStorage:WaitForChild("Remotes")
 	remote.OnServerEvent:Connect(onClaim)
 	ReefService.Activity:Connect(onActivity)
-	PlayerStore.Loaded:Connect(rollDay)
+	PlayerStore.Loaded:Connect(function(player)
+		local data = PlayerStore.get(player)
+		if data then
+			player:SetAttribute("DailyCoralDay", data.dailyCoralDay)
+		end
+		rollDay(player)
+	end)
 	-- Roll over at midnight UTC for players who stay online.
 	task.spawn(function()
 		while true do
