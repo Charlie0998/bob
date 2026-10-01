@@ -409,6 +409,20 @@ task.spawn(function()
 			giveRemote:FireServer(text)
 		end)
 	end
+	-- Owners also get two buttons, in case chat commands are off.
+	if giveRemote and player:GetAttribute("Admin") then
+		for i, entry in { { "+1000 pearls", "/give 1000" }, { "+100 shells", "/give 100 shells" } } do
+			local button = UIKit.button(entry[1], "gold", {
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, -12, 0, 60 + (i - 1) * 42),
+				Size = UDim2.fromOffset(130, 36),
+				Parent = gui,
+			})
+			button.Activated:Connect(function()
+				giveRemote:FireServer(entry[2])
+			end)
+		end
+	end
 end)
 Remotes:WaitForChild("Toast").OnClientEvent:Connect(function(text: string, kind: string)
 	Toasts.show(text, kind)

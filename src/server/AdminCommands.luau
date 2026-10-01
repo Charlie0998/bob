@@ -18,8 +18,12 @@ local MAX_AMOUNT = 1_000_000
 
 local AdminCommands = {}
 
+local function isOwner(player: Player): boolean
+	return OWNERS[string.lower(player.Name)] == true or RunService:IsStudio()
+end
+
 local function give(player: Player, text: string)
-	if not OWNERS[string.lower(player.Name)] and not RunService:IsStudio() then
+	if not isOwner(player) then
 		return
 	end
 	local amount, kind = string.match(string.lower(text), "^/give%s+(%d+)%s*(%a*)")
@@ -38,6 +42,16 @@ local function give(player: Player, text: string)
 end
 
 function AdminCommands.start()
+	-- Owners also get on-screen give buttons (shown by the client).
+	local function mark(player: Player)
+		if isOwner(player) then
+			player:SetAttribute("Admin", true)
+		end
+	end
+	Players.PlayerAdded:Connect(mark)
+	for _, player in Players:GetPlayers() do
+		mark(player)
+	end
 	local remote = Instance.new("RemoteEvent")
 	remote.Name = "AdminGive"
 	remote.Parent = ReplicatedStorage:WaitForChild("Remotes")
