@@ -20,7 +20,7 @@ local HINTS = {
 	"Tap the glowing shell under the arrow to plant your first coral!",
 	"Your coral is growing! When it says Ready, tap it to collect pearls.",
 	"Save up pearls, then tap the giant clam to unlock a new slot.",
-	"Follow the brick path to the Market for rare corals and deals!",
+	"Follow the path to the Market in the middle for corals and deals!",
 }
 
 local Tutorial = {}
@@ -226,8 +226,8 @@ function Tutorial.start(gui: ScreenGui, remotes: Instance)
 			current.Size = UDim2.fromOffset(10 + pulse * 3, 10 + pulse * 3)
 		end
 		local grow = (t * 0.8) % 1
-		-- Just above the surface under each target: slot shell, clam pad, plaza floor.
-		local ringY = ({ 1.55, 1.55, 1.15, 0.65 })[step() + 1] or 0.65
+		-- Just above the surface under each target: slot shell, clam pad, plaza center tile.
+		local ringY = ({ 1.55, 1.55, 1.15, 1.45 })[step() + 1] or 1.45
 		ring.Size = Vector3.new(0.2, 3 + grow * 6, 3 + grow * 6)
 		ring.CFrame = CFrame.new(position.X, ringY, position.Z) * CFrame.Angles(0, 0, math.pi / 2)
 		ring.Transparency = 0.3 + grow * 0.7

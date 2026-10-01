@@ -303,63 +303,40 @@ local function updatePad(player: Player, state: PlayerState)
 	pad:SetAttribute("Cost", if full then -1 else ReefMath.slotCost(data.slots, Balance))
 end
 
--- Walkways: brick paths from the spawn disc to each plot's front, with
--- glowing lanterns along them. Heights are staggered (path top 0.25, curbs
--- 0.35, spawn disc 0.45) so no two surfaces line up and flicker.
-local SPAWN_DISC = 22 -- paths start here, where neighbors no longer overlap
-local PATH_WIDTH = 7
-local PATH_COLOR = Color3.fromRGB(196, 112, 84)
-local CURB_COLOR = Color3.fromRGB(120, 72, 58)
+-- Walkways: wide stone floors from the Market plaza in the middle out to
+-- each plot's front, with glowing lanterns on both sides. Heights are
+-- staggered (floor top 0.5, curbs 0.6) and plain smooth stone is used, since
+-- patterned materials rendered oddly on parts this long.
+local PATH_START = Balance.world.plaza.size + 1 -- just outside the plaza rim
+local PATH_WIDTH = 10
+local PATH_COLOR = Color3.fromRGB(205, 160, 120)
+local CURB_COLOR = Color3.fromRGB(120, 85, 65)
 local LANTERN_COLOR = Color3.fromRGB(255, 215, 140)
-local LANTERN_SPACING = 26
+local LANTERN_SPACING = 18
 
--- One straight stretch of walkway with curbs and lanterns.
-local function walkwaySegment(model: Instance, start: Vector3, finish: Vector3)
-	local length = (finish - start).Magnitude
-	if length < 2 then
-		return
-	end
-	local frame = CFrame.lookAt((start + finish) / 2, finish)
-	anchoredPart({ Name = "Walkway", Size = Vector3.new(PATH_WIDTH, 0.5, length), CFrame = frame, Color = PATH_COLOR, Material = Enum.Material.Brick, CanQuery = false }).Parent = model
-	for _, side in { -1, 1 } do
-		anchoredPart({ Name = "Curb", Size = Vector3.new(0.6, 0.7, length), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.3), 0, 0), Color = CURB_COLOR, Material = Enum.Material.Slate, CanQuery = false }).Parent = model
-	end
-	-- Lanterns on alternating sides.
-	local side = 1
-	for d = LANTERN_SPACING / 2, length - 4, LANTERN_SPACING do
-		local spot = (frame * CFrame.new(side * (PATH_WIDTH / 2 + 1.2), 0, length / 2 - d)).Position
-		anchoredPart({ Name = "LanternPost", Size = Vector3.new(0.5, 5, 0.5), CFrame = CFrame.new(spot + Vector3.new(0, 2.5, 0)), Color = CURB_COLOR, Material = Enum.Material.Wood, CanQuery = false }).Parent = model
-		local glow = anchoredPart({ Name = "Lantern", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.3, CFrame = CFrame.new(spot + Vector3.new(0, 5.4, 0)), Color = LANTERN_COLOR, Material = Enum.Material.Neon, CanCollide = false, CanQuery = false })
-		local light = Instance.new("PointLight")
-		light.Color = LANTERN_COLOR
-		light.Range = 12
-		light.Brightness = 1.2
-		light.Parent = glow
-		glow.Parent = model
-		side = -side
-	end
-end
-
--- From the spawn disc to the plot's front. A walkway that would cross the
--- Market plaza stops at its edge and picks up again on the far side, so it
--- never sits under the plaza floor.
 local function buildWalkway(model: Instance, site: Vector3)
-	-- Plots face spawn, so the front edge is the side nearest the middle.
+	-- Plots face the middle, so the front edge is the side nearest it.
 	local halfZ = (math.ceil(GRID_CAPACITY / GRID_COLUMNS) * CELL + 4) / 2
 	local direction = site.Unit
+	local start = direction * PATH_START
 	local finish = site - direction * (halfZ + 1)
-	local start = direction * SPAWN_DISC
-	local plaza = Balance.world.plaza
-	local plazaCenter = Vector3.new(math.cos(math.rad(plaza.angle)), 0, math.sin(math.rad(plaza.angle))) * plaza.radius
-	local clear = plaza.size + 1
-	local along = (plazaCenter - start):Dot(direction)
-	local miss = (plazaCenter - (start + direction * along)).Magnitude
-	if miss < clear then
-		local half = math.sqrt(clear * clear - miss * miss)
-		walkwaySegment(model, start, start + direction * (along - half))
-		walkwaySegment(model, start + direction * (along + half), finish)
-	else
-		walkwaySegment(model, start, finish)
+	local length = (finish - start).Magnitude
+	local frame = CFrame.lookAt((start + finish) / 2, finish)
+	anchoredPart({ Name = "Walkway", Size = Vector3.new(PATH_WIDTH, 1, length), CFrame = frame, Color = PATH_COLOR, Material = Enum.Material.SmoothPlastic, CanQuery = false }).Parent = model
+	for _, side in { -1, 1 } do
+		anchoredPart({ Name = "Curb", Size = Vector3.new(0.8, 1.2, length), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.4), 0, 0), Color = CURB_COLOR, Material = Enum.Material.SmoothPlastic, CanQuery = false }).Parent = model
+		-- A lantern pair every few steps, one on each side of the floor.
+		for d = LANTERN_SPACING / 2, length - 4, LANTERN_SPACING do
+			local spot = (frame * CFrame.new(side * (PATH_WIDTH / 2 + 1.6), 0, length / 2 - d)).Position
+			anchoredPart({ Name = "LanternPost", Size = Vector3.new(0.5, 5, 0.5), CFrame = CFrame.new(spot + Vector3.new(0, 2.5, 0)), Color = CURB_COLOR, Material = Enum.Material.Wood, CanQuery = false }).Parent = model
+			local glow = anchoredPart({ Name = "Lantern", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.3, CFrame = CFrame.new(spot + Vector3.new(0, 5.4, 0)), Color = LANTERN_COLOR, Material = Enum.Material.Neon, CanCollide = false, CanQuery = false })
+			local light = Instance.new("PointLight")
+			light.Color = LANTERN_COLOR
+			light.Range = 12
+			light.Brightness = 1.2
+			light.Parent = glow
+			glow.Parent = model
+		end
 	end
 end
 
@@ -845,15 +822,6 @@ function ReefService.resetReef(player: Player)
 end
 
 function ReefService.start()
-	-- The round meeting spot every walkway starts from.
-	anchoredPart({
-		Name = "SpawnDisc",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.9, SPAWN_DISC * 2 + 3, SPAWN_DISC * 2 + 3),
-		CFrame = CFrame.Angles(0, 0, math.pi / 2),
-		Color = Color3.fromRGB(38, 172, 186),
-		Material = Enum.Material.Pavement,
-	}).Parent = workspace
 	-- A walkway to every plot spot, empty or not, so the map always shows
 	-- where reefs go.
 	local walkways = Instance.new("Folder")

@@ -1,5 +1,6 @@
--- Builds the decorative seafloor locally on each client: a coral garden at
--- spawn, rocks, swaying kelp, sunbeams, bubble vents, drifting plankton, and
+-- Builds the decorative seafloor locally on each client: pebbles, rocks,
+-- swaying kelp, sunbeams, bubble vents, drifting plankton, glowing orbs over
+-- the Market plaza in the middle, and
 -- the water surface. None of it is replicated, so it costs the server nothing.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -64,8 +65,8 @@ end
 
 -- Where ReefService lays the walkways from the spawn disc to every plot.
 -- Kept clear of rocks and kelp.
-local PATH_WIDTH = 7
-local SPAWN_DISC = 22
+local PATH_WIDTH = 14 -- floor plus curbs and lanterns
+local SPAWN_DISC = Balance.world.plaza.size + 1
 local paths: { { from: Vector3, to: Vector3 } } = {}
 do
 	local function add(target: Vector3, stopShort: number)
@@ -119,23 +120,6 @@ local function randomClearSpot(rng: Random, minRadius: number, maxRadius: number
 		end
 	end
 	return nil
-end
-
-local function buildGarden(rng: Random)
-	local types = {}
-	for name in Balance.corals do
-		table.insert(types, name)
-	end
-	table.sort(types)
-	for i = 1, 16 do
-		local angle = (i + 0.5) / 16 * math.pi * 2 + rng:NextNumber(-0.1, 0.1) -- between the walkways
-		local radius = rng:NextNumber(13, 24)
-		local coralType = types[rng:NextInteger(1, #types)]
-		local model = CoralModels.build(coralType, Balance.corals[coralType].color, SEED + i)
-		model:PivotTo(CFrame.new(math.cos(angle) * radius, 0, math.sin(angle) * radius) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0))
-		model:ScaleTo(rng:NextNumber(0.9, 1.5))
-		model.Parent = folder
-	end
 end
 
 local function buildRocks(rng: Random)
@@ -653,8 +637,7 @@ end
 
 function WorldDecor.start()
 	local rng = Random.new(SEED)
-	buildPebbles(rng)
-	buildGarden(rng)
+	buildPebbles(rng) -- (no spawn garden: the Market plaza fills the middle now)
 	buildRocks(rng)
 	buildKelp(rng)
 	buildSunbeams(rng)
@@ -673,7 +656,7 @@ function WorldDecor.start()
 	for i = 1, 8 do
 		table.insert(orbs, newPart({ Name = "SpawnOrb", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.2, Color = Color3.fromHSV(i / 8, 0.45, 1), Material = Enum.Material.Neon }))
 	end
-	local column = newPart({ Name = "SpawnBubbles", Size = Vector3.one, CFrame = CFrame.new(0, 1, 0), Transparency = 1 })
+	local column = newPart({ Name = "SpawnBubbles", Size = Vector3.one, CFrame = CFrame.new(0, 1.5, 0), Transparency = 1 })
 	local bubbles = Instance.new("ParticleEmitter")
 	bubbles.Texture = "rbxasset://textures/particles/smoke_main.dds"
 	bubbles.Color = ColorSequence.new(Color3.fromRGB(230, 250, 255))
@@ -702,7 +685,7 @@ function WorldDecor.start()
 		local t = os.clock()
 		for i, orb in orbs do
 			local a = t * 0.4 + i / #orbs * math.pi * 2
-			orb.CFrame = CFrame.new(math.cos(a) * 14, 6 + math.sin(t * 1.5 + i) * 0.8, math.sin(a) * 14) -- wide enough to clear the Top Reefs board
+			orb.CFrame = CFrame.new(math.cos(a) * 12, 12 + math.sin(t * 1.5 + i) * 0.8, math.sin(a) * 12) -- above the Top Reefs board and shopkeepers
 		end
 
 		-- Move every nearby kelp segment in one bulk call.

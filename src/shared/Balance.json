@@ -1686,8 +1686,8 @@
 			"rings": 1
 		},
 		"plaza": {
-			"angle": 36,
-			"radius": 90,
+			"angle": 0,
+			"radius": 0,
 			"size": 30
 		},
 		"landmarks": {

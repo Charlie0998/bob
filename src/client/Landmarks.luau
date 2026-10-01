@@ -235,7 +235,6 @@ end
 local function buildPlaza()
 	local center = spot(WORLD.plaza.angle, WORLD.plaza.radius)
 	local model = group("MarketPlaza", center, true)
-	local facing = CFrame.lookAt(center, Vector3.new(0, 0, 0))
 	-- A round tiled floor with a sandstone rim.
 	-- A raised, solid stone floor (top 1.0) on a darker rim (top 0.6), well
 	-- clear of the sand so nothing flickers, and a teal tile in the middle
@@ -256,9 +255,9 @@ local function buildPlaza()
 	}
 	-- Spaced far enough apart that awnings and signs don't overlap.
 	for i = 1, 4 do
-		local angle = math.rad(-72 + (i - 1) * 48)
-		local frame = facing * CFrame.Angles(0, angle, 0) * CFrame.new(0, 0, 20)
-		frame = CFrame.lookAt(frame.Position, center) -- counters face the plaza center
+		-- In the gaps between the walkways that leave the plaza.
+		local angle = (i - 0.5) / Balance.world.plots.perRing * math.pi * 2
+		local frame = CFrame.lookAt(center + Vector3.new(math.cos(angle), 0, math.sin(angle)) * 20, center) -- counters face the plaza center
 		stall(model, CFrame.new(0, 1, 0) * frame * CFrame.Angles(0, math.pi, 0) --[[ on the raised floor ]], AWNINGS[i], titles[i], tabs[i])
 		-- A shopkeeper behind every counter, facing the customers.
 		local keeper = KEEPERS[i]
@@ -269,13 +268,6 @@ local function buildPlaza()
 			hat = keeper.hat,
 			name = keeper.name,
 		})
-	end
-	-- Lantern posts at the entrance.
-	for _, side in { -1, 1 } do
-		local base = (facing * CFrame.new(side * 10, 0, -26)).Position
-		part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(7, 0.5, 0.5), CFrame = CFrame.new(base + Vector3.new(0, 3.5, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = DARK_WOOD, Material = Enum.Material.Wood })
-		local glow = part(model, { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.4, CFrame = CFrame.new(base + Vector3.new(0, 7.4, 0)), Color = Color3.fromRGB(255, 220, 150), Material = Enum.Material.Neon })
-		light(glow, Color3.fromRGB(255, 210, 140), 16, 1.6)
 	end
 end
 
