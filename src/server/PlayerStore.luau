@@ -50,6 +50,7 @@ export type PlayerData = {
 	level: number,
 	xp: number,
 	dailyCoralDay: number,
+	pet: string,
 }
 
 type Profile = { data: PlayerData, key: string }
@@ -96,6 +97,7 @@ local function newData(): PlayerData
 		level = 1,
 		xp = 0,
 		dailyCoralDay = -1,
+		pet = "",
 	}
 	-- First session: the player spawns with one starter coral already growing.
 	data.corals["1"] = { type = Balance.starterCoral, plantedAt = os.time(), bornAt = os.time() }

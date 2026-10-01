@@ -6,6 +6,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
+local CoralModels = require(ReplicatedStorage.Shared.CoralModels)
+local CreatureModels = require(ReplicatedStorage.Shared.CreatureModels)
 local CreatureRules = require(ReplicatedStorage.Shared.CreatureRules)
 
 local player = Players.LocalPlayer
@@ -45,8 +47,43 @@ for coralType, def in Balance.corals do
 	coralNames[coralType] = def.displayName
 end
 
+-- A small 3D preview of a coral or creature. Undiscovered entries show as a
+-- solid black silhouette, so players can see the shape they're hunting.
+local function preview(card: Frame, id: string, isCoral: boolean, known: boolean)
+	local viewport = make("ViewportFrame", {
+		Position = UDim2.fromOffset(4, 4),
+		Size = UDim2.new(1, -8, 0, 78),
+		BackgroundTransparency = 1,
+		Ambient = if known then Color3.fromRGB(170, 170, 170) else Color3.new(0, 0, 0),
+		LightColor = if known then Color3.new(1, 1, 1) else Color3.new(0, 0, 0),
+		LightDirection = Vector3.new(-1, -2, -1),
+		Parent = card,
+	})
+	local def = if isCoral then Balance.corals[id] else Balance.creatures[id]
+	local model = if isCoral then CoralModels.build(id, def.color, 7) else CreatureModels.build(def.kind, def.color, def.accent)
+	for _, item in model:GetDescendants() do
+		if item:IsA("Light") or item:IsA("ParticleEmitter") then
+			item:Destroy()
+		elseif item:IsA("BasePart") and not known and item.Transparency < 1 then
+			item.Color = Color3.new(0, 0, 0)
+			item.Material = Enum.Material.SmoothPlastic
+			item.Transparency = 0
+		end
+	end
+	model.Parent = viewport
+	local cframe, size = model:GetBoundingBox()
+	local radius = size.Magnitude / 2
+	local camera = Instance.new("Camera")
+	camera.FieldOfView = 40
+	local direction = if isCoral then Vector3.new(1, 0.6, 1).Unit else Vector3.new(1, 0.4, -1).Unit
+	camera.CFrame = CFrame.lookAt(cframe.Position + direction * radius * 2.6, cframe.Position)
+	camera.Parent = viewport
+	viewport.CurrentCamera = camera
+end
+
 function Book.start(gui: ScreenGui, remotes: Instance)
 	local claimRemote = remotes:WaitForChild("ClaimBookPage") :: RemoteEvent
+	local petRemote = remotes:WaitForChild("SetPet") :: RemoteEvent
 	local currentPage = 1
 
 	local panel = make("Frame", {
@@ -104,7 +141,7 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 		CanvasSize = UDim2.new(),
 		Parent = panel,
 	}, {
-		make("UIGridLayout", { CellSize = UDim2.fromOffset(160, 84), CellPadding = UDim2.fromOffset(8, 8) }),
+		make("UIGridLayout", { CellSize = UDim2.fromOffset(160, 152), CellPadding = UDim2.fromOffset(8, 8) }),
 	})
 
 	local claim = make("TextButton", {
@@ -157,39 +194,56 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 			local hint = if isCoral
 				then (if def.inShop then "Sold in the shop" elseif def.rarity == "Rare" then "Rotating rare shop" elseif def.rarity == "Epic" then "Dropped by rare creatures" else "Prestige shop")
 				else CreatureRules.describe(def.conditions, coralNames)
-			make("Frame", {
+			if not isCoral and known and def.boost then
+				hint = "Boost: " .. def.boost.text
+			elseif isCoral and def.zone then
+				hint = "Sold in the " .. def.zone .. " market"
+			end
+			local card = make("Frame", {
 				BackgroundColor3 = if known then COLORS.card else COLORS.unknown,
 				Parent = grid,
 			}, {
 				corner(10),
-				make("Frame", {
-					Position = UDim2.fromOffset(8, 8),
-					Size = UDim2.fromOffset(22, 22),
-					BackgroundColor3 = if known then Color3.fromRGB(def.color[1], def.color[2], def.color[3]) else Color3.fromRGB(80, 95, 105),
-				}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) }),
 				make("TextLabel", {
-					Position = UDim2.fromOffset(36, 6),
-					Size = UDim2.new(1, -42, 0, 26),
+					Position = UDim2.fromOffset(8, 84),
+					Size = UDim2.new(1, -16, 0, 22),
 					BackgroundTransparency = 1,
 					Font = Enum.Font.FredokaOne,
 					TextScaled = true,
-					TextXAlignment = Enum.TextXAlignment.Left,
 					TextColor3 = COLORS.text,
 					Text = if known then def.displayName else "???",
 				}),
 				make("TextLabel", {
-					Position = UDim2.fromOffset(8, 36),
-					Size = UDim2.new(1, -16, 1, -42),
+					Position = UDim2.fromOffset(8, 108),
+					Size = UDim2.new(1, -16, 0, 40),
 					BackgroundTransparency = 1,
 					Font = Enum.Font.Gotham,
-					TextSize = 12,
+					TextSize = 11,
 					TextWrapped = true,
-					TextXAlignment = Enum.TextXAlignment.Left,
 					TextYAlignment = Enum.TextYAlignment.Top,
 					TextColor3 = COLORS.hint,
 					Text = (def.rarity or "") .. " · " .. hint,
 				}),
 			})
+			preview(card, id, isCoral, known)
+			-- Found swimmers can become your pet.
+			if not isCoral and known and table.find(Balance.pets.allowedKinds, def.kind) then
+				local isPet = player:GetAttribute("Pet") == id
+				local petButton = make("TextButton", {
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, -6, 0, 6),
+					Size = UDim2.fromOffset(62, 26),
+					BackgroundColor3 = if isPet then COLORS.gold else Color3.fromRGB(60, 170, 190),
+					Font = Enum.Font.FredokaOne,
+					TextSize = 13,
+					TextColor3 = if isPet then Color3.fromRGB(60, 40, 10) else COLORS.text,
+					Text = if isPet then "Pet ✓" else "Make pet",
+					Parent = card,
+				}, { corner(8) })
+				petButton.Activated:Connect(function()
+					petRemote:FireServer(if isPet then "" else id)
+				end)
+			end
 		end
 		title.Text = string.format("Collection Book: %s (%d/%d)", page.title, found, #entries)
 		for i, tab in tabButtons do
@@ -210,7 +264,7 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 		panel.Visible = false
 	end)
 	player.AttributeChanged:Connect(function(name)
-		if string.sub(name, 1, 6) == "Found_" or string.sub(name, 1, 8) == "Claimed_" then
+		if string.sub(name, 1, 6) == "Found_" or string.sub(name, 1, 8) == "Claimed_" or name == "Pet" then
 			Book.refresh()
 		end
 	end)

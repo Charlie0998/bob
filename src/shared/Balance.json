@@ -1394,5 +1394,77 @@
 				}
 			]
 		}
+	},
+	"passers": {
+		"minGapSeconds": 90,
+		"maxGapSeconds": 240,
+		"crossSeconds": 28,
+		"list": {
+			"Dolphin": {
+				"displayName": "Dolphin",
+				"kind": "dolphin",
+				"color": [
+					130,
+					150,
+					175
+				],
+				"accent": [
+					225,
+					230,
+					240
+				],
+				"pearls": 150,
+				"shells": 5,
+				"weight": 4
+			},
+			"WanderingTurtle": {
+				"displayName": "Wandering Turtle",
+				"kind": "turtle",
+				"color": [
+					110,
+					150,
+					90
+				],
+				"accent": [
+					170,
+					130,
+					70
+				],
+				"pearls": 100,
+				"shells": 8,
+				"weight": 3
+			},
+			"GiantManta": {
+				"displayName": "Giant Manta",
+				"kind": "ray",
+				"color": [
+					35,
+					45,
+					65
+				],
+				"accent": [
+					240,
+					240,
+					250
+				],
+				"pearls": 250,
+				"shells": 10,
+				"weight": 2
+			}
+		}
+	},
+	"pets": {
+		"scale": 0.6,
+		"allowedKinds": [
+			"fish",
+			"puffer",
+			"seahorse",
+			"jelly",
+			"turtle",
+			"ray",
+			"octopus",
+			"shark",
+			"dolphin"
+		]
 	}
 }

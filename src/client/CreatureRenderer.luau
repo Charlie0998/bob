@@ -18,6 +18,7 @@ type Entry = {
 	offsets: { CFrame },
 	roles: { string },
 	crawler: boolean,
+	passing: boolean,
 	ground: number,
 	phase: number,
 	born: number,
@@ -41,7 +42,8 @@ local function onAdded(instance: Instance)
 		return
 	end
 	local anchor = instance :: BasePart
-	local def = Balance.creatures[anchor:GetAttribute("CreatureId")]
+	local passerId = anchor:GetAttribute("PasserId")
+	local def = if passerId then Balance.passers.list[passerId] else Balance.creatures[anchor:GetAttribute("CreatureId")]
 	if not def then
 		return
 	end
@@ -53,6 +55,7 @@ local function onAdded(instance: Instance)
 		offsets = {},
 		roles = {},
 		crawler = CreatureModels.isCrawler(def.kind),
+		passing = passerId ~= nil,
 		ground = anchor.Position.Y,
 		phase = math.random() * math.pi * 2,
 		born = os.clock(),
@@ -88,6 +91,10 @@ local function rootFrame(anchor: BasePart, entry: Entry, t: number): CFrame
 	local arrive = 1 - math.clamp(age / ARRIVE_SECONDS, 0, 1) -- 1 -> 0 while arriving
 	local leave = if entry.leaving then math.clamp((t - entry.leaving) / LEAVE_SECONDS, 0, 1) else 0
 	local center = anchor.Position
+	if entry.passing then
+		-- Follow the server's moving anchor, with a gentle swimming wave.
+		return anchor.CFrame * CFrame.new(0, math.sin(t * 1.6 + entry.phase) * 0.5 + entry.hop, 0) * CFrame.Angles(0, 0, math.sin(t * 1.1) * 0.1)
+	end
 	if entry.crawler then
 		-- Shuffle side to side on the sand.
 		local x = math.sin(t * 0.6 + entry.phase) * 1.2

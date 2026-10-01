@@ -169,6 +169,18 @@ builders.seahorse = function(model, body, accent)
 	eyes(model, 0.2, 1.3, -0.3, 0.14)
 end
 
+builders.dolphin = function(model, body, accent)
+	ellipsoid(model, Vector3.new(1.3, 1.4, 4.2), CFrame.identity, body, "Body")
+	ellipsoid(model, Vector3.new(1.1, 0.7, 3.6), CFrame.new(0, -0.4, 0), accent)
+	ellipsoid(model, Vector3.new(0.45, 0.4, 1.1), CFrame.new(0, -0.15, -2.4), body)
+	newPart(model, { Size = Vector3.new(0.15, 0.9, 0.8), CFrame = CFrame.new(0, 0.85, 0.2) * CFrame.Angles(-0.6, 0, 0), Color = body })
+	for _, side in { -1, 1 } do
+		ellipsoid(model, Vector3.new(1.1, 0.12, 0.5), CFrame.new(side * 0.8, -0.4, -0.8) * CFrame.Angles(0, 0, side * -0.4), body, "Fin")
+	end
+	ellipsoid(model, Vector3.new(1.8, 0.12, 0.7), CFrame.new(0, 0, 2.35), body, "Tail")
+	eyes(model, 0.55, 0.15, -1.5, 0.16)
+end
+
 -- Builds a creature model. Colors are {r, g, b} in 0-255.
 function CreatureModels.build(kind: string, color: { number }, accent: { number }): Model
 	local model = Instance.new("Model")

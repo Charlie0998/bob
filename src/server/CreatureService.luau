@@ -6,6 +6,7 @@
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
@@ -197,6 +198,103 @@ local function spawnVisitor(owner: Player): boolean
 	return true
 end
 
+-- Passing visitors: a big creature swims across the reef now and then.
+-- Anyone nearby can tap it once for a small gift.
+local function pickPasser(): string
+	local list = Balance.passers.list
+	local total = 0
+	for _, def in list do
+		total += def.weight
+	end
+	local roll = rng:NextNumber(0, total)
+	local last = ""
+	for id, def in list do
+		last = id
+		roll -= def.weight
+		if roll <= 0 then
+			return id
+		end
+	end
+	return last
+end
+
+local function spawnPasser(owner: Player)
+	local plot = ReefService.getPlot(owner)
+	local base = plot and plot.PrimaryPart
+	if not plot or not base then
+		return
+	end
+	local id = pickPasser()
+	local def = Balance.passers.list[id]
+	local half = base.Size.X / 2 + 12
+	local z = rng:NextNumber(-base.Size.Z / 3, base.Size.Z / 3)
+	local height = rng:NextNumber(7, 10)
+	local direction = if rng:NextNumber() < 0.5 then 1 else -1
+	local from = (base.CFrame * CFrame.new(-half * direction, height, z)).Position
+	local to = (base.CFrame * CFrame.new(half * direction, height, z)).Position
+
+	local anchor = Instance.new("Part")
+	anchor.Name = "Passer_" .. id
+	anchor.Size = Vector3.new(6, 4, 6)
+	anchor.Transparency = 1
+	anchor.Anchored = true
+	anchor.CanCollide = false
+	anchor.CanTouch = false
+	anchor.CFrame = CFrame.lookAt(from, to)
+	anchor:SetAttribute("PasserId", id)
+	anchor:SetAttribute("OwnerId", owner.UserId)
+	local tapped: { [number]: boolean } = {}
+	local click = Instance.new("ClickDetector")
+	click.MaxActivationDistance = MAX_REACH
+	click.MouseClick:Connect(function(player)
+		if tapped[player.UserId] then
+			return
+		end
+		tapped[player.UserId] = true
+		ReefService.addCurrency(player, def.pearls, def.shells, "Passer_" .. id)
+		ReefService.toast(player, string.format("The %s left a gift: +%d pearls, +%d shells", def.displayName, def.pearls, def.shells), "pearls")
+		ReefService.effect("feed", anchor, def.shells, player.UserId)
+		ReefService.activity(player, "passer", 1)
+	end)
+	click.Parent = anchor
+	CollectionService:AddTag(anchor, TAG)
+	anchor.Parent = plot
+	ReefService.toast(owner, string.format("A %s is swimming by! Tap it for a gift.", def.displayName), "unlock")
+	local tween = TweenService:Create(anchor, TweenInfo.new(Balance.passers.crossSeconds, Enum.EasingStyle.Linear), { CFrame = CFrame.lookAt(to, to + (to - from).Unit) })
+	tween.Completed:Connect(function()
+		anchor:Destroy()
+	end)
+	tween:Play()
+end
+
+local function runPassers(player: Player)
+	while player.Parent and visits[player] do
+		task.wait(rng:NextNumber(Balance.passers.minGapSeconds, Balance.passers.maxGapSeconds))
+		if player.Parent and visits[player] then
+			spawnPasser(player)
+		end
+	end
+end
+
+-- Pets: any discovered swimming creature can follow its owner.
+local function onSetPet(player: Player, creatureId: unknown)
+	local data = PlayerStore.get(player)
+	if not data or type(creatureId) ~= "string" then
+		return
+	end
+	if creatureId ~= "" then
+		local def = Balance.creatures[creatureId]
+		if not def or not data.discovered.creatures[creatureId] or not table.find(Balance.pets.allowedKinds, def.kind) then
+			return
+		end
+	end
+	data.pet = creatureId
+	player:SetAttribute("Pet", creatureId)
+	if creatureId ~= "" then
+		ReefService.toast(player, Balance.creatures[creatureId].displayName .. " is now your pet!", "unlock")
+	end
+end
+
 local function runPlayer(player: Player)
 	visits[player] = {}
 	task.wait(CONFIG.firstCheckSeconds)
@@ -222,8 +320,18 @@ function CreatureService.start()
 	ReefService.addMutationSource("creatures", function(player)
 		return CreatureService.activeBoosts(player).mutation
 	end)
+	local petRemote = Instance.new("RemoteEvent")
+	petRemote.Name = "SetPet"
+	petRemote.Parent = ReplicatedStorage:WaitForChild("Remotes")
+	petRemote.OnServerEvent:Connect(onSetPet)
+
 	PlayerStore.Loaded:Connect(function(player)
+		local data = PlayerStore.get(player)
+		if data then
+			player:SetAttribute("Pet", data.pet)
+		end
 		task.spawn(runPlayer, player)
+		task.defer(runPassers, player)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		visits[player] = nil -- anchors are destroyed with the plot
