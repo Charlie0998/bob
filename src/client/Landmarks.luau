@@ -122,28 +122,28 @@ local AWNINGS = {
 	{ Color3.fromRGB(140, 92, 222), Color3.fromRGB(255, 240, 225) },
 }
 
-local openMarket: () -> () = function() end
+local openMarket: (string?) -> () = function() end
 
-local function promptOn(p: BasePart)
+local function promptOn(p: BasePart, title: string, tab: string)
 	local prompt = Instance.new("ProximityPrompt")
-	prompt.ActionText = "Open Market"
-	prompt.ObjectText = "Coral Market"
+	prompt.ActionText = if tab == "Trade" then "Trade" else "Shop"
+	prompt.ObjectText = title
 	prompt.HoldDuration = 0
 	prompt.MaxActivationDistance = 16
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = p
 	prompt.Triggered:Connect(function()
-		openMarket()
+		openMarket(tab)
 	end)
 	local click = Instance.new("ClickDetector")
 	click.MaxActivationDistance = 60
 	click.MouseClick:Connect(function()
-		openMarket()
+		openMarket(tab)
 	end)
 	click.Parent = p
 end
 
-local function stall(parent: Instance, frame: CFrame, colors: { Color3 }, title: string)
+local function stall(parent: Instance, frame: CFrame, colors: { Color3 }, title: string, tab: string)
 	local counter = part(parent, { Name = "Counter", Size = Vector3.new(10, 3, 3.5), CFrame = frame * CFrame.new(0, 1.5, 0), Color = WOOD, Material = Enum.Material.WoodPlanks, CanCollide = true, CanQuery = true })
 	part(parent, { Size = Vector3.new(10.4, 0.4, 3.9), CFrame = frame * CFrame.new(0, 3.1, 0), Color = DARK_WOOD, Material = Enum.Material.Wood })
 	for _, x in { -4.8, 4.8 } do
@@ -172,7 +172,7 @@ local function stall(parent: Instance, frame: CFrame, colors: { Color3 }, title:
 	part(parent, { Size = Vector3.one * 1.6, CFrame = frame * CFrame.new(-6.4, 3, 1.1) * CFrame.Angles(0, -0.2, 0), Color = Color3.fromRGB(175, 125, 80), Material = Enum.Material.WoodPlanks })
 	part(parent, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.6, 2, 2), CFrame = frame * CFrame.new(6.6, 1.3, 1) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(120, 80, 50), Material = Enum.Material.Wood, CanCollide = true })
 	sign(counter, title, 8.5, Color3.fromRGB(255, 230, 150), 9)
-	promptOn(counter)
+	promptOn(counter, title, tab)
 end
 
 -- Friendly blocky shopkeepers behind each counter bob, look around, and wave.
@@ -245,7 +245,9 @@ local function buildPlaza()
 	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 54, 54), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(225, 205, 170), Material = Enum.Material.SmoothPlastic, CanCollide = true })
 	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.6, 18, 18), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(38, 172, 186), Material = Enum.Material.SmoothPlastic, CanCollide = true })
 	-- Four stalls in an arc behind the plaza center, facing spawn.
-	local titles = { "Coral Market", "Rare Corals", "Daily Deal", "Decor & Trade" }
+	-- Each stall sells one thing and opens just that Market tab.
+	local titles = { "Coral Shop", "Daily Deal", "Decor Shop", "Trade Post" }
+	local tabs = { "Corals", "Daily Deal", "Decor", "Trade" }
 	local KEEPERS = {
 		{ name = "Marina", shirt = Color3.fromRGB(38, 140, 160), hat = Color3.fromRGB(240, 210, 120) },
 		{ name = "Finn", shirt = Color3.fromRGB(230, 90, 100), hat = Color3.fromRGB(255, 240, 225) },
@@ -257,7 +259,7 @@ local function buildPlaza()
 		local angle = math.rad(-72 + (i - 1) * 48)
 		local frame = facing * CFrame.Angles(0, angle, 0) * CFrame.new(0, 0, 20)
 		frame = CFrame.lookAt(frame.Position, center) -- counters face the plaza center
-		stall(model, CFrame.new(0, 1, 0) * frame * CFrame.Angles(0, math.pi, 0) --[[ on the raised floor ]], AWNINGS[i], titles[i])
+		stall(model, CFrame.new(0, 1, 0) * frame * CFrame.Angles(0, math.pi, 0) --[[ on the raised floor ]], AWNINGS[i], titles[i], tabs[i])
 		-- A shopkeeper behind every counter, facing the customers.
 		local keeper = KEEPERS[i]
 		buildPerson(model, frame * CFrame.Angles(0, math.pi, 0) * CFrame.new(0, 1, -3) * CFrame.Angles(0, math.pi, 0), {
@@ -505,7 +507,7 @@ local function buildZoneKeepers()
 	end
 end
 
-function Landmarks.start(onOpenMarket: () -> ())
+function Landmarks.start(onOpenMarket: (string?) -> ())
 	openMarket = onOpenMarket
 	buildPlaza()
 	buildZoneKeepers()

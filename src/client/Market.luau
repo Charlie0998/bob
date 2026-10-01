@@ -36,6 +36,7 @@ function Market.start(gui: ScreenGui, remotes: Instance, openTravel: () -> ()): 
 	local decorRemote = remotes:WaitForChild("BuyDecor") :: RemoteEvent
 	local dailyRemote = remotes:WaitForChild("BuyDailyCoral") :: RemoteEvent
 	local tab = "Corals"
+	local only: string? = nil -- set when a stall's shopkeeper opened just their own tab
 	local timerLabel: TextLabel? = nil
 	local panel
 
@@ -227,11 +228,11 @@ function Market.start(gui: ScreenGui, remotes: Instance, openTravel: () -> ()): 
 		end
 		UIKit.clear(panel.body)
 		timerLabel = nil
-		-- Tabs row.
+		-- Tabs row (a stall shows only its own tab).
 		local row = make("Frame", { Size = UDim2.new(1, -8, 0, 40), BackgroundTransparency = 1, LayoutOrder = 0, Parent = panel.body }, {
 			make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }),
 		})
-		for _, name in TABS do
+		for _, name in if only then { only } else TABS do
 			local button = UIKit.button(name, if name == tab then "accent" else "card", { Size = UDim2.new(0.25, -5, 1, 0), TextSize = 14, Parent = row })
 			UIKit.addIcon(button, TAB_ICONS[name])
 			button.Activated:Connect(function()
@@ -276,12 +277,25 @@ function Market.start(gui: ScreenGui, remotes: Instance, openTravel: () -> ()): 
 		end
 	end)
 
-	function Market.open()
-		if not panel.isOpen() then
+	-- Opens the Market; with `tabName`, only that tab (one shopkeeper, one
+	-- kind of goods).
+	function Market.open(tabName: string?)
+		only = tabName
+		if tabName then
+			tab = tabName
+		end
+		if panel.isOpen() then
+			refresh()
+		else
 			panel.toggle()
 		end
 	end
-	return panel.toggle
+	return function()
+		if not panel.isOpen() then
+			only = nil
+		end
+		panel.toggle()
+	end
 end
 
 return Market

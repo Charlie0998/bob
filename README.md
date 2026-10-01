@@ -92,7 +92,7 @@ Everything in the design doc's launch scope and Updates 2 and 3 is built. All tu
 | Prestige badge | Tide Reset can award a Roblox badge: create one in Creator Hub and set `prestige.badgeId` | `PrestigeService.luau` |
 | Deep zones | Kelp Forest (Lv 5), Shipwreck (Lv 10), and Deep Sea (Lv 15), each with its own scenery, water tint, and a market selling 2 new corals | `ZoneService.luau`, `WorldDecor.luau` |
 
-The menu keeps to five buttons: Shop, Book, Travel, Goals, Photo. Tide Reset opens from the Shop; friends, trading, and zones are in Travel.
+The side menu has Shop, Book, Market, Trade, Travel, Goals, and Photo, and shrinks to fit short screens. Tide Reset opens from the Shop; friends and zones are in Travel. Each Market stall has its own shopkeeper and sells one thing (Corals, Daily Deal, Decor, Trade).
 
 ### Icons
 

@@ -230,7 +230,7 @@ updateShells()
 -- shrink on short screens so they never overlap either.
 local MENU_TOP = 96
 local MENU_BOTTOM = 64
-local MENU_PADDING = 8
+local MENU_PADDING = 6
 local menuScale = make("UIScale", {})
 local menu = make("Frame", {
 	Position = UDim2.fromOffset(12, MENU_TOP),
@@ -277,7 +277,7 @@ local function addMenuButton(text: string, onActivated: () -> (), iconName: stri
 	local button: GuiButton
 	if image then
 		button = make("ImageButton", {
-			Size = UDim2.fromOffset(58, 72),
+			Size = UDim2.fromOffset(50, 62),
 			BackgroundTransparency = 1,
 			Image = "",
 			Parent = menu,
@@ -285,19 +285,19 @@ local function addMenuButton(text: string, onActivated: () -> (), iconName: stri
 			scale,
 			make("ImageLabel", {
 				Name = "Icon",
-				Size = UDim2.fromOffset(58, 58),
+				Size = UDim2.fromOffset(50, 50),
 				BackgroundTransparency = 1,
 				Image = image,
 				ScaleType = Enum.ScaleType.Fit,
 			}),
 			make("TextLabel", {
-				Position = UDim2.fromOffset(-8, 55),
-				Size = UDim2.new(1, 16, 0, 16),
+				Position = UDim2.fromOffset(-10, 47),
+				Size = UDim2.new(1, 20, 0, 15),
 				BackgroundTransparency = 1,
 				TextColor3 = COLORS.text,
 				TextStrokeTransparency = 0,
 				Font = Enum.Font.FredokaOne,
-				TextSize = 13,
+				TextSize = 12,
 				Text = text,
 			}),
 		})
@@ -335,12 +335,15 @@ game:GetService("RunService").Heartbeat:Connect(function()
 end)
 
 Book.start(gui, Remotes)
--- Five buttons at most (design pillar: understood in 10 seconds). Tide Reset
+-- Side menu: Shop, Book, Market, Trade, Travel, Goals, Photo. Tide Reset
 -- opens from the Shop.
 addMenuButton("Shop", Panels.shop(gui, Remotes, Panels.tide(gui, Remotes)), "shop")
 addMenuButton("Book", Book.toggle, "book")
 local travelToggle = Panels.friends(gui, Remotes, Panels.trade(gui, Remotes))
 addMenuButton("Market", Market.start(gui, Remotes, travelToggle), "market")
+addMenuButton("Trade", function()
+	Market.open("Trade")
+end, "trade")
 addMenuButton("Travel", travelToggle, "travel")
 Landmarks.start(Market.open)
 Mood.start()
