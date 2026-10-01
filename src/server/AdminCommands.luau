@@ -1,9 +1,13 @@
 -- Owner-only chat command for testing:
 --   /give 1000          gives 1000 pearls
 --   /give 50 shells     gives 50 shells
--- Only the game owner's account can use it; everyone else is ignored.
+-- Only the game owner's account (or anyone in a Studio test) can use it;
+-- everyone else is ignored. The chat command fires on the typing player's
+-- client, which forwards the text here; the server does the owner check.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TextChatService = game:GetService("TextChatService")
 
 local ReefService = require(script.Parent.ReefService)
@@ -14,7 +18,7 @@ local MAX_AMOUNT = 1_000_000
 local AdminCommands = {}
 
 local function give(player: Player, text: string)
-	if player.Name ~= OWNER_NAME then
+	if string.lower(player.Name) ~= OWNER_NAME and not RunService:IsStudio() then
 		return
 	end
 	local amount, kind = string.match(string.lower(text), "^/give%s+(%d+)%s*(%a*)")
@@ -33,16 +37,18 @@ local function give(player: Player, text: string)
 end
 
 function AdminCommands.start()
+	local remote = Instance.new("RemoteEvent")
+	remote.Name = "AdminGive"
+	remote.Parent = ReplicatedStorage:WaitForChild("Remotes")
+	remote.OnServerEvent:Connect(function(player, text)
+		if type(text) == "string" and #text < 100 then
+			give(player, text)
+		end
+	end)
 	if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
 		local command = Instance.new("TextChatCommand")
 		command.Name = "GiveCommand"
 		command.PrimaryAlias = "/give"
-		command.Triggered:Connect(function(source: TextSource, text: string)
-			local player = Players:GetPlayerByUserId(source.UserId)
-			if player then
-				give(player, text)
-			end
-		end)
 		command.Parent = TextChatService
 	else
 		local function watch(player: Player)

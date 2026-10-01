@@ -399,6 +399,17 @@ player:GetAttributeChangedSignal("HealthTier"):Connect(updateHealth)
 updateHealth()
 
 Toasts.start(gui)
+
+-- Owner-only /give command (the server checks who sent it).
+task.spawn(function()
+	local command = game:GetService("TextChatService"):WaitForChild("GiveCommand", 30) :: TextChatCommand?
+	local giveRemote = Remotes:WaitForChild("AdminGive", 30) :: RemoteEvent?
+	if command and giveRemote then
+		command.Triggered:Connect(function(_source, text)
+			giveRemote:FireServer(text)
+		end)
+	end
+end)
 Remotes:WaitForChild("Toast").OnClientEvent:Connect(function(text: string, kind: string)
 	Toasts.show(text, kind)
 end)
