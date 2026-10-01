@@ -23,12 +23,14 @@ local tint = Instance.new("ColorCorrectionEffect")
 tint.Name = "MoodTint"
 
 local WHITE = Color3.new(1, 1, 1)
-local DAY_AMBIENT = Color3.fromRGB(64, 90, 102)
-local NIGHT_AMBIENT = Color3.fromRGB(28, 36, 72)
-local DAY_OUTDOOR = Color3.fromRGB(89, 128, 140)
-local NIGHT_OUTDOOR = Color3.fromRGB(34, 44, 90)
-local DAY_WATER = Color3.fromRGB(51, 115, 140)
-local DEEP_WATER = Color3.fromRGB(18, 40, 82)
+-- Night is a bright, moonlit blue rather than pitch dark, so players can
+-- always see their reef.
+local DAY_AMBIENT = Color3.fromRGB(92, 118, 128)
+local NIGHT_AMBIENT = Color3.fromRGB(78, 92, 140)
+local DAY_OUTDOOR = Color3.fromRGB(120, 155, 165)
+local NIGHT_OUTDOOR = Color3.fromRGB(90, 105, 160)
+local DAY_WATER = Color3.fromRGB(60, 130, 155)
+local DEEP_WATER = Color3.fromRGB(35, 70, 125)
 local STORM_GREY = Color3.fromRGB(170, 180, 190)
 local BLOOM_PINK = Color3.fromRGB(255, 215, 235)
 local DEEP_BLUE = Color3.fromRGB(195, 215, 255)
@@ -73,19 +75,20 @@ function Mood.start()
 		local n, s, p, d = current.night, current.storm, current.pink, current.depth
 
 		Lighting.ClockTime = if event == "NightGlow" then 0 else Mood.clockTime()
-		Lighting.Brightness = (1.6 - 1.1 * n) * (1 - 0.35 * s)
+		Lighting.Brightness = (2 - 0.6 * n) * (1 - 0.25 * s)
+		Lighting.ExposureCompensation = 0.15 + 0.35 * n
 		Lighting.Ambient = DAY_AMBIENT:Lerp(NIGHT_AMBIENT, n):Lerp(Color3.new(0.15, 0.17, 0.2), s * 0.5)
 		Lighting.OutdoorAmbient = DAY_OUTDOOR:Lerp(NIGHT_OUTDOOR, n):Lerp(Color3.new(0.2, 0.22, 0.25), s * 0.5)
 		if atmosphere then
-			atmosphere.Density = 0.28 + 0.06 * d + 0.18 * s + 0.06 * n
-			atmosphere.Color = DAY_WATER:Lerp(DEEP_WATER, math.max(n * 0.75, d * 0.35)):Lerp(Color3.fromRGB(70, 80, 90), s * 0.6)
-			atmosphere.Decay = atmosphere.Color:Lerp(Color3.new(0, 0, 0), 0.4)
+			atmosphere.Density = 0.26 + 0.04 * d + 0.14 * s + 0.02 * n
+			atmosphere.Color = DAY_WATER:Lerp(DEEP_WATER, math.max(n * 0.6, d * 0.3)):Lerp(Color3.fromRGB(70, 80, 90), s * 0.6)
+			atmosphere.Decay = atmosphere.Color:Lerp(Color3.new(0, 0, 0), 0.25)
 		end
 		if bloom then
 			bloom.Intensity = 0.25 + 0.2 * n
 		end
-		tint.TintColor = WHITE:Lerp(DEEP_BLUE, 0.4 * d + 0.4 * n):Lerp(STORM_GREY, s * 0.7):Lerp(BLOOM_PINK, p * 0.8)
-		tint.Brightness = -0.04 * d - 0.07 * n - 0.08 * s + 0.03 * p
+		tint.TintColor = WHITE:Lerp(DEEP_BLUE, 0.3 * d + 0.3 * n):Lerp(STORM_GREY, s * 0.7):Lerp(BLOOM_PINK, p * 0.8)
+		tint.Brightness = 0.03 - 0.02 * d - 0.05 * s + 0.03 * p
 		tint.Saturation = 0.15 - 0.3 * s + 0.15 * p
 
 		-- Bioluminescence switches on and off at dusk and dawn.
