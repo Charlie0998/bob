@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Checks that ReefMath.luau and the Python mirror in tools/economy_sim.py agree.
+"""Checks that ReefMath.luau and ReefHealth.luau agree with their Python
+mirrors in tools/economy_sim.py.
 
 Needs the `luau` CLI (https://github.com/luau-lang/luau/releases) on PATH, or
 its path in the LUAU environment variable.
@@ -77,8 +78,62 @@ def main() -> int:
             failures += 1
             if failures <= 5:
                 print(f"mismatch for {case}: luau={line!r} python={expected!r}")
-    print(f"{len(cases)} cases, {failures} mismatches")
-    return 1 if failures else 0
+    print(f"harvest/slot cost: {len(cases)} cases, {failures} mismatches")
+    health_failures = check_health(luau, balance, rng)
+    return 1 if failures or health_failures else 0
+
+
+HEALTH_DRIVER = """
+local ReefHealth = require("./ReefHealth")
+local config = {config}
+local cases = {{
+{cases}
+}}
+for _, c in cases do
+	print(ReefHealth.score(c.corals, c.slots, c.now, {cap}, config))
+end
+"""
+
+
+def lua_value(v) -> str:
+    if isinstance(v, dict):
+        return "{" + ", ".join(f'["{k}"] = {lua_value(x)}' for k, x in v.items()) + "}"
+    if isinstance(v, list):
+        return "{" + ", ".join(lua_value(x) for x in v) + "}"
+    if isinstance(v, str):
+        return f'"{v}"'
+    return str(v)
+
+
+def check_health(luau: str, balance: dict, rng: random.Random) -> int:
+    kinds = list(balance["corals"])
+    cases = []
+    for _ in range(500):
+        slots = rng.randint(balance["startingSlots"], balance["maxSlots"])
+        now = rng.randint(100_000, 1_000_000)
+        corals = {
+            i: (rng.choice(kinds), now - rng.randint(0, 2 * balance["offlineCapSeconds"]))
+            for i in range(1, rng.randint(0, slots) + 1)
+        }
+        cases.append((corals, slots, now))
+    rows = ",\n".join(
+        "{corals = " + lua_value({str(i): {"type": k, "plantedAt": t} for i, (k, t) in corals.items()}) + f", slots = {slots}, now = {now}}}"
+        for corals, slots, now in cases
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        shutil.copy(ROOT / "src/shared/ReefHealth.luau", Path(tmp) / "ReefHealth.luau")
+        driver = Path(tmp) / "driver.luau"
+        driver.write_text(HEALTH_DRIVER.format(config=lua_value(balance["reefHealth"]), cases=rows, cap=balance["offlineCapSeconds"]))
+        out = subprocess.run([luau, str(driver)], capture_output=True, text=True, check=True).stdout.split()
+    failures = 0
+    for (corals, slots, now), got in zip(cases, out):
+        expected = sim.health_score(corals, slots, now, balance)
+        if int(got) != expected:
+            failures += 1
+            if failures <= 5:
+                print(f"health mismatch: luau={got} python={expected}")
+    print(f"reef health: {len(cases)} cases, {failures} mismatches")
+    return failures
 
 
 if __name__ == "__main__":

@@ -873,7 +873,7 @@
 	],
 	"startingShells": 0,
 	"prestige": {
-		"requiredSlots": 24,
+		"requiredSlots": 31,
 		"multiplierPerLevel": 0.25,
 		"rewardCoral": "Crystal",
 		"shop": [
@@ -889,7 +889,8 @@
 				"shells": 120,
 				"minLevel": 1
 			}
-		]
+		],
+		"requiredSlotsPerLevel": 1
 	},
 	"daily": {
 		"goalsPerDay": 3,

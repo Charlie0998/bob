@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import random
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -31,7 +32,7 @@ DAY = 24 * HOUR
 
 # (start offset within the day in hours, session length in minutes)
 DAY_ONE_SESSIONS = [(0, 20), (4, 10), (10, 10)]
-LATER_DAY_SESSIONS = [(0, 10), (10, 10)]
+LATER_DAY_SESSIONS = [(0, 15), (6, 15), (12, 15)]
 
 GAP_MIN_SECONDS = 2 * 60
 GAP_MAX_SECONDS = 30 * 60
@@ -61,6 +62,45 @@ def slot_cost(slots_owned: int, balance: dict) -> int:
     return math.floor(balance["slotCostBase"] * balance["slotCostGrowth"] ** n + 0.5)
 
 
+def health_score(corals: dict, slots: int, now: float, balance: dict) -> int:
+    """Mirrors ReefHealth.score."""
+    cfg = balance["reefHealth"]
+    if not corals:
+        return 0
+    kinds = {k for k, _ in corals.values()}
+    cared = sum(1 for _, planted in corals.values() if now - planted < balance["offlineCapSeconds"])
+    w = cfg["weights"]
+    variety = min(1, len(kinds) / cfg["varietyTarget"])
+    density = min(1, len(corals) / max(1, slots))
+    care = cared / len(corals)
+    return math.floor(100 * (w["variety"] * variety + w["density"] * density + w["care"] * care) + 0.5)
+
+
+def health_multiplier(score: int, balance: dict) -> float:
+    """Mirrors ReefHealth.tier(...).multiplier."""
+    best = balance["reefHealth"]["tiers"][0]
+    for tier in balance["reefHealth"]["tiers"]:
+        if score >= tier["min"]:
+            best = tier
+    return best["multiplier"]
+
+
+def rotating_coral(now: float, balance: dict) -> str | None:
+    """Approximates ShopRotation.current. The game seeds Roblox's Random by
+    period, which Python can't reproduce exactly, but the stock rate matches."""
+    cfg = balance["shopRotation"]
+    rng = random.Random(int(now // cfg["periodSeconds"]))
+    if not cfg["pool"] or rng.random() >= cfg["stockChance"]:
+        return None
+    return cfg["pool"][rng.randrange(len(cfg["pool"]))]
+
+
+def required_slots(level: int, balance: dict) -> int:
+    """Mirrors PrestigeService.requiredSlots: the bar rises with each reset."""
+    cfg = balance["prestige"]
+    return min(balance["maxSlots"], cfg["requiredSlots"] + level * cfg["requiredSlotsPerLevel"])
+
+
 # --- Simulation -------------------------------------------------------------
 
 @dataclass
@@ -72,6 +112,8 @@ class Player:
     active_seconds: float = 0.0
     unlocks: list[tuple[float, float, str]] = field(default_factory=list)  # (active, wall, label)
     seen_types: set[str] = field(default_factory=set)
+    tide_level: int = 0
+    resets: list[tuple[float, float]] = field(default_factory=list)  # (active, wall)
 
     def __post_init__(self) -> None:
         self.pearls = self.balance["startingPearls"]
@@ -83,10 +125,17 @@ class Player:
     def unlock(self, now: float, label: str) -> None:
         self.unlocks.append((self.active_seconds, now, label))
 
-    def best_affordable_coral(self) -> str | None:
+    def multiplier(self, now: float) -> float:
+        b = self.balance
+        health = health_multiplier(health_score(self.corals, self.slots, now, b), b)
+        return health * (1 + self.tide_level * b["prestige"]["multiplierPerLevel"])
+
+    def best_affordable_coral(self, now: float) -> str | None:
         best, best_rate = None, -1.0
+        rotating = rotating_coral(now, self.balance)
         for name, c in self.balance["corals"].items():
-            if not c["inShop"] or self.slots < c["unlockSlots"] or c["cost"] > self.pearls:
+            buyable = c["inShop"] or name == rotating
+            if not buyable or self.slots < c["unlockSlots"] or c["cost"] > self.pearls:
                 continue
             rate = c["pearls"] / c["growSeconds"]
             if rate > best_rate:
@@ -100,13 +149,21 @@ class Player:
             c = b["corals"][kind]
             gained, new_planted = harvest(planted, now, c["growSeconds"], c["pearls"], cap)
             if gained:
-                self.pearls += gained
+                self.pearls += math.floor(gained * self.multiplier(now))
                 self.corals[slot] = (kind, new_planted)
+
+        if self.slots >= required_slots(self.tide_level, b):
+            self.tide_level += 1
+            self.resets.append((self.active_seconds, now))
+            self.unlock(now, f"TIDE RESET {self.tide_level}")
+            self.pearls = b["startingPearls"]
+            self.slots = b["startingSlots"]
+            self.corals = {1: (b["starterCoral"], now)}
 
         while True:
             empty = [s for s in range(1, self.slots + 1) if s not in self.corals]
             if empty:
-                kind = self.best_affordable_coral()
+                kind = self.best_affordable_coral(now)
                 if kind is None:
                     return
                 self.pearls -= b["corals"][kind]["cost"]
@@ -195,6 +252,11 @@ def run(balance: dict, tick: float) -> None:
             out_of_range += 1
         print(f"  day {int(wall // DAY) + 1:>2}  {fmt_minutes(gap)}  {label}{flag}")
     print(f"\n{len(p.unlocks)} unlocks in {len(moments)} moments, {out_of_range} outside the 2-30 minute target.")
+    print("\n== Tide Resets (design target: first one after ~10 hours of play over 1-2 weeks) ==")
+    if not p.resets:
+        print("  none within the simulated days")
+    for i, (active, wall) in enumerate(p.resets, start=1):
+        print(f"  reset {i}: day {int(wall // DAY) + 1}, after {active / 3600:.1f} hours of play")
 
 
 def main() -> None:

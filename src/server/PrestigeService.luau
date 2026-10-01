@@ -22,17 +22,24 @@ local function throttled(player: Player): boolean
 	return false
 end
 
+-- Slots needed for the next reset; the bar rises by a little each time.
+-- tools/economy_sim.py mirrors this.
+function PrestigeService.requiredSlots(level: number): number
+	return math.min(Balance.maxSlots, CONFIG.requiredSlots + level * CONFIG.requiredSlotsPerLevel)
+end
+
 local function publish(player: Player)
 	local data = PlayerStore.get(player)
 	if data then
 		player:SetAttribute("TideLevel", data.prestige.level)
+		player:SetAttribute("TideRequiredSlots", PrestigeService.requiredSlots(data.prestige.level))
 		ReefService.incomeMultiplier(player)
 	end
 end
 
 local function onReset(player: Player)
 	local data = PlayerStore.get(player)
-	if throttled(player) or not data or data.slots < CONFIG.requiredSlots then
+	if throttled(player) or not data or data.slots < PrestigeService.requiredSlots(data.prestige.level) then
 		return
 	end
 	data.prestige.level += 1

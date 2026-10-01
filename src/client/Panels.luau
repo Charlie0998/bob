@@ -87,7 +87,8 @@ function Panels.tide(gui: ScreenGui, remotes: Instance): () -> ()
 		UIKit.clear(panel.body)
 		local level = player:GetAttribute("TideLevel") or 0
 		local slots = player:GetAttribute("Slots") or 0
-		local ready = slots >= config.requiredSlots
+		local required = player:GetAttribute("TideRequiredSlots") or config.requiredSlots
+		local ready = slots >= required
 
 		local info = UIKit.card(panel.body, 110, 0)
 		UIKit.label(
@@ -103,7 +104,7 @@ function Panels.tide(gui: ScreenGui, remotes: Instance): () -> ()
 
 		local resetCard = UIKit.card(panel.body, 64, 1)
 		local resetButton = UIKit.button(
-			if not ready then string.format("Needs %d slots (%d/%d)", config.requiredSlots, slots, config.requiredSlots)
+			if not ready then string.format("Needs %d slots (%d/%d)", required, slots, required)
 				elseif confirming then "Tap again to confirm reset"
 				else "Tide Reset",
 			if ready then "gold" else "muted",
@@ -154,7 +155,7 @@ function Panels.tide(gui: ScreenGui, remotes: Instance): () -> ()
 	end
 	panel = UIKit.panel(gui, "Tide Reset", refresh)
 	player.AttributeChanged:Connect(function(name)
-		if name == "TideLevel" or name == "Slots" or name == "Shells" then
+		if name == "TideLevel" or name == "TideRequiredSlots" or name == "Slots" or name == "Shells" then
 			refresh()
 		end
 	end)

@@ -6,7 +6,7 @@ A cozy co-op Roblox game: grow a living coral reef, attract rare sea creatures, 
 - **Prototype:** the "one-coral prototype" from the plan's next steps, as a [Rojo](https://rojo.space) project.
 - **Economy simulator:** [`tools/economy_sim.py`](tools/economy_sim.py), which plays through days 1, 7, and 30 against the same balance file the game uses.
 
-## Run the prototype
+## Run the game
 
 1. Install [Roblox Studio](https://create.roblox.com/) and Rojo (`aftman install` uses the pinned version in `aftman.toml`, or install the Rojo Studio plugin plus CLI yourself).
 2. Build a place file and open it:
@@ -19,7 +19,7 @@ A cozy co-op Roblox game: grow a living coral reef, attract rare sea creatures, 
 
 Saves work in Studio only when **Game Settings → Security → Enable Studio Access to API Services** is on. Otherwise the game runs with in-memory saves and prints a warning.
 
-## What the prototype covers
+## Core architecture
 
 | Plan item | Where |
 |---|---|
@@ -52,7 +52,40 @@ Sounds use built-in Roblox placeholder sounds (`SOUNDS` in `Effects.luau`). Swap
 
 To preview coral shapes without Studio, run `python3 tools/preview/render_corals.py`. It runs the real `CoralModels.luau` in the `luau` CLI against a small mock of Roblox's math types and writes `docs/coral_preview.png`. It needs matplotlib.
 
-Not built yet: creature conditions, reef health, collection book, prestige, social features, shop rotation, monetization, custom audio, and uploaded meshes. The design doc's system order is the suggested build order.
+## Game systems
+
+Everything in the design doc's launch scope and Updates 2 and 3 is built. All tuning values are in `src/shared/Balance.json`.
+
+| System | How it works | Code |
+|---|---|---|
+| Rotating rare shop | Fan Coral is in stock about 60% of 30-minute periods. The stock is derived from the clock, so every server agrees | `src/shared/ShopRotation.luau` |
+| Reef health | 0–100 score from coral variety, how full the plot is, and care (harvesting before the 8 h cap). Tiers Struggling / Healthy / Thriving pay x1.0 / x1.1 / x1.25 | `src/shared/ReefHealth.luau` |
+| Creatures | 30 creatures in 10 body types, each with conditions (coral counts, total corals, variety, health). Tap a visitor to feed it for Shells and Pearls. Rare ones can drop a Glowing Tube coral | `CreatureService.luau`, `CreatureRules.luau`, `CreatureModels.luau`, `CreatureRenderer.luau` |
+| Shells and inventory | Second currency, and saved corals you plant for free (creature drops, prestige shop, project rewards, purchases) | `ReefService.addCurrency` / `addInventory` |
+| Collection book | 4 pages (corals plus 3 pages of creatures) with hints for missing entries; a finished page pays Shells | `BookService.luau`, `src/client/Book.luau` |
+| Tide Reset | Reset at 31 slots (+1 per later reset) for +x0.25 income forever and a Crystal Coral. The prestige shop sells corals for Shells | `PrestigeService.luau` |
+| Daily goals and streak | 3 goals per UTC day picked from templates, plus a login streak bonus | `DailyService.luau` |
+| Reef visits | Visit any reef on the server; visitor and host both get a capped daily pearl bonus. Visitors can feed the host's creatures | `SocialService.luau` |
+| Friend boost | +5% income per friend on the same server, up to 3 friends | `SocialService.luau` |
+| Likes and Top Reefs | Like a reef once a day; a weekly board at spawn lists the most-liked reefs | `SocialService.luau` |
+| Trading | Trade inventory corals with two steps (Ready, then Confirm), a value summary on both sides, Robux-bought corals locked, a 3-day account age minimum, and a daily cap | `TradeService.luau` |
+| Group reef projects | Server-wide goals (plant, feed, or harvest together); contributors get Shells and a coral | `GroupProjectService.luau` |
+| Photo mode | Hides all UI, 4 camera angles plus orbit, saves to the device gallery | `src/client/PhotoMode.luau` |
+| Monetization | 4 gamepasses, speed-up packs, a Rare Coral Bundle, and a rewarded ad. See below | `MonetizationService.luau` |
+
+The menu keeps to five buttons: Shop, Book, Friends, Goals, Photo. Tide Reset opens from the Shop.
+
+### Setting up purchases
+
+All items show "Not set up" until you add their IDs:
+
+1. In [Creator Hub](https://create.roblox.com), open your published game, then **Monetization → Passes**, and create the 4 passes: 2x Pearls, Auto-Harvest, Extra Plot Slots, VIP Reef Pack.
+2. Under **Monetization → Developer Products**, create the speed-up packs (1, 5, 20), the Rare Coral Bundle, and one product for the rewarded ad.
+3. Paste each ID into `src/shared/Balance.json` under `monetization`, then rebuild.
+
+Prices in `Balance.json` are only shown in the shop; the real price is whatever you set in Creator Hub, so keep them matching. Check Roblox's current rules for rewarded ads and for young audiences before launch.
+
+Still to do by you: custom audio (replace the placeholder sounds in `src/client/Effects.luau`), uploaded meshes if you want art beyond the part-built models, and the purchase IDs above.
 
 ## Project layout
 
@@ -62,16 +95,33 @@ src/shared/              ReplicatedStorage.Shared
   Balance.json           coral stats, costs, caps (loaded as a ModuleScript)
   ReefMath.luau          pure growth/cost math used by server, client, and the sim
   CoralModels.luau       procedural coral models built from parts
+  CreatureModels.luau    procedural creature models
+  CreatureRules.luau     creature conditions and book hints
+  ReefHealth.luau        reef health score and tiers
+  ShopRotation.luau      rotating rare shop
 src/server/              ServerScriptService.Server
   init.server.luau       entry point
   PlayerStore.luau       save/load with session lock
   ReefService.luau       plots, planting, harvesting, slot purchases
+  CreatureService.luau   creature visits and feeding
+  BookService.luau       collection book rewards
+  PrestigeService.luau   Tide Reset and prestige shop
+  DailyService.luau      daily goals and login streak
+  SocialService.luau     visits, friend boost, likes, Top Reefs board
+  TradeService.luau      trading
+  GroupProjectService.luau  server-wide projects
+  MonetizationService.luau  passes, products, rewarded ads
 src/client/              StarterPlayerScripts.Client
   init.client.luau       HUD, coral picker, slot timers; starts the modules below
   CoralRenderer.luau     draws and grows corals on slot tiles
   Effects.luau           harvest/plant/slot effects and sounds
   Fish.luau              fish schools
   WorldDecor.luau        seafloor decoration
+  CreatureRenderer.luau  draws and animates visiting creatures
+  Book.luau              collection book panel
+  Panels.luau            Shop, Tide, Goals, Friends, Trade panels and project bar
+  PhotoMode.luau         photo mode
+  UIKit.luau             shared GUI helpers
 tools/economy_sim.py     economy simulator
 tools/preview/           offline coral preview renderer
 tests/reefmath_parity.py checks ReefMath.luau against the simulator's Python mirror
@@ -84,8 +134,8 @@ docs/DESIGN.md           full design and development plan
 python3 tools/economy_sim.py
 ```
 
-The simulator plays a greedy player through a fixed login schedule (three sessions on day 1, then two 10-minute sessions per day) and prints the reef at the end of days 1, 7, and 30, plus the active play time between unlocks. Gaps outside the 2 to 30 minute target from the design doc are flagged. Edit `src/shared/Balance.json` and rerun; the game picks up the same values.
+The simulator plays a greedy player through a fixed login schedule (three sessions on day 1, then three 15-minute check-ins per day). It models reef health, the rotating Fan shop, and Tide Resets, and prints the reef at the end of days 1, 7, and 30, plus the active play time between unlocks. Gaps outside the 2 to 30 minute target from the design doc are flagged. Edit `src/shared/Balance.json` and rerun; the game picks up the same values.
 
-With the current starting values the early game stays inside the target, and gaps past day 7 grow beyond 30 minutes. That is where prestige and the rotating Fan-coral shop, which the simulator does not model yet, need to take over.
+With the current values the early game stays inside the 2–30 minute target, and the first Tide Reset lands on day 12 after about 8.7 hours of play, close to the design target of about 10 hours over 1–2 weeks. Creature, goal, and project Shell income is not modeled.
 
-The harvest math in `economy_sim.py` mirrors `ReefMath.luau`. Keep the two in sync when either changes. `tests/reefmath_parity.py` runs 2,000 random cases through both and fails on any mismatch; it needs the [`luau` CLI](https://github.com/luau-lang/luau/releases) on `PATH` (or set `LUAU=/path/to/luau`).
+The harvest math in `economy_sim.py` mirrors `ReefMath.luau`. Keep the two in sync when either changes. `tests/reefmath_parity.py` runs 2,000 harvest cases and 500 reef-health cases through both and fails on any mismatch; it needs the [`luau` CLI](https://github.com/luau-lang/luau/releases) on `PATH` (or set `LUAU=/path/to/luau`).
