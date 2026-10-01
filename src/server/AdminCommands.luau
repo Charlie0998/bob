@@ -1,7 +1,7 @@
 -- Owner-only chat command for testing:
 --   /give 1000          gives 1000 pearls
 --   /give 50 shells     gives 50 shells
--- Only the game owner's account (or anyone in a Studio test) can use it;
+-- Only the owners' accounts (or anyone in a Studio test) can use it;
 -- everyone else is ignored. The chat command fires on the typing player's
 -- client, which forwards the text here; the server does the owner check.
 
@@ -12,13 +12,14 @@ local TextChatService = game:GetService("TextChatService")
 
 local ReefService = require(script.Parent.ReefService)
 
-local OWNER_NAME = "cool_dude1296alt4"
+-- Usernames allowed to use /give (lowercase).
+local OWNERS = { cool_dude1296alt4 = true, charbunni14 = true }
 local MAX_AMOUNT = 1_000_000
 
 local AdminCommands = {}
 
 local function give(player: Player, text: string)
-	if string.lower(player.Name) ~= OWNER_NAME and not RunService:IsStudio() then
+	if not OWNERS[string.lower(player.Name)] and not RunService:IsStudio() then
 		return
 	end
 	local amount, kind = string.match(string.lower(text), "^/give%s+(%d+)%s*(%a*)")
