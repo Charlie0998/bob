@@ -73,7 +73,25 @@ Everything in the design doc's launch scope and Updates 2 and 3 is built. All tu
 | Photo mode | Hides all UI, 4 camera angles plus orbit, saves to the device gallery | `src/client/PhotoMode.luau` |
 | Monetization | 4 gamepasses, speed-up packs, a Rare Coral Bundle, and a rewarded ad. See below | `MonetizationService.luau` |
 
-The menu keeps to five buttons: Shop, Book, Friends, Goals, Photo. Tide Reset opens from the Shop.
+### Second wave of features
+
+| Feature | How it works | Code |
+|---|---|---|
+| Reef level and XP | Harvesting, planting, and feeding give XP. Levels unlock decorations (7, placed behind your reef), free plot slots, deep zones, corals, and Shells. Tap the level badge to see the next reward | `LevelService.luau`, `ReefLevel.luau`, `DecorModels.luau` |
+| Nametags | Everyone's overhead tag shows reef level, Tide (prestige) badge, and VIP | `Nametags.luau` |
+| 7-day login streak | A different reward each day with a big day-7 prize (Glowing Tube Coral + 100 shells); popup on login and a calendar in Goals | `DailyService.luau` |
+| Rare Coral Today | One rare coral a day in the Shop, bought once with Shells. The rotating Fan market now restocks every 10 minutes | `ShopRotation.daily` |
+| Coral quests | Daily goals now include "Harvest 15 Staghorn corals", mutations, passing visitors, and level-ups (4 goals a day) | `Balance.json > daily.templates` |
+| Mutated corals | A new coral may grow Glowing (x2 pearls, 3%), Rainbow (x3, 1%), or Crystalline (x5, 0.4%), each with its own look | `ReefService.rollMutation`, `CoralRenderer.luau` |
+| Reef events | Every 12–20 minutes: Coral Bloom (2x growth), Night Glow (reef lights up, 2x mutation odds), or Storm (a treasure chest washes up on every reef) | `EventService.luau`, `EventFX.luau` |
+| Creatures that matter | 12 creatures boost your reef while visiting: e.g. Clownfish makes Staghorn grow 25% faster, Whale Shark gives +25% pearls, Glow Jelly doubles mutation odds | `Balance.json > creatures.*.boost` |
+| Passing visitors | A Dolphin, Wandering Turtle, or Giant Manta swims across your reef every few minutes; tap it for a gift | `CreatureService.luau` (passers) |
+| Pet companions | Any swimming creature you've found can follow you; pick it in the Book. Everyone sees everyone's pets | `PetRenderer.luau` |
+| Book silhouettes | Book cards show a 3D preview; undiscovered entries are black silhouettes | `Book.luau` |
+| Prestige badge | Tide Reset can award a Roblox badge: create one in Creator Hub and set `prestige.badgeId` | `PrestigeService.luau` |
+| Deep zones | Kelp Forest (Lv 5), Shipwreck (Lv 10), and Deep Sea (Lv 15), each with its own scenery, water tint, and a market selling 2 new corals | `ZoneService.luau`, `WorldDecor.luau` |
+
+The menu keeps to five buttons: Shop, Book, Travel, Goals, Photo. Tide Reset opens from the Shop; friends, trading, and zones are in Travel.
 
 ### Setting up purchases
 
@@ -98,11 +116,17 @@ src/shared/              ReplicatedStorage.Shared
   CreatureModels.luau    procedural creature models
   CreatureRules.luau     creature conditions and book hints
   ReefHealth.luau        reef health score and tiers
-  ShopRotation.luau      rotating rare shop
+  ShopRotation.luau      rotating rare shop and Rare Coral Today
+  ReefLevel.luau         level curve and rewards
+  DecorModels.luau       procedural decorations
 src/server/              ServerScriptService.Server
   init.server.luau       entry point
   PlayerStore.luau       save/load with session lock
   ReefService.luau       plots, planting, harvesting, slot purchases
+  LevelService.luau      reef level, XP, level rewards, decorations
+  EventService.luau      reef events, growth engine, storm treasure
+  ZoneService.luau       deep zones: travel and markets
+  Nametags.luau          overhead level / Tide / VIP tags
   CreatureService.luau   creature visits and feeding
   BookService.luau       collection book rewards
   PrestigeService.luau   Tide Reset and prestige shop
@@ -121,6 +145,8 @@ src/client/              StarterPlayerScripts.Client
   Book.luau              collection book panel
   Panels.luau            Shop, Tide, Goals, Friends, Trade panels and project bar
   PhotoMode.luau         photo mode
+  EventFX.luau           event visuals and storm treasure chests
+  PetRenderer.luau       pet companions
   UIKit.luau             shared GUI helpers
 tools/economy_sim.py     economy simulator
 tools/preview/           offline coral preview renderer
@@ -136,6 +162,6 @@ python3 tools/economy_sim.py
 
 The simulator plays a greedy player through a fixed login schedule (three sessions on day 1, then three 15-minute check-ins per day). It models reef health, the rotating Fan shop, and Tide Resets, and prints the reef at the end of days 1, 7, and 30, plus the active play time between unlocks. Gaps outside the 2 to 30 minute target from the design doc are flagged. Edit `src/shared/Balance.json` and rerun; the game picks up the same values.
 
-With the current values the early game stays inside the 2–30 minute target, and the first Tide Reset lands on day 12 after about 8.7 hours of play, close to the design target of about 10 hours over 1–2 weeks. Creature, goal, and project Shell income is not modeled.
+With the current values the early game stays inside the 2–30 minute target, and the first Tide Reset lands on day 12 after about 8.7 hours of play, close to the design target of about 10 hours over 1–2 weeks. Creature, goal, and project Shell income, mutations, events, creature boosts, and zone corals are not modeled, so real pacing will run somewhat faster; tune after playtests.
 
 The harvest math in `economy_sim.py` mirrors `ReefMath.luau`. Keep the two in sync when either changes. `tests/reefmath_parity.py` runs 2,000 harvest cases and 500 reef-health cases through both and fails on any mismatch; it needs the [`luau` CLI](https://github.com/luau-lang/luau/releases) on `PATH` (or set `LUAU=/path/to/luau`).
