@@ -4,20 +4,13 @@
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
-local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
 local CoralRenderer = require(script.Parent.CoralRenderer)
 local CreatureRenderer = require(script.Parent.CreatureRenderer)
+local SoundFX = require(script.Parent.SoundFX)
 
 local player = Players.LocalPlayer
-
--- Built-in Roblox sounds as placeholders. Swap in your own uploaded audio IDs.
-local SOUNDS = {
-	harvest = { id = "rbxasset://sounds/electronicpingshort.wav", volume = 0.5 },
-	plant = { id = "rbxasset://sounds/snap.wav", volume = 0.6 },
-	slot = { id = "rbxasset://sounds/swoosh.wav", volume = 0.6 },
-}
 
 local SPARKLE = "rbxasset://textures/particles/sparkles_main.dds"
 local PUFF = "rbxasset://textures/particles/smoke_main.dds"
@@ -25,21 +18,7 @@ local PEARL_COLOR = Color3.fromRGB(255, 248, 230)
 
 local Effects = {}
 
-local soundCache: { [string]: Sound } = {}
-
-local function playSound(kind: string)
-	local info = SOUNDS[kind]
-	local sound = soundCache[kind]
-	if not sound then
-		sound = Instance.new("Sound")
-		sound.SoundId = info.id
-		sound.Volume = info.volume
-		sound.Parent = SoundService
-		soundCache[kind] = sound
-	end
-	sound.PlaybackSpeed = 0.95 + math.random() * 0.15
-	SoundService:PlayLocalSound(sound)
-end
+local playSound = SoundFX.play
 
 -- Emits a burst of particles at a point from a temporary invisible part.
 local function burst(position: Vector3, props: { [string]: any }, count: number)
@@ -183,7 +162,7 @@ local function onSlot(tile: BasePart, isMine: boolean)
 		Drag = 3,
 	}, 24)
 	if isMine then
-		playSound("slot")
+		playSound("buy_slot")
 	end
 end
 
@@ -199,7 +178,7 @@ local function onFeed(anchor: BasePart, shells: number, isMine: boolean)
 		Drag = 3,
 	}, 16)
 	if isMine then
-		playSound("harvest")
+		playSound("bubble_pop")
 		floatingText(anchor.Position + Vector3.new(0, 2, 0), "+" .. shells .. " shells", Color3.fromRGB(255, 190, 230))
 	end
 end
@@ -216,12 +195,19 @@ local function onLevelUp(root: BasePart, level: number, isMine: boolean)
 	}, 40)
 	floatingText(root.Position + Vector3.new(0, 4, 0), "Level " .. level .. "!", Color3.fromRGB(150, 235, 255))
 	if isMine then
-		playSound("slot")
+		playSound("level_up")
 	end
 end
 
 function Effects.start(remotes: Instance)
 	(remotes:WaitForChild("Effect") :: RemoteEvent).OnClientEvent:Connect(function(kind: string, target: Instance?, amount: number, actorId: number)
+		-- Rare finds (mutations, discoveries, treasure) have no place to show; just a sound.
+		if kind == "rare" then
+			if actorId == player.UserId then
+				playSound("rare_find")
+			end
+			return
+		end
 		-- The target may not be streamed in on this client.
 		if not target or not target:IsA("BasePart") or not target:IsDescendantOf(workspace) then
 			return

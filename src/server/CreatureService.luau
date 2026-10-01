@@ -102,6 +102,7 @@ local function feed(feeder: Player, owner: Player, visit: Visit)
 		for coralType, chance in def.drops do
 			if rng:NextNumber() < chance then
 				ReefService.addInventory(feeder, coralType, 1)
+				ReefService.effect("rare", nil, 0, feeder.UserId)
 				ReefService.toast(feeder, string.format("The %s left you a %s!", def.displayName, Balance.corals[coralType].displayName), "unlock")
 			end
 		end

@@ -13,6 +13,7 @@ local TweenService = game:GetService("TweenService")
 local CoralRenderer = require(script.Parent.CoralRenderer)
 local DecorModels = require(ReplicatedStorage.Shared.DecorModels)
 local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
+local SoundFX = require(script.Parent.SoundFX)
 local UIKit = require(script.Parent.UIKit)
 
 local EventFX = {}
@@ -61,6 +62,7 @@ local function apply(eventId: string)
 		}):Play()
 		setParticles(Color3.fromRGB(150, 255, 230), 25, 0.6)
 	elseif eventId == "Storm" then
+		SoundFX.play("storm_event")
 		TweenService:Create(tint, FADE, { TintColor = Color3.fromRGB(190, 200, 210), Brightness = -0.08, Saturation = -0.3 }):Play()
 		TweenService:Create(Lighting, FADE, { Brightness = 0.9, ClockTime = defaults.ClockTime }):Play()
 		if atmosphere then

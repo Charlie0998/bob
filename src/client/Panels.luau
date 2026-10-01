@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
 local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
+local SoundFX = require(script.Parent.SoundFX)
 local UIKit = require(script.Parent.UIKit)
 
 local player = Players.LocalPlayer
@@ -703,6 +704,7 @@ function Panels.streakPopup(gui: ScreenGui)
 		title.Text = string.format("Daily reward: day %s of 7", day or "?")
 		body.Text = text or ""
 		popup.Visible = true
+		SoundFX.play("daily_reward")
 	end
 	player:GetAttributeChangedSignal("StreakReward"):Connect(show)
 	show()

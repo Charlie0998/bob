@@ -20,6 +20,7 @@ local Effects = require(script.Effects)
 local EventFX = require(script.EventFX)
 local Fish = require(script.Fish)
 local Panels = require(script.Panels)
+local SoundFX = require(script.SoundFX)
 local UIKit = require(script.UIKit)
 local PetRenderer = require(script.PetRenderer)
 local PhotoMode = require(script.PhotoMode)
@@ -27,6 +28,7 @@ local WorldDecor = require(script.WorldDecor)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 WorldDecor.start()
+SoundFX.start()
 ButtonFX.start()
 CoralRenderer.start()
 CreatureRenderer.start()
@@ -266,6 +268,19 @@ addMenuButton("Travel", Panels.friends(gui, Remotes, Panels.trade(gui, Remotes))
 addMenuButton("Goals", Panels.goals(gui, Remotes), "goals")
 addMenuButton("Photo", PhotoMode.start(gui), "photo")
 Panels.project(gui)
+
+-- Mute toggle in the bottom-left corner.
+local muteButton = UIKit.button("🔊", "panel", {
+	AnchorPoint = Vector2.new(0, 1),
+	Position = UDim2.new(0, 12, 1, -12),
+	Size = UDim2.fromOffset(40, 40),
+	TextSize = 20,
+	Parent = gui,
+})
+muteButton.Activated:Connect(function()
+	SoundFX.setMuted(not SoundFX.isMuted())
+	muteButton.Text = if SoundFX.isMuted() then "🔇" else "🔊"
+end)
 Panels.streakPopup(gui)
 Panels.zoneMarket(gui, Remotes)
 EventFX.start(gui)

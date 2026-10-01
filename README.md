@@ -106,6 +106,12 @@ rojo build -o ReefKeepers.rbxl
 
 The script writes the IDs into `src/shared/Icons.json`. To do it by hand instead, upload each PNG in Studio (Asset Manager → Bulk Import), copy each asset ID, and paste it into `Icons.json`.
 
+### Sounds
+
+Ten original sound effects are in `assets/sounds` (see its README). They're wired in through `src/client/SoundFX.luau`: harvest, plant, buy_slot, bubble_pop (feeding, visitors), button_click (every button), daily_reward, level_up, rare_find (mutations, new discoveries, storm treasure, creature drops), storm_event, and a looping ocean ambience. A speaker button in the bottom-left corner mutes everything.
+
+Upload the WAVs in Studio (Asset Manager → Bulk Import) and put each asset ID in `src/shared/Sounds.json`. Until then, harvest, plant, slot, and level-up use built-in placeholders and the rest are silent.
+
 ### Setting up purchases
 
 All items show "Not set up" until you add their IDs:

@@ -228,6 +228,7 @@ function ReefService.discover(player: Player, kind: "corals" | "creatures", id: 
 	end
 	data.discovered[kind][id] = true
 	player:SetAttribute("Found_" .. id, true)
+	effectRemote:FireClient(player, "rare", nil, 0, player.UserId)
 	discoveredSignal:Fire(player, kind, id)
 	return true
 end
@@ -625,6 +626,7 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 		planted.mutation = mutation.id
 		toast(player, string.format("Your %s grew %s! It earns x%d pearls.", def.displayName, mutation.text, mutation.multiplier), "unlock")
 		ReefService.activity(player, "mutation", 1)
+		effectRemote:FireClient(player, "rare", nil, 0, player.UserId)
 	end
 	data.corals[key] = planted
 	setCoral(part, planted)

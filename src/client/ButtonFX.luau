@@ -15,6 +15,8 @@ local HOVER_TILT = 2 -- degrees
 local QUICK = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local SPRING = TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
+local SoundFX = require(script.Parent.SoundFX)
+
 local ButtonFX = {}
 
 local attached: { [GuiButton]: boolean } = {}
@@ -55,6 +57,7 @@ local function attach(button: GuiButton)
 	end)
 	-- Touch screens never send MouseLeave, so settle after every tap.
 	button.Activated:Connect(function()
+		SoundFX.play("button_click")
 		task.delay(0.05, function()
 			if not button.Parent then
 				return

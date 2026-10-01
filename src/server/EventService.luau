@@ -75,6 +75,7 @@ local function spawnTreasure(owner: Player)
 			ReefService.addCurrency(player, 0, loot.shells, "Treasure")
 		end
 		ReefService.toast(player, "The storm left you " .. loot.text .. "!", "unlock")
+		ReefService.effect("rare", nil, 0, player.UserId)
 		ReefService.effect("feed", chest, 0, player.UserId)
 		task.delay(0.5, function()
 			chest:Destroy()
