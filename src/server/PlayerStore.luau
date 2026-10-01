@@ -43,6 +43,10 @@ export type PlayerData = {
 	trades: { day: number, count: number },
 	-- Inventory corals bought with Robux; these can't be traded.
 	untradeable: { [string]: number },
+	speedups: number,
+	-- Recently granted Robux purchase IDs, so a receipt is never granted twice.
+	receipts: { string },
+	vipGranted: boolean,
 }
 
 type Profile = { data: PlayerData, key: string }
@@ -83,6 +87,9 @@ local function newData(): PlayerData
 		social = { day = -1, visitsRewarded = 0, hostRewarded = 0, liked = {}, likesReceived = 0 },
 		trades = { day = -1, count = 0 },
 		untradeable = {},
+		speedups = 0,
+		receipts = {},
+		vipGranted = false,
 	}
 	-- First session: the player spawns with one starter coral already growing.
 	data.corals["1"] = { type = Balance.starterCoral, plantedAt = os.time(), bornAt = os.time() }

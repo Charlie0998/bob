@@ -77,6 +77,20 @@
 				240,
 				255
 			]
+		},
+		"Pearlescent": {
+			"displayName": "Pearlescent Oyster",
+			"rarity": "Legendary",
+			"growSeconds": 43200,
+			"pearls": 9000,
+			"cost": 0,
+			"inShop": false,
+			"unlockSlots": 0,
+			"color": [
+				245,
+				230,
+				250
+			]
 		}
 	},
 	"shopRotation": {
@@ -987,5 +1001,71 @@
 				"target": 200
 			}
 		]
+	},
+	"monetization": {
+		"_note": "Create these in Creator Hub (Monetization > Passes / Developer Products) and paste each ID here. An ID of 0 shows the item as not set up yet.",
+		"passes": {
+			"Pearls2x": {
+				"id": 0,
+				"name": "2x Pearls",
+				"price": 399,
+				"description": "Double pearl income, forever"
+			},
+			"AutoHarvest": {
+				"id": 0,
+				"name": "Auto-Harvest",
+				"price": 249,
+				"description": "Ready corals harvest themselves while you play"
+			},
+			"ExtraSlots": {
+				"id": 0,
+				"name": "Extra Plot Slots",
+				"price": 199,
+				"description": "+10 slots on your reef",
+				"slots": 10
+			},
+			"VIP": {
+				"id": 0,
+				"name": "VIP Reef Pack",
+				"price": 599,
+				"description": "Pearlescent Oyster coral, VIP name tag, +10% pearls",
+				"coral": "Pearlescent",
+				"multiplier": 1.1
+			}
+		},
+		"products": {
+			"SpeedUp1": {
+				"id": 0,
+				"name": "Growth Speed-Up",
+				"price": 25,
+				"speedups": 1
+			},
+			"SpeedUp5": {
+				"id": 0,
+				"name": "5 Growth Speed-Ups",
+				"price": 99,
+				"speedups": 5
+			},
+			"SpeedUp20": {
+				"id": 0,
+				"name": "20 Growth Speed-Ups",
+				"price": 349,
+				"speedups": 20
+			},
+			"RareBundle": {
+				"id": 0,
+				"name": "Rare Coral Bundle",
+				"price": 149,
+				"corals": {
+					"Fan": 3
+				}
+			}
+		},
+		"rewardedAd": {
+			"productId": 0,
+			"name": "Watch an ad: free speed-up",
+			"speedups": 1
+		},
+		"autoHarvestSeconds": 15
 	}
 }

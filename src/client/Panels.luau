@@ -421,6 +421,106 @@ function Panels.trade(gui: ScreenGui, remotes: Instance): (userId: number) -> ()
 	end
 end
 
+-- The shop: Robux passes and products (price shown before every prompt),
+-- speed-ups, a rewarded ad, and the way into Tide Reset.
+function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () -> ()
+	local MarketplaceService = game:GetService("MarketplaceService")
+	local useSpeedUp = remotes:WaitForChild("UseSpeedUp") :: RemoteEvent
+	local watchAd = remotes:WaitForChild("WatchAd") :: RemoteEvent
+	local config = Balance.monetization
+	local panel
+
+	local function itemRow(order: number, title: string, description: string, buttonText: string, style: string, onBuy: (() -> ())?)
+		local card = UIKit.card(panel.body, 64, order)
+		UIKit.label(title, { Position = UDim2.fromOffset(12, 4), Size = UDim2.new(1, -190, 0, 26), Parent = card })
+		UIKit.label(description, {
+			Position = UDim2.fromOffset(12, 30),
+			Size = UDim2.new(1, -190, 0, 30),
+			TextSize = 13,
+			TextColor3 = COLORS.hint,
+			Font = Enum.Font.Gotham,
+			Parent = card,
+		})
+		local button = UIKit.button(buttonText, style, {
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, 0),
+			Parent = card,
+		})
+		if onBuy then
+			button.Activated:Connect(onBuy)
+		end
+	end
+
+	local function refresh()
+		if not panel or not panel.isOpen() then
+			return
+		end
+		UIKit.clear(panel.body)
+		local order = 0
+		local function nextOrder(): number
+			order += 1
+			return order
+		end
+
+		local speedups = player:GetAttribute("SpeedUps") or 0
+		itemRow(nextOrder(), string.format("Growth speed-ups: %d", speedups), "Instantly finishes the coral closest to ready", "Use one", if speedups > 0 then "accent" else "muted", function()
+			useSpeedUp:FireServer()
+		end)
+		local adReady = config.rewardedAd.productId ~= 0
+		itemRow(nextOrder(), config.rewardedAd.name, "Free. Watch a short video ad", if adReady then "Watch ad" else "Not set up", if adReady then "accent" else "muted", function()
+			if adReady then
+				watchAd:FireServer()
+			end
+		end)
+		itemRow(nextOrder(), "Tide Reset", "Reset your reef for a permanent pearl bonus, and the prestige shop", "Open", "accent", openTide)
+
+		UIKit.label("Passes (one-time, permanent)", { Size = UDim2.new(1, -8, 0, 30), TextSize = 20, LayoutOrder = nextOrder(), Parent = panel.body })
+		for _, key in { "Pearls2x", "AutoHarvest", "ExtraSlots", "VIP" } do
+			local pass = config.passes[key]
+			local has = player:GetAttribute("Pass_" .. key) == true
+			itemRow(
+				nextOrder(),
+				pass.name,
+				pass.description,
+				if has then "Owned" elseif pass.id == 0 then "Not set up" else string.format("R$ %d", pass.price),
+				if has or pass.id == 0 then "muted" else "gold",
+				function()
+					if not has and pass.id ~= 0 then
+						MarketplaceService:PromptGamePassPurchase(player, pass.id)
+					end
+				end
+			)
+		end
+
+		UIKit.label("Items", { Size = UDim2.new(1, -8, 0, 30), TextSize = 20, LayoutOrder = nextOrder(), Parent = panel.body })
+		for _, key in { "SpeedUp1", "SpeedUp5", "SpeedUp20", "RareBundle" } do
+			local product = config.products[key]
+			local description = if product.speedups
+				then string.format("%d speed-up%s", product.speedups, if product.speedups == 1 then "" else "s")
+				else "3 Fan Corals (can't be traded)"
+			itemRow(
+				nextOrder(),
+				product.name,
+				description,
+				if product.id == 0 then "Not set up" else string.format("R$ %d", product.price),
+				if product.id == 0 then "muted" else "gold",
+				function()
+					if product.id ~= 0 then
+						MarketplaceService:PromptProductPurchase(player, product.id)
+					end
+				end
+			)
+		end
+	end
+	panel = UIKit.panel(gui, "Shop", refresh)
+	player.AttributeChanged:Connect(function(name)
+		if name == "SpeedUps" or string.sub(name, 1, 5) == "Pass_" then
+			refresh()
+		end
+	end)
+	return panel.toggle
+end
+
 -- A small bar showing the server-wide reef project.
 function Panels.project(gui: ScreenGui)
 	local ReplicatedStorage_ = game:GetService("ReplicatedStorage")

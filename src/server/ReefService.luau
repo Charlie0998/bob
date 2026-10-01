@@ -19,9 +19,11 @@ local PAD_TAG = "ReefBuyPad"
 local GRID_COLUMNS = 8
 local CELL = 6
 local PLOT_RING = 8
-local PLOT_RADIUS = 70
-local RING_STEP = 60
+local PLOT_RADIUS = 100
+local RING_STEP = 80
 local MAX_REACH = 80 -- studs between the player and the part they tap
+-- The plot grid has room for the base cap plus the Extra Plot Slots pass.
+local GRID_CAPACITY = Balance.maxSlots + Balance.monetization.passes.ExtraSlots.slots
 local RATE_CAPACITY = 10
 local RATE_REFILL_PER_SECOND = 6
 
@@ -239,7 +241,7 @@ local function plotCFrame(index: number): CFrame
 end
 
 local function slotOffset(slot: number): CFrame
-	local rows = math.ceil(Balance.maxSlots / GRID_COLUMNS)
+	local rows = math.ceil(GRID_CAPACITY / GRID_COLUMNS)
 	local col = (slot - 1) % GRID_COLUMNS
 	local row = (slot - 1) // GRID_COLUMNS
 	return CFrame.new((col - (GRID_COLUMNS - 1) / 2) * CELL, 0.7, (row - (rows - 1) / 2) * CELL)
@@ -305,7 +307,7 @@ local function updatePad(player: Player, state: PlayerState)
 	if not data or not pad then
 		return
 	end
-	local full = data.slots >= Balance.maxSlots
+	local full = data.slots >= ReefService.maxSlots(player)
 	pad:SetAttribute("Cost", if full then -1 else ReefMath.slotCost(data.slots, Balance))
 end
 
@@ -313,7 +315,7 @@ local function buildPlot(player: Player, state: PlayerState)
 	local model = Instance.new("Model")
 	model.Name = player.Name .. "'s Reef"
 
-	local rows = math.ceil(Balance.maxSlots / GRID_COLUMNS)
+	local rows = math.ceil(GRID_CAPACITY / GRID_COLUMNS)
 	local base = anchoredPart({
 		Name = "Base",
 		Size = Vector3.new(GRID_COLUMNS * CELL + 4, 1, rows * CELL + 4),
@@ -414,6 +416,98 @@ local function buildPlot(player: Player, state: PlayerState)
 	state.plot = model
 end
 
+-- Harvests one tile if it's ready and returns the pearls earned. `quiet`
+-- skips the "not ready" and "+N" toasts (used by Auto-Harvest).
+function ReefService.harvestTile(player: Player, part: BasePart, quiet: boolean): number
+	local data = PlayerStore.get(player)
+	local coral = data and data.corals[tostring(part:GetAttribute("Slot"))]
+	if not data or not coral then
+		return 0
+	end
+	local now = os.time()
+	local def = Balance.corals[coral.type]
+	local gained, newPlantedAt = ReefMath.harvest(coral.plantedAt, now, def.growSeconds, def.pearls, Balance.offlineCapSeconds)
+	gained = math.floor(gained * ReefService.incomeMultiplier(player))
+	if gained == 0 then
+		if not quiet then
+			local left = ReefMath.secondsUntilReady(coral.plantedAt, now, def.growSeconds)
+			toast(player, def.displayName .. " ready in " .. ReefMath.formatDuration(left))
+		end
+		return 0
+	end
+	coral.plantedAt = newPlantedAt
+	part:SetAttribute("PlantedAt", newPlantedAt)
+	effectRemote:FireAllClients("harvest", part, gained, player.UserId)
+	setPearls(player, data.pearls + gained)
+	logPearls(player, Enum.AnalyticsEconomyFlowType.Source, gained, data.pearls, "Harvest_" .. coral.type)
+	if data.stats.harvests == 0 then
+		logOnboarding(player, ONBOARDING.firstHarvest)
+	end
+	data.stats.harvests += 1
+	refreshHealth(player)
+	ReefService.activity(player, "harvest", 1)
+	ReefService.activity(player, "pearls", gained)
+	if not quiet then
+		toast(player, "+" .. gained .. " pearls", "pearls")
+	end
+	return gained
+end
+
+function ReefService.harvestAll(player: Player): number
+	local plot = ReefService.getPlot(player)
+	local total = 0
+	if plot then
+		for _, child in plot:GetChildren() do
+			if child:IsA("BasePart") and CollectionService:HasTag(child, SLOT_TAG) then
+				total += ReefService.harvestTile(player, child, true)
+			end
+		end
+	end
+	return total
+end
+
+-- Finishes the coral that is closest to ready. Returns false if none is growing.
+function ReefService.speedUp(player: Player): boolean
+	local data = PlayerStore.get(player)
+	local plot = ReefService.getPlot(player)
+	if not data or not plot then
+		return false
+	end
+	local now = os.time()
+	local bestKey, bestLeft = nil, math.huge
+	for key, coral in data.corals do
+		local left = ReefMath.secondsUntilReady(coral.plantedAt, now, Balance.corals[coral.type].growSeconds)
+		if left > 0 and left < bestLeft then
+			bestKey, bestLeft = key, left
+		end
+	end
+	if not bestKey then
+		return false
+	end
+	local coral = data.corals[bestKey]
+	local grow = Balance.corals[coral.type].growSeconds
+	coral.plantedAt = now - grow
+	coral.bornAt = math.min(coral.bornAt or coral.plantedAt, now - grow)
+	local tile = plot:FindFirstChild("Slot" .. bestKey) :: BasePart?
+	if tile then
+		setCoral(tile, coral)
+		effectRemote:FireAllClients("plant", tile, 0, player.UserId)
+	end
+	return true
+end
+
+-- Slot cap for this player (the Extra Plot Slots pass raises it).
+function ReefService.maxSlots(player: Player): number
+	return Balance.maxSlots + (player:GetAttribute("BonusSlots") :: number? or 0)
+end
+
+function ReefService.refreshPad(player: Player)
+	local state = states[player]
+	if state then
+		updatePad(player, state)
+	end
+end
+
 function ReefService.onSlotClicked(player: Player, part: BasePart)
 	local state = states[player]
 	local data = PlayerStore.get(player)
@@ -430,29 +524,7 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 	local now = os.time()
 
 	if coral then
-		local def = Balance.corals[coral.type]
-		local multiplier = ReefService.incomeMultiplier(player)
-		local gained, newPlantedAt =
-			ReefMath.harvest(coral.plantedAt, now, def.growSeconds, def.pearls, Balance.offlineCapSeconds)
-		gained = math.floor(gained * multiplier)
-		if gained == 0 then
-			local left = ReefMath.secondsUntilReady(coral.plantedAt, now, def.growSeconds)
-			toast(player, def.displayName .. " ready in " .. ReefMath.formatDuration(left))
-			return
-		end
-		coral.plantedAt = newPlantedAt
-		part:SetAttribute("PlantedAt", newPlantedAt)
-		effectRemote:FireAllClients("harvest", part, gained, player.UserId)
-		setPearls(player, data.pearls + gained)
-		logPearls(player, Enum.AnalyticsEconomyFlowType.Source, gained, data.pearls, "Harvest_" .. coral.type)
-		if data.stats.harvests == 0 then
-			logOnboarding(player, ONBOARDING.firstHarvest)
-		end
-		data.stats.harvests += 1
-		refreshHealth(player)
-		ReefService.activity(player, "harvest", 1)
-		ReefService.activity(player, "pearls", gained)
-		toast(player, "+" .. gained .. " pearls", "pearls")
+		ReefService.harvestTile(player, part, false)
 		return
 	end
 
@@ -510,7 +582,7 @@ function ReefService.onBuySlot(player: Player, pad: BasePart)
 	if not allow(state) or not inReach(player, pad) then
 		return
 	end
-	if data.slots >= Balance.maxSlots then
+	if data.slots >= ReefService.maxSlots(player) then
 		toast(player, "Your reef is full size!")
 		return
 	end

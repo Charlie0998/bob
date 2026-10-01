@@ -217,6 +217,18 @@ builders.Crystal = function(model, rng, color)
 	shimmer(model, WHITE, 5)
 end
 
+-- An open oyster shell holding a glowing pearl (VIP coral).
+builders.Pearlescent = function(model, rng, color)
+	local shell = shade(color, -0.1)
+	local yaw = rng:NextNumber(0, math.pi * 2)
+	local frame = CFrame.new(0, 0.5, 0) * CFrame.Angles(0, yaw, 0)
+	ellipsoid(model, Vector3.new(3, 0.7, 2.6), frame, shell)
+	ellipsoid(model, Vector3.new(3, 0.6, 2.6), frame * CFrame.new(0, 0.3, 0.9) * CFrame.Angles(-1.0, 0, 0) * CFrame.new(0, 0, -1.1), shade(color, 0.1))
+	ball(model, (frame * CFrame.new(0, 0.6, -0.1)).Position, 1, Color3.fromRGB(255, 250, 245), Enum.Material.Neon)
+	glow(model, Color3.fromRGB(255, 230, 250), 10, 2)
+	shimmer(model, Color3.fromRGB(255, 240, 250), 3)
+end
+
 -- A plain blob for any coral type without its own builder yet.
 local function fallback(model: Model, _rng: Random, color: Color3)
 	ellipsoid(model, Vector3.new(2.6, 2.4, 2.6), CFrame.new(0, 1.2, 0), color)

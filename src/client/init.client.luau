@@ -17,6 +17,7 @@ local CreatureRenderer = require(script.CreatureRenderer)
 local Effects = require(script.Effects)
 local Fish = require(script.Fish)
 local Panels = require(script.Panels)
+local PhotoMode = require(script.PhotoMode)
 local WorldDecor = require(script.WorldDecor)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
@@ -181,10 +182,13 @@ local function addMenuButton(text: string, onActivated: () -> ()): TextButton
 end
 
 Book.start(gui, Remotes)
-addMenuButton("Goals", Panels.goals(gui, Remotes))
+-- Five buttons at most (design pillar: understood in 10 seconds). Tide Reset
+-- opens from the Shop.
+addMenuButton("Shop", Panels.shop(gui, Remotes, Panels.tide(gui, Remotes)))
 addMenuButton("Book", Book.toggle)
-addMenuButton("Tide", Panels.tide(gui, Remotes))
 addMenuButton("Friends", Panels.friends(gui, Remotes, Panels.trade(gui, Remotes)))
+addMenuButton("Goals", Panels.goals(gui, Remotes))
+addMenuButton("Photo", PhotoMode.start(gui))
 Panels.project(gui)
 
 -- Reef health meter ------------------------------------------------------

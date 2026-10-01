@@ -15,8 +15,8 @@ local KELP_FPS = 20
 
 -- Must match the plot layout in ReefService.luau.
 local PLOT_RING = 8
-local PLOT_RADII = { 70, 130 }
-local PLOT_CLEARANCE = 36
+local PLOT_RADII = { 100, 180 }
+local PLOT_CLEARANCE = 40
 
 local WorldDecor = {}
 
