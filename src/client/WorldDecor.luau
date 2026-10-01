@@ -584,6 +584,20 @@ end
 
 -- Night: kelp tips glow softly (bioluminescence), sunbeams fade, and the
 -- surface overhead goes dark.
+-- Graphics: Low. Sunbeams go away, kelp sways at a gentler rate and only
+-- close up, and every other pebble cluster stone is hidden.
+local lowGraphics = false
+function WorldDecor.setLowGraphics(low: boolean)
+	lowGraphics = low
+	local i = 0
+	for _, item in folder:GetChildren() do
+		if item.Name == "Pebble" and item:IsA("BasePart") then
+			i += 1
+			item.LocalTransparencyModifier = if low and i % 2 == 0 then 1 else 0
+		end
+	end
+end
+
 function WorldDecor.setNight(night: boolean)
 	isNight = night
 	for _, kelp in kelps do
@@ -687,7 +701,7 @@ function WorldDecor.start()
 		plankton.CFrame = CFrame.new(cameraPosition)
 
 		accumulator += dt
-		if accumulator < 1 / KELP_FPS then
+		if accumulator < 1 / (if lowGraphics then KELP_FPS / 2 else KELP_FPS) then
 			return
 		end
 		accumulator = 0
@@ -701,7 +715,7 @@ function WorldDecor.start()
 		table.clear(parts)
 		table.clear(frames)
 		for _, kelp in kelps do
-			if (kelp.base.Position - cameraPosition).Magnitude < KELP_ANIMATE_DISTANCE then
+			if (kelp.base.Position - cameraPosition).Magnitude < (if lowGraphics then KELP_ANIMATE_DISTANCE / 2 else KELP_ANIMATE_DISTANCE) then
 				for _, part in kelp.parts do
 					parts[#parts + 1] = part
 				end
@@ -714,7 +728,7 @@ function WorldDecor.start()
 
 		-- Sunbeams slowly brighten and fade.
 		for _, beam in beams do
-			beam.part.Transparency = if isNight then 1 else 0.955 + math.sin(t * 0.4 + beam.phase) * 0.02
+			beam.part.Transparency = if isNight or lowGraphics then 1 else 0.955 + math.sin(t * 0.4 + beam.phase) * 0.02
 		end
 	end)
 

@@ -417,6 +417,10 @@ local function onPad(pad: Instance)
 	end)
 end
 
+function PlotDecor.setLowGraphics(low: boolean)
+	HIDE_DISTANCE = if low then 220 else 360
+end
+
 function PlotDecor.start()
 	local reefs = workspace:WaitForChild("Reefs")
 	reefs.ChildAdded:Connect(onPlot)

@@ -1,4 +1,4 @@
-# Reef Keepers: notes for Claude
+# Grow a Reef (repo: Reef Keepers): notes for Claude
 
 Cozy co-op Roblox reef tycoon. Rojo project; Luau code in `src/`, design doc in `docs/DESIGN.md`, feature tables in `README.md`.
 

@@ -11,7 +11,7 @@ local Balance = require(ReplicatedStorage.Shared.Balance)
 
 local WORLD = Balance.world
 local SURFACE = WORLD.surfaceHeight
-local HIDE_DISTANCE = 420 -- landmarks farther than this from the camera are hidden
+local HIDE_DISTANCE = 420 -- landmarks farther than this from the camera are hidden (less on Graphics: Low)
 local LOD_CHECK_SECONDS = 1
 
 local Landmarks = {}
@@ -581,6 +581,10 @@ local function buildZoneKeepers()
 			})
 		end
 	end
+end
+
+function Landmarks.setLowGraphics(low: boolean)
+	HIDE_DISTANCE = if low then 260 else 420
 end
 
 function Landmarks.start(onOpenMarket: (string?) -> ())

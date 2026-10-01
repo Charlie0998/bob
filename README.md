@@ -1,4 +1,4 @@
-# Reef Keepers (working title)
+# Grow a Reef
 
 A cozy co-op Roblox game: grow a living coral reef, attract rare sea creatures, and visit your friends' reefs.
 
@@ -69,6 +69,9 @@ Everything in the design doc's launch scope and Updates 2 and 3 is built. All tu
 | Friend boost | +5% income per friend on the same server, up to 3 friends | `SocialService.luau` |
 | Leaderboards | Leaderboard area off the ring road with all-time Most Rebirths, Most Shells, and Most Pearls boards; Shells and Rebirths also in the player list | `LeaderboardService.luau` |
 | Tap a fish | Tapping a swimming fish sends it darting off in bubbles and pays 1 pearl (2 s cooldown, 100 per visit) | `Fish.luau`, `FishService.luau` |
+| Help ("?") | Tap-to-open common questions, how-to-play guides with Replay tutorial, and a guide to pearls, shells, controls, and settings | `Help.luau` |
+| Graphics: High / Low | Low turns off shadows, glow, particles, and extra lights, hides sunbeams and some pebbles, keeps fewer fish, and hides far scenery sooner; saved per player | `Graphics.luau`, `SettingsService.luau` |
+| Loading screen | Animated undersea scene: swaying corals and sunbeams, fish, bubbles, and a pearl rolling along the loading bar | `LoadingScreen.client.luau` |
 | Friend join bonus | A friend joining your server pays you both 100 pearls and 10 shells, once per friend | `SocialService.luau` |
 | Likes and Top Reefs | Like a reef once a day; a weekly board at spawn lists the most-liked reefs | `SocialService.luau` |
 | Trading | Trade inventory corals with two steps (Ready, then Confirm), a value summary on both sides, Robux-bought corals locked, a 3-day account age minimum, and a daily cap | `TradeService.luau` |

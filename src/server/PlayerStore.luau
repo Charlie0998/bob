@@ -55,6 +55,7 @@ export type PlayerData = {
 	market: { period: number, restocks: number, bought: { [string]: boolean } },
 	decorOwned: { [string]: boolean },
 	tutorial: number,
+	lowGraphics: boolean, -- the Graphics: Low setting
 }
 
 type Profile = { data: PlayerData, key: string }
@@ -106,6 +107,7 @@ local function newData(): PlayerData
 		market = { period = -1, restocks = 0, bought = {} },
 		decorOwned = {},
 		tutorial = 0,
+		lowGraphics = false,
 	}
 	-- First session: the player spawns with one starter coral already growing.
 	data.corals["1"] = { type = Balance.starterCoral, plantedAt = os.time(), bornAt = os.time() }

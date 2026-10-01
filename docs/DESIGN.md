@@ -1,6 +1,6 @@
 # Coral Reef Builder: Game Design & Development Plan
 
-> "Reef Keepers" is a placeholder title.
+> The game is called "Grow a Reef" (it was "Reef Keepers" while in development).
 
 ## Vision
 

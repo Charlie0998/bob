@@ -20,6 +20,8 @@ local CreatureRenderer = require(script.CreatureRenderer)
 local Effects = require(script.Effects)
 local EventFX = require(script.EventFX)
 local Fish = require(script.Fish)
+local Graphics = require(script.Graphics)
+local Help = require(script.Help)
 local Ambient = require(script.Ambient)
 local Landmarks = require(script.Landmarks)
 local Market = require(script.Market)
@@ -370,6 +372,45 @@ muteButton.Activated:Connect(function()
 	SoundFX.setMuted(not SoundFX.isMuted())
 	muteButton.Text = if SoundFX.isMuted() then "🔇" else "🔊"
 end)
+
+-- Graphics: High / Low, next to the mute button (saved on the server).
+Graphics.start()
+local graphicsRemote = Remotes:WaitForChild("SetGraphics") :: RemoteEvent
+local graphicsButton = UIKit.button("Graphics: High", "panel", {
+	AnchorPoint = Vector2.new(0, 1),
+	Position = UDim2.new(0, 60, 1, -12),
+	Size = UDim2.fromOffset(136, 40),
+	TextSize = 15,
+	Parent = gui,
+})
+local function showGraphics()
+	local isLow = Graphics.isLow()
+	graphicsButton.Text = if isLow then "Graphics: Low" else "Graphics: High"
+	local style = if isLow then "gold" else "panel"
+	UIKit.gloss(graphicsButton, (UIKit.COLORS :: any)[style], 10)
+	graphicsButton.TextColor3 = if isLow then COLORS.goldText else COLORS.text
+	graphicsButton.TextStrokeTransparency = if isLow then 1 else 0.7
+end
+graphicsButton.Activated:Connect(function()
+	Graphics.set(not Graphics.isLow())
+	showGraphics()
+	graphicsRemote:FireServer(Graphics.isLow())
+end)
+local function loadGraphics()
+	Graphics.set(player:GetAttribute("LowGraphics") == true)
+	showGraphics()
+end
+player:GetAttributeChangedSignal("LowGraphics"):Connect(loadGraphics)
+loadGraphics()
+
+-- The "?" Help button next to Menu.
+local helpButton = UIKit.button("?", "gold", {
+	Position = UDim2.fromOffset(88, 56),
+	Size = UDim2.fromOffset(36, 32),
+	TextSize = 20,
+	Parent = gui,
+})
+helpButton.Activated:Connect(Help.start(gui, Remotes))
 Panels.streakPopup(gui)
 Panels.zoneMarket(gui, Remotes)
 EventFX.start(gui)

@@ -45,6 +45,11 @@ local folder = Instance.new("Folder")
 folder.Name = "Fish"
 
 local fishes: { Fish } = {}
+local lowGraphics = false -- Graphics: Low keeps fewer fish per reef
+
+function Fish.setLowGraphics(low: boolean)
+	lowGraphics = low
+end
 local reefFish: { [Model]: { Fish } } = {}
 
 local function newPart(props: { [string]: any }): Part
@@ -142,7 +147,7 @@ local function rebalance(reefs: Instance)
 		end
 		local list = reefFish[reef] or {}
 		reefFish[reef] = list
-		local wanted = math.min(MAX_FISH_PER_REEF, coralCount(reef) // CORALS_PER_FISH)
+		local wanted = math.min(if lowGraphics then MAX_FISH_PER_REEF // 3 else MAX_FISH_PER_REEF, coralCount(reef) // CORALS_PER_FISH)
 		while #list < wanted do
 			local model = reef
 			local fish = makeFish(rng, function()

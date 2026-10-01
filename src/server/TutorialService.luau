@@ -2,6 +2,7 @@
 -- Market. The step is saved and published as the TutorialStep attribute;
 -- the client draws the hints and arrows.
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local PlayerStore = require(script.Parent.PlayerStore)
@@ -11,6 +12,9 @@ local STEPS = { "plant", "harvest", "slot", "market" }
 local DONE = #STEPS
 
 local TutorialService = {}
+
+-- Players replaying the tutorial from the Help panel (no second reward).
+local replaying: { [Player]: boolean } = {}
 
 local function publish(player: Player)
 	local data = PlayerStore.get(player)
@@ -25,8 +29,13 @@ local function advance(player: Player, kind: string)
 		data.tutorial += 1
 		publish(player)
 		if data.tutorial == DONE then
-			ReefService.addCurrency(player, 0, 25, "Tutorial")
-			ReefService.toast(player, "Tutorial complete! +25 shells", "unlock")
+			if replaying[player] then
+				replaying[player] = nil
+				ReefService.toast(player, "Tutorial complete!", "unlock")
+			else
+				ReefService.addCurrency(player, 0, 25, "Tutorial")
+				ReefService.toast(player, "Tutorial complete! +25 shells", "unlock")
+			end
 		end
 	end
 end
@@ -45,9 +54,16 @@ function TutorialService.start()
 			publish(player)
 		elseif action == "market" then
 			advance(player, "market")
+		elseif action == "replay" and data.tutorial >= DONE then
+			replaying[player] = true
+			data.tutorial = 0
+			publish(player)
 		end
 	end)
 	ReefService.Activity:Connect(advance)
+	Players.PlayerRemoving:Connect(function(player)
+		replaying[player] = nil
+	end)
 	PlayerStore.Loaded:Connect(function(player)
 		local data = PlayerStore.get(player)
 		-- Players who already know the ropes skip the tutorial.
