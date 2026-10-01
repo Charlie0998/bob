@@ -237,8 +237,13 @@ local function buildPlaza()
 	local model = group("MarketPlaza", center, true)
 	local facing = CFrame.lookAt(center, Vector3.new(0, 0, 0))
 	-- A round tiled floor with a sandstone rim.
-	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 56, 56), CFrame = CFrame.new(center + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(215, 195, 160), Material = Enum.Material.Pavement, CanCollide = true }) -- solid, so feet don't sink in
-	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 18, 18), CFrame = CFrame.new(center + Vector3.new(0, 0.35, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(38, 172, 186), Material = Enum.Material.Pavement, CanCollide = true })
+	-- A raised, solid stone floor (top 1.0) on a darker rim (top 0.6), well
+	-- clear of the sand so nothing flickers, and a teal tile in the middle
+	-- (top 1.3). Plain smooth stone: the patterned Pavement look rendered
+	-- with jagged edges on a floor this big.
+	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 57, 57), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(165, 140, 110), Material = Enum.Material.SmoothPlastic, CanCollide = true })
+	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 54, 54), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(225, 205, 170), Material = Enum.Material.SmoothPlastic, CanCollide = true })
+	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.6, 18, 18), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(38, 172, 186), Material = Enum.Material.SmoothPlastic, CanCollide = true })
 	-- Four stalls in an arc behind the plaza center, facing spawn.
 	local titles = { "Coral Market", "Rare Corals", "Daily Deal", "Decor & Trade" }
 	local KEEPERS = {
@@ -252,10 +257,10 @@ local function buildPlaza()
 		local angle = math.rad(-72 + (i - 1) * 48)
 		local frame = facing * CFrame.Angles(0, angle, 0) * CFrame.new(0, 0, 20)
 		frame = CFrame.lookAt(frame.Position, center) -- counters face the plaza center
-		stall(model, frame * CFrame.Angles(0, math.pi, 0), AWNINGS[i], titles[i])
+		stall(model, CFrame.new(0, 1, 0) * frame * CFrame.Angles(0, math.pi, 0) --[[ on the raised floor ]], AWNINGS[i], titles[i])
 		-- A shopkeeper behind every counter, facing the customers.
 		local keeper = KEEPERS[i]
-		buildPerson(model, frame * CFrame.Angles(0, math.pi, 0) * CFrame.new(0, 0.5, -3) * CFrame.Angles(0, math.pi, 0), {
+		buildPerson(model, frame * CFrame.Angles(0, math.pi, 0) * CFrame.new(0, 1, -3) * CFrame.Angles(0, math.pi, 0), {
 			shirt = keeper.shirt,
 			pants = Color3.fromRGB(60, 70, 110),
 			skin = SKINS[i],
