@@ -1,5 +1,5 @@
 -- Places to explore, built on the client: the Market plaza at spawn (stalls,
--- awnings, lanterns, crates, a shopkeeper), a sunken ruin, a lighthouse on a
+-- awnings, lanterns, crates, shopkeepers), a sunken ruin, a lighthouse on a
 -- rock island, a whale skeleton, hydrothermal vents, a giant clam that opens
 -- to show its pearl, boats drifting on the surface, and a whale silhouette
 -- far overhead. Far-away landmarks are hidden to keep the frame rate up.
@@ -175,31 +175,61 @@ local function stall(parent: Instance, frame: CFrame, colors: { Color3 }, title:
 	promptOn(counter)
 end
 
--- A friendly blocky shopkeeper who bobs and waves.
-local shopkeeper: { parts: { BasePart }, offsets: { CFrame }, base: CFrame, arm: number }? = nil
+-- Friendly blocky shopkeepers behind each counter bob, look around, and wave.
+type Person = {
+	parts: { BasePart },
+	offsets: { CFrame },
+	base: CFrame,
+	arm: number, -- the right arm (waves)
+}
+local people: { Person } = {}
 
-local function buildShopkeeper(parent: Instance, frame: CFrame)
-	local skin = Color3.fromRGB(240, 200, 160)
+local SKINS = { Color3.fromRGB(240, 200, 160), Color3.fromRGB(198, 140, 100), Color3.fromRGB(141, 95, 66), Color3.fromRGB(255, 220, 190) }
+
+local function buildPerson(parent: Instance, frame: CFrame, look: { shirt: Color3, pants: Color3, skin: Color3, hat: Color3?, name: string? }): Person
 	local parts, offsets = {}, {}
-	local function add(p: BasePart, offset: CFrame)
+	local function add(p: BasePart, offset: CFrame): number
 		table.insert(parts, p)
 		table.insert(offsets, offset)
+		return #parts
 	end
-	add(part(parent, { Size = Vector3.new(2, 2, 1), Color = Color3.fromRGB(38, 140, 160) }), CFrame.new(0, 3, 0))
-	add(part(parent, { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.6, Color = skin }), CFrame.new(0, 4.8, 0))
-	add(part(parent, { Size = Vector3.new(0.9, 2, 1), Color = Color3.fromRGB(60, 70, 110) }), CFrame.new(-0.5, 1, 0))
-	add(part(parent, { Size = Vector3.new(0.9, 2, 1), Color = Color3.fromRGB(60, 70, 110) }), CFrame.new(0.5, 1, 0))
-	add(part(parent, { Size = Vector3.new(0.8, 2, 0.8), Color = skin }), CFrame.new(-1.45, 3, 0))
-	local armIndex = #parts + 1
-	add(part(parent, { Size = Vector3.new(0.8, 2, 0.8), Color = skin }), CFrame.new(1.45, 3, 0))
-	add(ellipsoid(parent, Vector3.new(2.8, 0.3, 2.8), CFrame.identity, Color3.fromRGB(240, 210, 120)), CFrame.new(0, 5.5, 0))
-	add(ellipsoid(parent, Vector3.new(1.4, 0.9, 1.4), CFrame.identity, Color3.fromRGB(240, 210, 120)), CFrame.new(0, 5.8, 0))
+	add(part(parent, { Size = Vector3.new(2, 2, 1), Color = look.shirt }), CFrame.new(0, 3, 0))
+	add(part(parent, { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.6, Color = look.skin }), CFrame.new(0, 4.8, 0))
+	add(part(parent, { Size = Vector3.new(0.9, 2, 1), Color = look.pants }), CFrame.new(-0.5, 1, 0))
+	add(part(parent, { Size = Vector3.new(0.9, 2, 1), Color = look.pants }), CFrame.new(0.5, 1, 0))
+	add(part(parent, { Size = Vector3.new(0.8, 2, 0.8), Color = look.skin }), CFrame.new(-1.45, 3, 0))
+	local armR = add(part(parent, { Size = Vector3.new(0.8, 2, 0.8), Color = look.skin }), CFrame.new(1.45, 3, 0))
+	if look.hat then
+		add(ellipsoid(parent, Vector3.new(2.8, 0.3, 2.8), CFrame.identity, look.hat), CFrame.new(0, 5.5, 0))
+		add(ellipsoid(parent, Vector3.new(1.4, 0.9, 1.4), CFrame.identity, look.hat), CFrame.new(0, 5.8, 0))
+	end
 	add(part(parent, { Shape = Enum.PartType.Ball, Size = Vector3.one * 0.25, Color = Color3.new(0, 0, 0) }), CFrame.new(-0.35, 5, -0.72))
 	add(part(parent, { Shape = Enum.PartType.Ball, Size = Vector3.one * 0.25, Color = Color3.new(0, 0, 0) }), CFrame.new(0.35, 5, -0.72))
-	local name = part(parent, { Size = Vector3.one * 0.2, Transparency = 1 })
-	add(name, CFrame.new(0, 6.5, 0))
-	sign(name, "Marina the Merchant", 1.2, Color3.fromRGB(255, 255, 255), 6)
-	shopkeeper = { parts = parts, offsets = offsets, base = frame, arm = armIndex }
+	if look.name then
+		local tag = part(parent, { Size = Vector3.one * 0.2, Transparency = 1 })
+		add(tag, CFrame.new(0, 6.3, 0))
+		sign(tag, look.name, 0.6, Color3.fromRGB(255, 255, 255), 4.5)
+	end
+	local person: Person = { parts = parts, offsets = offsets, base = frame, arm = armR }
+	table.insert(people, person)
+	return person
+end
+
+-- Poses every shopkeeper for time `t` (called from the animation loop):
+-- a gentle bob, a slow look around, and a wave now and then.
+local function posePeople(t: number, outParts: { BasePart }, outFrames: { CFrame })
+	for n, person in people do
+		local idle = CFrame.new(0, math.sin(t * 2 + n) * 0.08, 0) * CFrame.Angles(0, math.sin(t * 0.5 + n * 2) * 0.25, 0)
+		local wave = math.max(0, math.sin(t * 0.8 + n * 1.9)) * (1.6 + math.sin(t * 8) * 0.35)
+		for i, p in person.parts do
+			local offset = person.offsets[i]
+			if i == person.arm then
+				offset = CFrame.new(1.45, 3.9, 0) * CFrame.Angles(0, 0, wave) * CFrame.new(0, -0.9, 0)
+			end
+			outParts[#outParts + 1] = p
+			outFrames[#outFrames + 1] = person.base * idle * offset
+		end
+	end
 end
 
 local function buildPlaza()
@@ -211,16 +241,27 @@ local function buildPlaza()
 	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 18, 18), CFrame = CFrame.new(center + Vector3.new(0, 0.35, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(38, 172, 186), Material = Enum.Material.Pavement, CanCollide = true })
 	-- Four stalls in an arc behind the plaza center, facing spawn.
 	local titles = { "Coral Market", "Rare Corals", "Daily Deal", "Decor & Trade" }
+	local KEEPERS = {
+		{ name = "Marina", shirt = Color3.fromRGB(38, 140, 160), hat = Color3.fromRGB(240, 210, 120) },
+		{ name = "Finn", shirt = Color3.fromRGB(230, 90, 100), hat = Color3.fromRGB(255, 240, 225) },
+		{ name = "Pearl", shirt = Color3.fromRGB(250, 190, 60), hat = Color3.fromRGB(240, 120, 160) },
+		{ name = "Captain Kai", shirt = Color3.fromRGB(130, 90, 210), hat = Color3.fromRGB(40, 50, 80) },
+	}
 	-- Spaced far enough apart that awnings and signs don't overlap.
 	for i = 1, 4 do
 		local angle = math.rad(-72 + (i - 1) * 48)
 		local frame = facing * CFrame.Angles(0, angle, 0) * CFrame.new(0, 0, 20)
 		frame = CFrame.lookAt(frame.Position, center) -- counters face the plaza center
 		stall(model, frame * CFrame.Angles(0, math.pi, 0), AWNINGS[i], titles[i])
-		if i == 2 then
-			-- Behind the counter (+Z of the stall frame faces the customers), facing them.
-			buildShopkeeper(model, frame * CFrame.Angles(0, math.pi, 0) * CFrame.new(0, 0.5, -3) * CFrame.Angles(0, math.pi, 0))
-		end
+		-- A shopkeeper behind every counter, facing the customers.
+		local keeper = KEEPERS[i]
+		buildPerson(model, frame * CFrame.Angles(0, math.pi, 0) * CFrame.new(0, 0.5, -3) * CFrame.Angles(0, math.pi, 0), {
+			shirt = keeper.shirt,
+			pants = Color3.fromRGB(60, 70, 110),
+			skin = SKINS[i],
+			hat = keeper.hat,
+			name = keeper.name,
+		})
 	end
 	-- Lantern posts at the entrance.
 	for _, side in { -1, 1 } do
@@ -434,9 +475,35 @@ end
 
 -- Animation and level-of-detail ------------------------------------------------
 
+-- A shopkeeper behind each deep zone's market counter (ZoneService builds
+-- the counter at the zone center, facing spawn).
+local ZONE_KEEPERS = {
+	KelpForest = { name = "Kelpie", shirt = Color3.fromRGB(70, 160, 90), hat = Color3.fromRGB(200, 230, 120) },
+	Shipwreck = { name = "Old Barnaby", shirt = Color3.fromRGB(120, 80, 50), hat = Color3.fromRGB(30, 30, 40) },
+	DeepSea = { name = "Lumi", shirt = Color3.fromRGB(60, 80, 170), hat = Color3.fromRGB(120, 230, 255) },
+}
+
+local function buildZoneKeepers()
+	for zoneId, zone in Balance.zones do
+		local keeper = ZONE_KEEPERS[zoneId]
+		if keeper then
+			local center = Vector3.new(zone.center[1], 0, zone.center[2])
+			local model = group(zone.name .. " Keeper", center)
+			buildPerson(model, CFrame.lookAt(center, Vector3.zero) * CFrame.new(0, 0, 3.5), {
+				shirt = keeper.shirt,
+				pants = Color3.fromRGB(60, 70, 110),
+				skin = SKINS[(#zoneId % #SKINS) + 1],
+				hat = keeper.hat,
+				name = keeper.name,
+			})
+		end
+	end
+end
+
 function Landmarks.start(onOpenMarket: () -> ())
 	openMarket = onOpenMarket
 	buildPlaza()
+	buildZoneKeepers()
 	buildRuin()
 	buildLighthouse()
 	buildWhale()
@@ -487,19 +554,8 @@ function Landmarks.start(onOpenMarket: () -> ())
 				frames[#frames + 1] = hinge * clam.offsets[i]
 			end
 		end
-		-- The shopkeeper bobs and waves now and then.
-		if shopkeeper then
-			local bob = CFrame.new(0, math.sin(t * 2) * 0.08, 0)
-			for i, p in shopkeeper.parts do
-				local offset = shopkeeper.offsets[i]
-				if i == shopkeeper.arm then
-					local wave = math.max(0, math.sin(t * 0.8)) * (1.6 + math.sin(t * 8) * 0.35)
-					offset = CFrame.new(1.45, 3.9, 0) * CFrame.Angles(0, 0, wave) * CFrame.new(0, -0.9, 0)
-				end
-				parts[#parts + 1] = p
-				frames[#frames + 1] = shopkeeper.base * bob * offset
-			end
-		end
+		-- Shopkeepers bob and wave; shoppers stroll around the plaza.
+		posePeople(t, parts, frames)
 		if lighthouseBeam then
 			local beam = lighthouseBeam :: BasePart
 			parts[#parts + 1] = beam

@@ -313,34 +313,52 @@ local CURB_COLOR = Color3.fromRGB(120, 72, 58)
 local LANTERN_COLOR = Color3.fromRGB(255, 215, 140)
 local LANTERN_SPACING = 26
 
+-- One straight stretch of walkway with curbs and lanterns.
+local function walkwaySegment(model: Model, start: Vector3, finish: Vector3)
+	local length = (finish - start).Magnitude
+	if length < 2 then
+		return
+	end
+	local frame = CFrame.lookAt((start + finish) / 2, finish)
+	anchoredPart({ Name = "Walkway", Size = Vector3.new(PATH_WIDTH, 0.5, length), CFrame = frame, Color = PATH_COLOR, Material = Enum.Material.Brick, CanQuery = false }).Parent = model
+	for _, side in { -1, 1 } do
+		anchoredPart({ Name = "Curb", Size = Vector3.new(0.6, 0.7, length), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.3), 0, 0), Color = CURB_COLOR, Material = Enum.Material.Slate, CanQuery = false }).Parent = model
+	end
+	-- Lanterns on alternating sides.
+	local side = 1
+	for d = LANTERN_SPACING / 2, length - 4, LANTERN_SPACING do
+		local spot = (frame * CFrame.new(side * (PATH_WIDTH / 2 + 1.2), 0, length / 2 - d)).Position
+		anchoredPart({ Name = "LanternPost", Size = Vector3.new(0.5, 5, 0.5), CFrame = CFrame.new(spot + Vector3.new(0, 2.5, 0)), Color = CURB_COLOR, Material = Enum.Material.Wood, CanQuery = false }).Parent = model
+		local glow = anchoredPart({ Name = "Lantern", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.3, CFrame = CFrame.new(spot + Vector3.new(0, 5.4, 0)), Color = LANTERN_COLOR, Material = Enum.Material.Neon, CanCollide = false, CanQuery = false })
+		local light = Instance.new("PointLight")
+		light.Color = LANTERN_COLOR
+		light.Range = 12
+		light.Brightness = 1.2
+		light.Parent = glow
+		glow.Parent = model
+		side = -side
+	end
+end
+
+-- From the spawn disc to the plot's front. A walkway that would cross the
+-- Market plaza stops at its edge and picks up again on the far side, so it
+-- never sits under the plaza floor.
 local function buildWalkway(model: Model, base: BasePart)
 	local front = (base.CFrame * CFrame.new(0, 0, -(base.Size.Z / 2 + 1))).Position
 	local finish = Vector3.new(front.X, 0, front.Z)
 	local direction = finish.Unit
 	local start = direction * SPAWN_DISC
-	local length = (finish - start).Magnitude
-	local frame = CFrame.lookAt((start + finish) / 2, finish)
 	local plaza = Balance.world.plaza
 	local plazaCenter = Vector3.new(math.cos(math.rad(plaza.angle)), 0, math.sin(math.rad(plaza.angle))) * plaza.radius
-	anchoredPart({ Name = "Walkway", Size = Vector3.new(PATH_WIDTH, 0.5, length), CFrame = frame, Color = PATH_COLOR, Material = Enum.Material.Brick, CanQuery = false }).Parent = model
-	for _, side in { -1, 1 } do
-		anchoredPart({ Name = "Curb", Size = Vector3.new(0.6, 0.7, length), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.3), 0, 0), Color = CURB_COLOR, Material = Enum.Material.Slate, CanQuery = false }).Parent = model
-	end
-	-- Lanterns on alternating sides, skipping the Market plaza.
-	local side = 1
-	for d = LANTERN_SPACING / 2, length - 4, LANTERN_SPACING do
-		local spot = (frame * CFrame.new(side * (PATH_WIDTH / 2 + 1.2), 0, length / 2 - d)).Position
-		if (Vector3.new(spot.X, 0, spot.Z) - plazaCenter).Magnitude > plaza.size + 2 then
-			anchoredPart({ Name = "LanternPost", Size = Vector3.new(0.5, 5, 0.5), CFrame = CFrame.new(spot + Vector3.new(0, 2.5, 0)), Color = CURB_COLOR, Material = Enum.Material.Wood, CanQuery = false }).Parent = model
-			local glow = anchoredPart({ Name = "Lantern", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.3, CFrame = CFrame.new(spot + Vector3.new(0, 5.4, 0)), Color = LANTERN_COLOR, Material = Enum.Material.Neon, CanCollide = false, CanQuery = false })
-			local light = Instance.new("PointLight")
-			light.Color = LANTERN_COLOR
-			light.Range = 12
-			light.Brightness = 1.2
-			light.Parent = glow
-			glow.Parent = model
-		end
-		side = -side
+	local clear = plaza.size + 1
+	local along = (plazaCenter - start):Dot(direction)
+	local miss = (plazaCenter - (start + direction * along)).Magnitude
+	if miss < clear then
+		local half = math.sqrt(clear * clear - miss * miss)
+		walkwaySegment(model, start, start + direction * (along - half))
+		walkwaySegment(model, start + direction * (along + half), finish)
+	else
+		walkwaySegment(model, start, finish)
 	end
 end
 
