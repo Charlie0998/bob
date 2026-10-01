@@ -112,6 +112,20 @@ Ten original sound effects are in `assets/sounds` (see its README). They're wire
 
 Upload the WAVs in Studio (Asset Manager → Bulk Import) and put each asset ID in `src/shared/Sounds.json`. Until then, harvest, plant, slot, and level-up use built-in placeholders and the rest are silent.
 
+### Market, world, and polish
+
+| Feature | Code |
+|---|---|
+| Market plaza at spawn (stalls, lanterns, shopkeeper) and Market panel: 6 rotating coral slots (10-minute restock, paid restock, sold-out), Daily Deal, Decor for Shells, Trade link | `MarketService.luau`, `Market.luau`, `Landmarks.luau`, `ShopRotation.market` |
+| Top bar (level, pearls, shells), stacked toasts, first-time tutorial with arrows, loading screen | `init.client.luau`, `Toasts.luau`, `Tutorial.luau`, `TutorialService.luau`, `src/first/LoadingScreen.client.luau` |
+| Day/night cycle, depth-based water color, event moods, bioluminescence at night | `Mood.luau` |
+| Caustics on the seafloor and rippling surface (textures in `assets/textures`, IDs in `Textures.json`) | `Water.luau` |
+| Landmarks: sunken ruin, lighthouse island, whale skeleton, hydrothermal vents, opening giant clam, boats and a whale overhead | `Landmarks.luau` |
+| Ambient life: turtles, mantas, hermit crabs, cleaner fish at ready corals, night jellyfish; fish schools scatter | `Ambient.luau`, `Fish.luau` |
+| Tycoon plots: rim, pillars, arch with name banner, growth tiers, glowing shell path, sand details | `PlotDecor.luau` |
+| Message bottles and hidden chests with Shell rewards | `FindsService.luau`, `FindsRenderer.luau` |
+| Level-up and Tide Reset celebrations, ambient music (`assets/sounds/ambient_music.wav`) | `Effects.luau`, `SoundFX.luau` |
+
 ### Setting up purchases
 
 All items show "Not set up" until you add their IDs:
