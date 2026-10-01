@@ -10,6 +10,7 @@ local TweenService = game:GetService("TweenService")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
 local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
+local ShopRotation = require(ReplicatedStorage.Shared.ShopRotation)
 local CoralRenderer = require(script.CoralRenderer)
 local Effects = require(script.Effects)
 local Fish = require(script.Fish)
@@ -123,6 +124,51 @@ local nextLabel = make("TextLabel", {
 	Parent = gui,
 })
 
+-- Reef health meter ------------------------------------------------------
+
+local HEALTH_COLORS = {
+	Struggling = Color3.fromRGB(230, 120, 90),
+	Healthy = Color3.fromRGB(120, 210, 140),
+	Thriving = Color3.fromRGB(110, 230, 230),
+}
+local healthFill = make("Frame", {
+	Size = UDim2.fromScale(0, 1),
+	BackgroundColor3 = HEALTH_COLORS.Healthy,
+	BorderSizePixel = 0,
+}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+local healthLabel = make("TextLabel", {
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 0, 90),
+	Size = UDim2.fromOffset(240, 20),
+	BackgroundTransparency = 1,
+	TextColor3 = COLORS.text,
+	TextStrokeTransparency = 0.5,
+	Font = Enum.Font.GothamBold,
+	TextSize = 14,
+	Text = "",
+	Parent = gui,
+})
+make("Frame", {
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 0, 112),
+	Size = UDim2.fromOffset(200, 10),
+	BackgroundColor3 = COLORS.panel,
+	BackgroundTransparency = 0.2,
+	Parent = gui,
+}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }), healthFill })
+
+local function updateHealth()
+	local score = player:GetAttribute("ReefHealth") or 0
+	local tier = player:GetAttribute("HealthTier") or "Struggling"
+	local multiplier = player:GetAttribute("HealthMultiplier") or 1
+	healthLabel.Text = string.format("Reef health: %s %d  (x%.2f pearls)", tier, score, multiplier)
+	healthFill.BackgroundColor3 = HEALTH_COLORS[tier] or HEALTH_COLORS.Healthy
+	TweenService:Create(healthFill, TweenInfo.new(0.4), { Size = UDim2.fromScale(score / 100, 1) }):Play()
+end
+player:GetAttributeChangedSignal("ReefHealth"):Connect(updateHealth)
+player:GetAttributeChangedSignal("HealthTier"):Connect(updateHealth)
+updateHealth()
+
 local toastScale = make("UIScale", {})
 local toastLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
@@ -168,7 +214,7 @@ updatePearls()
 
 local shopCorals = {}
 for name, def in Balance.corals do
-	if def.inShop then
+	if def.inShop or table.find(Balance.shopRotation.pool, name) then
 		table.insert(shopCorals, name)
 	end
 end
@@ -229,11 +275,29 @@ end
 local function updatePicker()
 	local selected = player:GetAttribute("SelectedCoral")
 	local slots = player:GetAttribute("Slots") or 0
+	local now = workspace:GetServerTimeNow()
+	local rotating, endsAt = ShopRotation.current(Balance.shopRotation, now)
+	local left = ReefMath.formatDuration(endsAt - now)
 	for name, button in pickerButtons do
 		local def = Balance.corals[name]
 		local locked = slots < def.unlockSlots
-		button.Text = if locked then string.format("%s\nUnlocks at %d slots", def.displayName, def.unlockSlots) else button:GetAttribute("Label")
-		button.BackgroundColor3 = if locked then COLORS.locked elseif name == selected then COLORS.selected else COLORS.panel
+		local text = button:GetAttribute("Label")
+		if locked then
+			text = string.format("%s\nUnlocks at %d slots", def.displayName, def.unlockSlots)
+		elseif not def.inShop then
+			-- Rotating rare shop: in stock for the rest of this period, or restocking.
+			if rotating == name then
+				text = string.format("%s\n%d · %s left", def.displayName, def.cost, left)
+			else
+				locked = true
+				text = string.format("%s\nRestock in %s", def.displayName, left)
+			end
+		end
+		button.Text = text
+		button.BackgroundColor3 = if locked then COLORS.locked
+			elseif name == selected then COLORS.selected
+			elseif not def.inShop then Color3.fromRGB(120, 80, 170)
+			else COLORS.panel
 	end
 end
 player:GetAttributeChangedSignal("SelectedCoral"):Connect(updatePicker)
@@ -295,6 +359,7 @@ updatePicker()
 while true do
 	local now = workspace:GetServerTimeNow()
 	CoralRenderer.update(now)
+	updatePicker()
 	local soonest: number? = nil
 	local soonestName = ""
 	local readyCount = 0

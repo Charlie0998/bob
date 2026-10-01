@@ -9,7 +9,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
+local ReefHealth = require(ReplicatedStorage.Shared.ReefHealth)
 local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
+local ShopRotation = require(ReplicatedStorage.Shared.ShopRotation)
 local PlayerStore = require(script.Parent.PlayerStore)
 
 local SLOT_TAG = "ReefSlot"
@@ -117,6 +119,33 @@ local function setPearls(player: Player, pearls: number)
 	end
 end
 
+-- Coral types a player may buy right now: the regular shop plus whatever the
+-- rotating rare shop has in stock.
+local function canBuy(coralType: string): boolean
+	local def = Balance.corals[coralType]
+	if not def then
+		return false
+	end
+	if def.inShop then
+		return true
+	end
+	local rotating = ShopRotation.current(Balance.shopRotation, os.time())
+	return rotating == coralType
+end
+
+local function refreshHealth(player: Player)
+	local data = PlayerStore.get(player)
+	if not data then
+		return
+	end
+	local score = ReefHealth.score(data.corals, data.slots, os.time(), Balance.offlineCapSeconds, Balance.reefHealth)
+	local tier = ReefHealth.tier(score, Balance.reefHealth)
+	player:SetAttribute("ReefHealth", score)
+	player:SetAttribute("HealthTier", tier.name)
+	player:SetAttribute("HealthMultiplier", tier.multiplier)
+end
+ReefService.refreshHealth = refreshHealth
+
 local function plotCFrame(index: number): CFrame
 	local ring = (index - 1) // PLOT_RING
 	local angle = ((index - 1) % PLOT_RING) / PLOT_RING * math.pi * 2
@@ -156,7 +185,7 @@ local function createSlot(player: Player, state: PlayerState, slot: number)
 		Shape = Enum.PartType.Cylinder,
 		Size = Vector3.new(0.4, CELL - 1, CELL - 1),
 		CFrame = base.CFrame * slotOffset(slot) * CFrame.Angles(0, 0, math.pi / 2),
-		Color = Color3.fromRGB(240, 222, 175),
+		Color = Color3.fromRGB(215, 195, 150),
 		Material = Enum.Material.Sand,
 	})
 	tile:SetAttribute("OwnerId", player.UserId)
@@ -205,7 +234,7 @@ local function buildPlot(player: Player, state: PlayerState)
 		Name = "Base",
 		Size = Vector3.new(GRID_COLUMNS * CELL + 4, 1, rows * CELL + 4),
 		CFrame = plotCFrame(state.plotIndex),
-		Color = Color3.fromRGB(226, 205, 150),
+		Color = Color3.fromRGB(200, 180, 130),
 		Material = Enum.Material.Sand,
 	})
 	base.Parent = model
@@ -318,7 +347,10 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 
 	if coral then
 		local def = Balance.corals[coral.type]
-		local gained, newPlantedAt = ReefMath.harvest(coral.plantedAt, now, def.growSeconds, def.pearls, Balance.offlineCapSeconds)
+		local multiplier = ReefService.incomeMultiplier(player)
+		local gained, newPlantedAt =
+			ReefMath.harvest(coral.plantedAt, now, def.growSeconds, def.pearls, Balance.offlineCapSeconds)
+		gained = math.floor(gained * multiplier)
 		if gained == 0 then
 			local left = ReefMath.secondsUntilReady(coral.plantedAt, now, def.growSeconds)
 			toast(player, def.displayName .. " ready in " .. ReefMath.formatDuration(left))
@@ -333,12 +365,17 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 			logOnboarding(player, ONBOARDING.firstHarvest)
 		end
 		data.stats.harvests += 1
+		refreshHealth(player)
 		toast(player, "+" .. gained .. " pearls", "pearls")
 		return
 	end
 
 	local coralType = state.selected
 	local def = Balance.corals[coralType]
+	if not canBuy(coralType) then
+		toast(player, def.displayName .. " is out of stock")
+		return
+	end
 	if data.slots < def.unlockSlots then
 		toast(player, def.displayName .. " unlocks at " .. def.unlockSlots .. " slots")
 		return
@@ -357,6 +394,7 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 		logOnboarding(player, ONBOARDING.firstPlant)
 	end
 	data.stats.planted += 1
+	refreshHealth(player)
 end
 
 function ReefService.onBuySlot(player: Player, pad: BasePart)
@@ -386,6 +424,7 @@ function ReefService.onBuySlot(player: Player, pad: BasePart)
 	player:SetAttribute("Slots", data.slots)
 	createSlot(player, state, data.slots)
 	updatePad(player, state)
+	refreshHealth(player)
 	toast(player, "New slot unlocked!", "unlock")
 	local newTile = state.plot:FindFirstChild("Slot" .. data.slots)
 	effectRemote:FireAllClients("slot", newTile, 0, player.UserId)
@@ -399,8 +438,7 @@ local function onSelectCoral(player: Player, coralType: unknown)
 	if type(coralType) ~= "string" then
 		return
 	end
-	local def = Balance.corals[coralType]
-	if not def or not def.inShop then
+	if not canBuy(coralType) then
 		return
 	end
 	state.selected = coralType
@@ -444,6 +482,7 @@ local function onLoaded(player: Player)
 	player:SetAttribute("SelectedCoral", state.selected)
 	player:SetAttribute("Slots", data.slots)
 	player:SetAttribute("PlotIndex", plotIndex)
+	refreshHealth(player)
 
 	if data.stats.planted == 0 and data.stats.harvests == 0 then
 		logOnboarding(player, ONBOARDING.joined)
@@ -474,7 +513,22 @@ local function onPlayerRemoving(player: Player)
 	end
 end
 
+-- Total harvest multiplier. Other systems (prestige, friends, passes) add
+-- their factors here as they are built.
+function ReefService.incomeMultiplier(player: Player): number
+	return player:GetAttribute("HealthMultiplier") :: number? or 1
+end
+
 function ReefService.start()
+	-- Care decays while players are away, so rescore everyone each minute.
+	task.spawn(function()
+		while true do
+			task.wait(60)
+			for player in states do
+				refreshHealth(player)
+			end
+		end
+	end)
 	remotes.Parent = ReplicatedStorage
 	plotsFolder.Parent = workspace
 	selectRemote.OnServerEvent:Connect(onSelectCoral)

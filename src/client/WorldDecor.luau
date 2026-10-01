@@ -168,7 +168,7 @@ local function buildSunbeams(rng: Random)
 				* CFrame.Angles(0, 0, math.rad(18)),
 			Color = Color3.fromRGB(200, 245, 255),
 			Material = Enum.Material.Neon,
-			Transparency = 0.94,
+			Transparency = 0.96,
 			CastShadow = false,
 		})
 		table.insert(beams, { part = part, phase = rng:NextNumber(0, math.pi * 2) })
@@ -288,7 +288,7 @@ function WorldDecor.start()
 
 		-- Sunbeams slowly brighten and fade.
 		for _, beam in beams do
-			beam.part.Transparency = 0.93 + math.sin(t * 0.4 + beam.phase) * 0.03
+			beam.part.Transparency = 0.955 + math.sin(t * 0.4 + beam.phase) * 0.02
 		end
 	end)
 

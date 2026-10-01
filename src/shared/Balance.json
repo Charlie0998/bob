@@ -16,7 +16,11 @@
 			"cost": 10,
 			"inShop": true,
 			"unlockSlots": 0,
-			"color": [255, 170, 120]
+			"color": [
+				255,
+				170,
+				120
+			]
 		},
 		"Brain": {
 			"displayName": "Brain Coral",
@@ -26,7 +30,11 @@
 			"cost": 120,
 			"inShop": true,
 			"unlockSlots": 8,
-			"color": [240, 120, 170]
+			"color": [
+				240,
+				120,
+				170
+			]
 		},
 		"Fan": {
 			"displayName": "Fan Coral",
@@ -36,7 +44,11 @@
 			"cost": 1500,
 			"inShop": false,
 			"unlockSlots": 12,
-			"color": [150, 110, 230]
+			"color": [
+				150,
+				110,
+				230
+			]
 		},
 		"GlowingTube": {
 			"displayName": "Glowing Tube Coral",
@@ -46,7 +58,11 @@
 			"cost": 0,
 			"inShop": false,
 			"unlockSlots": 0,
-			"color": [90, 230, 210]
+			"color": [
+				90,
+				230,
+				210
+			]
 		},
 		"Crystal": {
 			"displayName": "Crystal Coral",
@@ -56,7 +72,43 @@
 			"cost": 0,
 			"inShop": false,
 			"unlockSlots": 0,
-			"color": [200, 240, 255]
+			"color": [
+				200,
+				240,
+				255
+			]
 		}
+	},
+	"shopRotation": {
+		"periodSeconds": 1800,
+		"pool": [
+			"Fan"
+		],
+		"stockChance": 0.6
+	},
+	"reefHealth": {
+		"varietyTarget": 4,
+		"weights": {
+			"variety": 0.4,
+			"density": 0.4,
+			"care": 0.2
+		},
+		"tiers": [
+			{
+				"name": "Struggling",
+				"min": 0,
+				"multiplier": 1.0
+			},
+			{
+				"name": "Healthy",
+				"min": 40,
+				"multiplier": 1.1
+			},
+			{
+				"name": "Thriving",
+				"min": 80,
+				"multiplier": 1.25
+			}
+		]
 	}
 }
