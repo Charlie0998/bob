@@ -10,6 +10,7 @@ local CORALS_PER_FISH = 2
 local SPAWN_FISH = 8
 local ANIMATE_DISTANCE = 220
 local REBALANCE_SECONDS = 3
+local SCATTER_RADIUS = 9
 
 local PALETTES = {
 	{ body = Color3.fromRGB(255, 140, 40), stripe = Color3.fromRGB(255, 255, 255) }, -- clownfish
@@ -29,6 +30,7 @@ type Fish = {
 	speed: number,
 	phase: number,
 	direction: number,
+	scatter: Vector3, -- pushed away when a player swims close; decays back to 0
 }
 
 local Fish = {}
@@ -91,6 +93,7 @@ local function makeFish(rng: Random, center: () -> Vector3?, radius: number): Fi
 		speed = rng:NextNumber(3, 6),
 		phase = rng:NextNumber(0, math.pi * 2),
 		direction = if rng:NextNumber() < 0.5 then 1 else -1,
+		scatter = Vector3.zero,
 	}
 end
 
@@ -171,6 +174,8 @@ function Fish.start()
 	local frames: { CFrame } = {}
 	RunService.RenderStepped:Connect(function()
 		local t = os.clock()
+		local character = Players.LocalPlayer.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		local cameraPosition = camera.CFrame.Position
 		table.clear(parts)
 		table.clear(frames)
@@ -183,6 +188,16 @@ function Fish.start()
 			local angle = fish.phase + fish.direction * t * fish.speed / fish.radius
 			local y = fish.height + math.sin(t * 0.8 + fish.phase) * 0.8
 			local position = center + Vector3.new(math.cos(angle) * fish.radius, y, math.sin(angle) * fish.radius)
+			-- Scatter: dart away from the player, then drift back into the school.
+			if root then
+				local away = (position + fish.scatter) - root.Position
+				local distance = away.Magnitude
+				if distance < SCATTER_RADIUS and distance > 0.01 then
+					fish.scatter += away.Unit * (SCATTER_RADIUS - distance) * 0.25
+				end
+			end
+			fish.scatter *= 0.96
+			position += fish.scatter
 			local heading = Vector3.new(-math.sin(angle), 0, math.cos(angle)) * fish.direction
 			local body = CFrame.lookAt(position, position + heading)
 			-- The tail hinges just behind the body and swishes side to side.

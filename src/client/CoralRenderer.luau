@@ -18,6 +18,8 @@ type Entry = {
 	model: Model?,
 	rainbow: { BasePart }?,
 	readyFx: ParticleEmitter?,
+	readyGlow: { light: PointLight, ring: BasePart }?,
+	ready: boolean,
 	scale: number,
 	animating: boolean,
 }
@@ -154,6 +156,28 @@ local function rebuild(tile: BasePart, entry: Entry)
 	model.Name = "CoralVisual"
 	model:PivotTo(uprightFrame(tile))
 	entry.readyFx = makeReadyFx(model)
+	-- Ready-to-harvest glow: a soft light and a glowing ring at the base that pulse.
+	local ring = Instance.new("Part")
+	ring.Name = "ReadyRing"
+	ring.Shape = Enum.PartType.Cylinder
+	ring.Size = Vector3.new(0.1, 4.6, 4.6)
+	ring.Anchored = true
+	ring.CanCollide = false
+	ring.CanQuery = false
+	ring.CanTouch = false
+	ring.CastShadow = false
+	ring.Material = Enum.Material.Neon
+	ring.Color = Color3.fromRGB(255, 230, 120)
+	ring.Transparency = 1
+	ring.CFrame = uprightFrame(tile) * CFrame.new(0, 0.08, 0) * CFrame.Angles(0, 0, math.pi / 2)
+	ring.Parent = model
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 225, 140)
+	light.Range = 9
+	light.Brightness = 0
+	light.Parent = model.PrimaryPart
+	entry.readyGlow = { light = light, ring = ring }
+	entry.ready = false
 	entry.rainbow = nil
 	local mutation = tile:GetAttribute("Mutation")
 	if type(mutation) == "string" and mutation ~= "" then
@@ -173,7 +197,7 @@ local function onTileAdded(instance: Instance)
 		return
 	end
 	local tile = instance :: BasePart
-	local entry: Entry = { model = nil, rainbow = nil, readyFx = nil, scale = 1, animating = false }
+	local entry: Entry = { model = nil, rainbow = nil, readyFx = nil, readyGlow = nil, ready = false, scale = 1, animating = false }
 	entries[tile] = entry
 	rebuild(tile, entry)
 	tile:GetAttributeChangedSignal("CoralType"):Connect(function()
@@ -209,6 +233,7 @@ function CoralRenderer.update(now: number)
 		end
 		local plantedAt = tile:GetAttribute("PlantedAt") or now
 		local cycles = ReefMath.readyCycles(plantedAt, now, def.growSeconds, Balance.offlineCapSeconds)
+		entry.ready = cycles > 0
 		if entry.readyFx then
 			entry.readyFx.Enabled = cycles > 0
 		end
@@ -230,6 +255,17 @@ function CoralRenderer.pulse(tile: BasePart)
 		local scale = entry.scale
 		animateScale(entry, scale * 1.18, scale, 0.35, Enum.EasingStyle.Elastic)
 	end
+end
+
+-- Tops of corals that are ready to harvest (cleaner fish gather there).
+function CoralRenderer.readyTops(): { Vector3 }
+	local list = {}
+	for tile, entry in entries do
+		if entry.ready and entry.model then
+			table.insert(list, CoralRenderer.topOf(tile))
+		end
+	end
+	return list
 end
 
 function CoralRenderer.topOf(tile: BasePart): Vector3
@@ -268,6 +304,12 @@ function CoralRenderer.start()
 		accumulator = 0
 		local t = os.clock()
 		for _, entry in entries do
+			-- Ready corals pulse.
+			if entry.readyGlow then
+				local pulse = (math.sin(t * 3.2) + 1) / 2
+				entry.readyGlow.light.Brightness = if entry.ready then 0.6 + pulse * 1.4 else 0
+				entry.readyGlow.ring.Transparency = if entry.ready then 0.55 + (1 - pulse) * 0.35 else 1
+			end
 			if entry.rainbow then
 				for i, part in entry.rainbow do
 					part.Color = Color3.fromHSV((t * 0.15 + i * 0.07) % 1, 0.6, 1)

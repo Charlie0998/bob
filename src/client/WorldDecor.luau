@@ -184,6 +184,8 @@ end
 
 type Beam = { part: BasePart, phase: number }
 local beams: { Beam } = {}
+local isNight = false
+local surfacePart: BasePart? = nil
 
 local function buildSunbeams(rng: Random)
 	for _ = 1, 18 do
@@ -263,7 +265,7 @@ local function buildPlankton()
 end
 
 local function buildSurface()
-	newPart({
+	surfacePart = newPart({
 		Name = "WaterSurface",
 		Size = Vector3.new(2048, 1, 2048),
 		CFrame = CFrame.new(0, SURFACE_HEIGHT, 0),
@@ -565,6 +567,27 @@ local function runZoneMood()
 	end
 end
 
+-- Night: kelp tips glow softly (bioluminescence), sunbeams fade, and the
+-- surface overhead goes dark.
+function WorldDecor.setNight(night: boolean)
+	isNight = night
+	for _, kelp in kelps do
+		local tip = kelp.parts[#kelp.parts]
+		if tip then
+			tip.Material = if night then Enum.Material.Neon else Enum.Material.SmoothPlastic
+			if night then
+				tip:SetAttribute("DayColor", tip:GetAttribute("DayColor") or tip.Color)
+				tip.Color = Color3.fromRGB(110, 255, 210)
+			elseif tip:GetAttribute("DayColor") then
+				tip.Color = tip:GetAttribute("DayColor")
+			end
+		end
+	end
+	if surfacePart then
+		surfacePart.Color = if night then Color3.fromRGB(20, 40, 70) else Color3.fromRGB(130, 210, 235)
+	end
+end
+
 function WorldDecor.start()
 	local rng = Random.new(SEED)
 	buildGarden(rng)
@@ -614,7 +637,7 @@ function WorldDecor.start()
 
 		-- Sunbeams slowly brighten and fade.
 		for _, beam in beams do
-			beam.part.Transparency = 0.955 + math.sin(t * 0.4 + beam.phase) * 0.02
+			beam.part.Transparency = if isNight then 1 else 0.955 + math.sin(t * 0.4 + beam.phase) * 0.02
 		end
 	end)
 

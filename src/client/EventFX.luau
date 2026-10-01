@@ -1,7 +1,7 @@
 -- Client visuals for reef events: a countdown banner, plus
---   Coral Bloom - pink tint and drifting pollen
---   Night Glow  - nightfall, and every coral lights up
---   Storm       - dark, murky water with lightning flashes
+--   Coral Bloom - pink coral-spawn particles rising through the water
+--   Night Glow  - glowing motes (Mood handles the nightfall)
+--   Storm       - debris, lightning flashes, rumble, and camera shake
 -- Also draws the treasure chests a storm leaves behind.
 
 local CollectionService = game:GetService("CollectionService")
@@ -10,7 +10,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
-local CoralRenderer = require(script.Parent.CoralRenderer)
 local DecorModels = require(ReplicatedStorage.Shared.DecorModels)
 local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
 local SoundFX = require(script.Parent.SoundFX)
@@ -18,58 +17,39 @@ local UIKit = require(script.Parent.UIKit)
 
 local EventFX = {}
 
-local FADE = TweenInfo.new(2, Enum.EasingStyle.Sine)
-
 local tint = Instance.new("ColorCorrectionEffect")
 tint.Name = "EventTint"
 tint.Enabled = true
 
-local defaults = {
-	ClockTime = Lighting.ClockTime,
-	Brightness = Lighting.Brightness,
-	Ambient = Lighting.Ambient,
-	OutdoorAmbient = Lighting.OutdoorAmbient,
-}
-
 local particlesPart: BasePart
 local particles: ParticleEmitter
 local stormRunning = false
+local shakeUntil = 0
 
-local function setParticles(color: Color3?, rate: number, speed: number)
+local function setParticles(color: Color3?, rate: number, speed: number, direction: Enum.NormalId?)
 	particles.Enabled = color ~= nil
 	if color then
-		particles.Color = ColorSequence.new(color)
+		particles.Color = ColorSequence.new(color, Color3.fromRGB(255, 255, 255))
 		particles.Rate = rate
 		particles.Speed = NumberRange.new(speed * 0.5, speed)
+		particles.EmissionDirection = direction or Enum.NormalId.Top
+		particles.SpreadAngle = if direction then Vector2.new(25, 25) else Vector2.new(180, 180)
 	end
 end
 
+-- Lighting and water color for events are handled by Mood; this adds the
+-- particles, sounds, lightning, and camera shake.
 local function apply(eventId: string)
-	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
 	stormRunning = eventId == "Storm"
-	CoralRenderer.setNightGlow(eventId == "NightGlow")
 	if eventId == "Bloom" then
-		TweenService:Create(tint, FADE, { TintColor = Color3.fromRGB(255, 225, 240), Brightness = 0.03, Saturation = 0.2 }):Play()
-		TweenService:Create(Lighting, FADE, defaults):Play()
-		setParticles(Color3.fromRGB(255, 170, 210), 40, 1.5)
+		-- Coral spawn: little pink and white dots drifting up through the water.
+		setParticles(Color3.fromRGB(255, 150, 200), 90, 2.5, Enum.NormalId.Top)
 	elseif eventId == "NightGlow" then
-		TweenService:Create(tint, FADE, { TintColor = Color3.fromRGB(200, 215, 255), Brightness = -0.05, Saturation = 0.1 }):Play()
-		TweenService:Create(Lighting, FADE, {
-			ClockTime = 0,
-			Brightness = 0.6,
-			Ambient = Color3.fromRGB(40, 50, 90),
-			OutdoorAmbient = Color3.fromRGB(50, 60, 110),
-		}):Play()
 		setParticles(Color3.fromRGB(150, 255, 230), 25, 0.6)
 	elseif eventId == "Storm" then
 		SoundFX.play("storm_event")
-		TweenService:Create(tint, FADE, { TintColor = Color3.fromRGB(190, 200, 210), Brightness = -0.08, Saturation = -0.3 }):Play()
-		TweenService:Create(Lighting, FADE, { Brightness = 0.9, ClockTime = defaults.ClockTime }):Play()
-		if atmosphere then
-			TweenService:Create(atmosphere, FADE, { Density = 0.5 }):Play()
-		end
 		setParticles(Color3.fromRGB(200, 210, 200), 90, 6)
-		-- Lightning flashes.
+		-- Lightning flashes with a rumble of camera shake.
 		task.spawn(function()
 			while stormRunning do
 				task.wait(math.random(4, 9))
@@ -77,15 +57,12 @@ local function apply(eventId: string)
 					break
 				end
 				tint.Brightness = 0.35
-				TweenService:Create(tint, TweenInfo.new(0.4), { Brightness = -0.08 }):Play()
+				TweenService:Create(tint, TweenInfo.new(0.4), { Brightness = 0 }):Play()
+				shakeUntil = os.clock() + 0.6
+				SoundFX.play("storm_event")
 			end
 		end)
 	else
-		TweenService:Create(tint, FADE, { TintColor = Color3.new(1, 1, 1), Brightness = 0, Saturation = 0 }):Play()
-		TweenService:Create(Lighting, FADE, defaults):Play()
-		if atmosphere then
-			TweenService:Create(atmosphere, FADE, { Density = 0.3 }):Play()
-		end
 		setParticles(nil, 0, 0)
 	end
 end
@@ -117,6 +94,15 @@ end
 
 function EventFX.start(gui: ScreenGui)
 	tint.Parent = Lighting
+	-- Storm rumble: a short camera shake after each lightning flash.
+	RunService:BindToRenderStep("StormShake", Enum.RenderPriority.Camera.Value + 1, function()
+		local left = shakeUntil - os.clock()
+		if left > 0 then
+			local strength = left * 0.5
+			local camera = workspace.CurrentCamera
+			camera.CFrame *= CFrame.new((math.random() - 0.5) * strength, (math.random() - 0.5) * strength, 0)
+		end
+	end)
 	particlesPart = Instance.new("Part")
 	particlesPart.Name = "EventParticles"
 	particlesPart.Anchored = true
