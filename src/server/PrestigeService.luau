@@ -53,6 +53,8 @@ local function onReset(player: Player)
 		"unlock"
 	)
 	ReefService.activity(player, "prestige", 1)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	ReefService.effect("rebirth", root, data.prestige.level, player.UserId)
 	if CONFIG.badgeId ~= 0 then
 		task.spawn(pcall, function()
 			BadgeService:AwardBadgeAsync(player.UserId, CONFIG.badgeId)

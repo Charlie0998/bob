@@ -9,6 +9,7 @@ local TweenService = game:GetService("TweenService")
 local CoralRenderer = require(script.Parent.CoralRenderer)
 local CreatureRenderer = require(script.Parent.CreatureRenderer)
 local SoundFX = require(script.Parent.SoundFX)
+local UIKit = require(script.Parent.UIKit)
 
 local player = Players.LocalPlayer
 
@@ -183,6 +184,93 @@ local function onFeed(anchor: BasePart, shells: number, isMine: boolean)
 	end
 end
 
+-- Full-screen celebration for the local player: a flash, a big banner that
+-- pops in, and confetti falling across the screen.
+local celebrationGui: ScreenGui? = nil
+
+local function celebrate(title: string, subtitle: string, color: Color3)
+	if not celebrationGui then
+		local made = Instance.new("ScreenGui")
+		made.Name = "Celebrations"
+		made.IgnoreGuiInset = true
+		made.ResetOnSpawn = false
+		made.DisplayOrder = 20
+		made.Parent = player:WaitForChild("PlayerGui")
+		celebrationGui = made
+	end
+	local gui = celebrationGui :: ScreenGui
+	local flash = Instance.new("Frame")
+	flash.Size = UDim2.fromScale(1, 1)
+	flash.BackgroundColor3 = Color3.new(1, 1, 1)
+	flash.BackgroundTransparency = 0.4
+	flash.Parent = gui
+	TweenService:Create(flash, TweenInfo.new(0.5), { BackgroundTransparency = 1 }):Play()
+	Debris:AddItem(flash, 0.6)
+
+	local banner = UIKit.make("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.35),
+		Size = UDim2.fromOffset(360, 110),
+		Parent = gui,
+	})
+	UIKit.gloss(banner, UIKit.COLORS.panel, 20)
+	local stroke = banner:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Color = color
+		stroke.Thickness = 4
+	end
+	UIKit.label(title, { Position = UDim2.fromOffset(10, 8), Size = UDim2.new(1, -20, 0, 56), TextScaled = true, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = color, TextStrokeTransparency = 0, Parent = banner })
+	UIKit.label(subtitle, { Position = UDim2.fromOffset(10, 66), Size = UDim2.new(1, -20, 0, 34), TextSize = 16, TextXAlignment = Enum.TextXAlignment.Center, Parent = banner })
+	local scale = Instance.new("UIScale")
+	scale.Scale = 0.2
+	scale.Parent = banner
+	TweenService:Create(scale, TweenInfo.new(0.45, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+	task.delay(2.4, function()
+		TweenService:Create(scale, TweenInfo.new(0.25), { Scale = 0 }):Play()
+		Debris:AddItem(banner, 0.3)
+	end)
+
+	local palette = { UIKit.COLORS.gold, UIKit.COLORS.coral, UIKit.COLORS.accent, UIKit.COLORS.purple, Color3.new(1, 1, 1) }
+	for _ = 1, 60 do
+		local piece = Instance.new("Frame")
+		piece.Size = UDim2.fromOffset(math.random(6, 12), math.random(10, 18))
+		piece.Position = UDim2.new(math.random(), 0, -0.05, 0)
+		piece.Rotation = math.random(0, 360)
+		piece.BackgroundColor3 = palette[math.random(1, #palette)]
+		piece.BorderSizePixel = 0
+		piece.Parent = gui
+		local fall = TweenService:Create(piece, TweenInfo.new(math.random(18, 30) / 10, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Position = UDim2.new(piece.Position.X.Scale + (math.random() - 0.5) * 0.3, 0, 1.1, 0),
+			Rotation = piece.Rotation + math.random(-360, 360),
+		})
+		fall:Play()
+		Debris:AddItem(piece, 3.2)
+	end
+end
+
+local function onRebirth(root: BasePart, level: number, isMine: boolean)
+	for i = 0, 2 do
+		task.delay(i * 0.25, function()
+			burst(root.Position + Vector3.new(0, i * 2, 0), {
+				Texture = SPARKLE,
+				Color = ColorSequence.new(Color3.fromRGB(120, 230, 255), Color3.fromRGB(255, 255, 255)),
+				LightEmission = 1,
+				Size = NumberSequence.new(1.4, 0),
+				Lifetime = NumberRange.new(1, 1.6),
+				Speed = NumberRange.new(12, 20),
+				Drag = 2,
+			}, 60)
+		end)
+	end
+	if isMine then
+		playSound("level_up")
+		task.delay(0.3, function()
+			playSound("rare_find")
+		end)
+		celebrate("TIDE RESET!", string.format("Tide level %d: your pearls are worth more forever", level), Color3.fromRGB(120, 230, 255))
+	end
+end
+
 local function onLevelUp(root: BasePart, level: number, isMine: boolean)
 	burst(root.Position, {
 		Texture = SPARKLE,
@@ -196,6 +284,7 @@ local function onLevelUp(root: BasePart, level: number, isMine: boolean)
 	floatingText(root.Position + Vector3.new(0, 4, 0), "Level " .. level .. "!", Color3.fromRGB(150, 235, 255))
 	if isMine then
 		playSound("level_up")
+		celebrate("LEVEL " .. level .. "!", "Your reef grows stronger", UIKit.COLORS.gold)
 	end
 end
 
@@ -221,6 +310,8 @@ function Effects.start(remotes: Instance)
 			onSlot(target, isMine)
 		elseif kind == "feed" then
 			onFeed(target, amount, isMine)
+		elseif kind == "rebirth" then
+			onRebirth(target, amount, isMine)
 		elseif kind == "levelup" then
 			onLevelUp(target, amount, isMine)
 		elseif kind == "leave" then

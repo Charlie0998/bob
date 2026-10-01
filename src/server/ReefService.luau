@@ -328,37 +328,9 @@ local function buildPlot(player: Player, state: PlayerState)
 	base.Parent = model
 	model.PrimaryPart = base
 
-	-- Low rock border so the plot reads as its own little reef.
-	local rng = Random.new(state.plotIndex)
-	local halfX, halfZ = base.Size.X / 2, base.Size.Z / 2
-	local perimeter = 2 * (base.Size.X + base.Size.Z)
-	for i = 0, 27 do
-		local d = i / 28 * perimeter
-		local x, z
-		if d < base.Size.X then
-			x, z = -halfX + d, halfZ
-		elseif d < base.Size.X + base.Size.Z then
-			x, z = halfX, halfZ - (d - base.Size.X)
-		elseif d < 2 * base.Size.X + base.Size.Z then
-			x, z = halfX - (d - base.Size.X - base.Size.Z), -halfZ
-		else
-			x, z = -halfX, -halfZ + (d - 2 * base.Size.X - base.Size.Z)
-		end
-		if z == -halfZ and math.abs(x) < 7 then
-			continue -- leave a gap at the front for the buy pad
-		end
-		local size = rng:NextNumber(1.6, 3)
-		anchoredPart({
-			Name = "Rock",
-			Size = Vector3.new(size * rng:NextNumber(1, 1.6), size * 0.7, size),
-			CFrame = base.CFrame
-				* CFrame.new(x, 0.6, z)
-				* CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, math.pi * 2), rng:NextNumber(-0.3, 0.3)),
-			Color = Color3.fromRGB(110, 120, 135):Lerp(Color3.fromRGB(150, 140, 125), rng:NextNumber()),
-			Material = Enum.Material.Slate,
-			CanCollide = false,
-		}).Parent = model
-	end
+	-- The rim, pillars, arch, and other scenery are drawn by each client (PlotDecor).
+	local halfZ = base.Size.Z / 2
+	model:SetAttribute("OwnerId", player.UserId)
 
 	-- Name sign so visitors know whose reef this is.
 	local sign = Instance.new("BillboardGui")

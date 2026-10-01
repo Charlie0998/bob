@@ -588,6 +588,23 @@ function WorldDecor.setNight(night: boolean)
 	end
 end
 
+-- Adds a swaying stalk after startup (anemones, plot plants) and places it
+-- right away; it joins the shared sway animation. Returns its parts.
+function WorldDecor.addSwaying(position: Vector3, segments: number, color: Color3, parent: Instance?): { BasePart }
+	local rng = Random.new(math.floor(position.X * 31 + position.Z * 17))
+	addKelp(rng, position, segments, color)
+	local kelp = kelps[#kelps]
+	local frames = {}
+	kelpFrames(kelp, os.clock(), frames)
+	workspace:BulkMoveTo(kelp.parts, frames, Enum.BulkMoveMode.FireCFrameChanged)
+	if parent then
+		for _, part in kelp.parts do
+			part.Parent = parent
+		end
+	end
+	return kelp.parts
+end
+
 function WorldDecor.start()
 	local rng = Random.new(SEED)
 	buildGarden(rng)

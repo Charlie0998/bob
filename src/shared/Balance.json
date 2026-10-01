@@ -1710,5 +1710,20 @@
 		},
 		"surfaceHeight": 95,
 		"dayLengthSeconds": 960
+	},
+	"finds": {
+		"bottles": 6,
+		"chests": 4,
+		"bottleShells": [
+			5,
+			10
+		],
+		"chestShells": [
+			15,
+			25
+		],
+		"respawnSeconds": 1200,
+		"minRadius": 215,
+		"maxRadius": 560
 	}
 }
