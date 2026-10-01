@@ -207,8 +207,8 @@ local function buildPlaza()
 	local model = group("MarketPlaza", center, true)
 	local facing = CFrame.lookAt(center, Vector3.new(0, 0, 0))
 	-- A round tiled floor with a sandstone rim.
-	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 56, 56), CFrame = CFrame.new(center + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(215, 195, 160), Material = Enum.Material.Pavement })
-	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 18, 18), CFrame = CFrame.new(center + Vector3.new(0, 0.35, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(38, 172, 186), Material = Enum.Material.Pavement })
+	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 56, 56), CFrame = CFrame.new(center + Vector3.new(0, 0.2, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(215, 195, 160), Material = Enum.Material.Pavement, CanCollide = true }) -- solid, so feet don't sink in
+	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 18, 18), CFrame = CFrame.new(center + Vector3.new(0, 0.35, 0)) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(38, 172, 186), Material = Enum.Material.Pavement, CanCollide = true })
 	-- Four stalls in an arc behind the plaza center, facing spawn.
 	local titles = { "Coral Market", "Rare Corals", "Daily Deal", "Decor & Trade" }
 	-- Spaced far enough apart that awnings and signs don't overlap.

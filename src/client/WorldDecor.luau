@@ -631,8 +631,10 @@ end
 -- Walkways are flat slabs (top 0.25) with a raised border (top 0.35); the
 -- spawn disc (top 0.45) is higher still so no two tops ever line up.
 local function buildPaths()
-	local stone = Color3.fromRGB(196, 178, 146)
-	local border = Color3.fromRGB(150, 132, 108)
+	-- Grey stone so the walkways stand out against the sand. Solid, so you
+	-- walk on top of them instead of through them.
+	local stone = Color3.fromRGB(150, 158, 168)
+	local border = Color3.fromRGB(92, 102, 118)
 	newPart({
 		Name = "SpawnDisc",
 		Shape = Enum.PartType.Cylinder,
@@ -640,13 +642,14 @@ local function buildPaths()
 		CFrame = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.pi / 2),
 		Color = Color3.fromRGB(38, 172, 186),
 		Material = Enum.Material.Pavement,
+		CanCollide = true,
 	})
 	for _, path in paths do
 		local length = (path.to - path.from).Magnitude
 		local frame = CFrame.lookAt((path.from + path.to) / 2, path.to)
-		newPart({ Name = "Path", Size = Vector3.new(PATH_WIDTH, 0.5, length), CFrame = frame, Color = stone, Material = Enum.Material.Cobblestone })
+		newPart({ Name = "Path", Size = Vector3.new(PATH_WIDTH, 0.5, length), CFrame = frame, Color = stone, Material = Enum.Material.Cobblestone, CanCollide = true })
 		for _, side in { -1, 1 } do
-			newPart({ Name = "PathEdge", Size = Vector3.new(0.6, 0.7, length), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.3), 0, 0), Color = border, Material = Enum.Material.Slate })
+			newPart({ Name = "PathEdge", Size = Vector3.new(0.6, 0.7, length), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.3), 0, 0), Color = border, Material = Enum.Material.Slate, CanCollide = true })
 		end
 	end
 end
@@ -661,7 +664,7 @@ local function buildGroundPatches(rng: Random)
 		{ Color3.fromRGB(205, 182, 140), Enum.Material.Ground },
 	}
 	for _ = 1, 70 do
-		local spot = randomClearSpot(rng, 30, 520, 10)
+		local spot = randomClearSpot(rng, 30, 520, 22) -- wide margin so patches never cover a walkway
 		if spot then
 			local look = looks[rng:NextInteger(1, #looks)]
 			local p = newPart({
