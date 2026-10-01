@@ -68,6 +68,7 @@ Everything in the design doc's launch scope and Updates 2 and 3 is built. All tu
 | Reef visits | Visit any reef on the server; visitor and host both get a capped daily pearl bonus. Visitors can feed the host's creatures | `SocialService.luau` |
 | Friend boost | +5% income per friend on the same server, up to 3 friends | `SocialService.luau` |
 | Leaderboards | Leaderboard area off the ring road with all-time Most Rebirths, Most Shells, and Most Pearls boards; Shells and Rebirths also in the player list | `LeaderboardService.luau` |
+| Tap a fish | Tapping a swimming fish sends it darting off in bubbles and pays 1 pearl (2 s cooldown, 100 per visit) | `Fish.luau`, `FishService.luau` |
 | Friend join bonus | A friend joining your server pays you both 100 pearls and 10 shells, once per friend | `SocialService.luau` |
 | Likes and Top Reefs | Like a reef once a day; a weekly board at spawn lists the most-liked reefs | `SocialService.luau` |
 | Trading | Trade inventory corals with two steps (Ready, then Confirm), a value summary on both sides, Robux-bought corals locked, a 3-day account age minimum, and a daily cap | `TradeService.luau` |

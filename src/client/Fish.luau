@@ -1,9 +1,15 @@
--- Client-side schools of fish. A few circle the spawn garden, and each reef
--- gets more fish as its owner plants more coral, so a growing reef visibly
--- comes alive. All fish move in one BulkMoveTo call per frame.
+-- Client-side schools of fish. A few circle the Market in the middle, and
+-- each reef gets more fish as its owner plants more coral, so a growing reef
+-- visibly comes alive. Tap a fish and it darts off in a puff of bubbles (the
+-- server pays a pearl, with a cooldown). All fish move in one BulkMoveTo call
+-- per frame.
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local SoundFX = require(script.Parent.SoundFX)
 
 local MAX_FISH_PER_REEF = 10
 local CORALS_PER_FISH = 2
@@ -154,7 +160,7 @@ end
 
 function Fish.start()
 	folder.Parent = workspace
-	local spawnCenter = Vector3.new(0, 0, 0)
+	local spawnCenter = Vector3.new(0, 2.3, 0) -- above the Market floor
 	for _ = 1, SPAWN_FISH do
 		table.insert(fishes, makeFish(rng, function()
 			return spawnCenter
@@ -211,6 +217,54 @@ function Fish.start()
 		if #parts > 0 then
 			workspace:BulkMoveTo(parts, frames, Enum.BulkMoveMode.FireCFrameChanged)
 		end
+	end)
+
+	-- Tapping a fish: the fish nearest the tap on screen (within a generous
+	-- radius, since fish are small and quick) darts off in a puff of bubbles,
+	-- and the server is told. Matching on screen instead of making fish
+	-- clickable means fish never block taps on slots behind them.
+	local tapRemote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("TapFish") :: RemoteEvent
+	local TAP_PIXELS = 45
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if processed or (input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch) then
+			return
+		end
+		local best: Fish? = nil
+		local bestDistance = TAP_PIXELS
+		for _, fish in fishes do
+			local body = fish.parts[1]
+			if body.Parent and (body.Position - camera.CFrame.Position).Magnitude < 120 then
+				local screen, visible = camera:WorldToViewportPoint(body.Position)
+				local distance = (Vector2.new(screen.X, screen.Y) - Vector2.new(input.Position.X, input.Position.Y)).Magnitude
+				if visible and distance < bestDistance then
+					best, bestDistance = fish, distance
+				end
+			end
+		end
+		local fish = best
+		if not fish then
+			return
+		end
+		local hitPosition = fish.parts[1].Position
+		local away = (hitPosition - camera.CFrame.Position).Unit
+		fish.scatter += (away + Vector3.new(0, 0.6, 0)).Unit * 10
+		local puff = Instance.new("Attachment")
+		puff.Parent = workspace.Terrain
+		puff.WorldPosition = hitPosition
+		local bubbles = Instance.new("ParticleEmitter")
+		bubbles.Texture = "rbxasset://textures/particles/smoke_main.dds"
+		bubbles.Color = ColorSequence.new(Color3.fromRGB(230, 250, 255))
+		bubbles.Size = NumberSequence.new(0.3, 0.7)
+		bubbles.Transparency = NumberSequence.new(0.2, 1)
+		bubbles.Lifetime = NumberRange.new(0.6, 1.2)
+		bubbles.Speed = NumberRange.new(3, 6)
+		bubbles.SpreadAngle = Vector2.new(180, 180)
+		bubbles.Enabled = false
+		bubbles.Parent = puff
+		bubbles:Emit(14)
+		task.delay(2, puff.Destroy, puff)
+		SoundFX.play("bubble_pop")
+		tapRemote:FireServer()
 	end)
 
 	Players.LocalPlayer.CharacterAdded:Connect(function()
