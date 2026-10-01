@@ -1,6 +1,7 @@
 -- Builds each player's reef plot and handles planting, harvesting, and slot
--- purchases. All state changes happen here on the server; clients only render
--- the attributes set on slot parts and send a validated coral selection.
+-- purchases. All state changes happen here on the server; clients render the
+-- coral models and effects from the attributes set on slot parts, and send
+-- only a validated coral selection.
 
 local AnalyticsService = game:GetService("AnalyticsService")
 local CollectionService = game:GetService("CollectionService")
@@ -50,6 +51,10 @@ toastRemote.Parent = remotes
 local selectRemote = Instance.new("RemoteEvent")
 selectRemote.Name = "SelectCoral"
 selectRemote.Parent = remotes
+-- Server -> all clients: (kind, slotOrPad, amount, actorUserId) for visual effects.
+local effectRemote = Instance.new("RemoteEvent")
+effectRemote.Name = "Effect"
+effectRemote.Parent = remotes
 
 local plotsFolder = Instance.new("Folder")
 plotsFolder.Name = "Reefs"
@@ -127,59 +132,58 @@ local function slotOffset(slot: number): CFrame
 	return CFrame.new((col - (GRID_COLUMNS - 1) / 2) * CELL, 0.7, (row - (rows - 1) / 2) * CELL)
 end
 
-local function renderCoral(slotPart: BasePart, coralType: string?)
-	local existing = slotPart:FindFirstChild("Coral")
-	if existing then
-		existing:Destroy()
+local function anchoredPart(props: { [string]: any }): Part
+	local part = Instance.new("Part")
+	part.Anchored = true
+	part.Material = Enum.Material.SmoothPlastic
+	for key, value in props do
+		(part :: any)[key] = value
 	end
-	slotPart:SetAttribute("CoralType", coralType or "")
-	if not coralType then
-		return
-	end
-	local def = Balance.corals[coralType]
-	local coral = Instance.new("Part")
-	coral.Name = "Coral"
-	coral.Shape = Enum.PartType.Ball
-	coral.Size = Vector3.new(3, 3, 3)
-	coral.Color = Color3.fromRGB(def.color[1], def.color[2], def.color[3])
-	coral.Material = if def.rarity == "Epic" or def.rarity == "Legendary" then Enum.Material.Neon else Enum.Material.SmoothPlastic
-	coral.Anchored = true
-	coral.CanCollide = false
-	coral.CanQuery = false
-	coral.CFrame = slotPart.CFrame * CFrame.new(0, 1.5, 0)
-	coral.Parent = slotPart
+	return part
+end
+
+local function setCoral(tile: BasePart, coral: PlayerStore.CoralSave?)
+	tile:SetAttribute("CoralType", if coral then coral.type else "")
+	tile:SetAttribute("PlantedAt", if coral then coral.plantedAt else 0)
+	tile:SetAttribute("BornAt", if coral then coral.bornAt or coral.plantedAt else 0)
 end
 
 local function createSlot(player: Player, state: PlayerState, slot: number)
 	local base = state.plot.PrimaryPart :: BasePart
-	local part = Instance.new("Part")
-	part.Name = "Slot" .. slot
-	part.Size = Vector3.new(CELL - 1, 0.4, CELL - 1)
-	part.Color = Color3.fromRGB(236, 214, 160)
-	part.Material = Enum.Material.Sand
-	part.Anchored = true
-	part.CFrame = base.CFrame * slotOffset(slot)
-	part:SetAttribute("OwnerId", player.UserId)
-	part:SetAttribute("Slot", slot)
-	part:SetAttribute("CoralType", "")
-	part:SetAttribute("PlantedAt", 0)
+	-- A round sand tile: a cylinder turned on its side.
+	local tile = anchoredPart({
+		Name = "Slot" .. slot,
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.4, CELL - 1, CELL - 1),
+		CFrame = base.CFrame * slotOffset(slot) * CFrame.Angles(0, 0, math.pi / 2),
+		Color = Color3.fromRGB(240, 222, 175),
+		Material = Enum.Material.Sand,
+	})
+	tile:SetAttribute("OwnerId", player.UserId)
+	tile:SetAttribute("Slot", slot)
 
+	-- Invisible box over the slot so tapping anywhere on a tall coral counts.
+	local hitbox = anchoredPart({
+		Name = "Hitbox",
+		Size = Vector3.new(CELL - 1, 5, CELL - 1),
+		CFrame = base.CFrame * slotOffset(slot) * CFrame.new(0, 2.5, 0),
+		Transparency = 1,
+		CanCollide = false,
+		CanTouch = false,
+		CastShadow = false,
+	})
 	local click = Instance.new("ClickDetector")
 	click.MaxActivationDistance = MAX_REACH
 	click.MouseClick:Connect(function(clicker)
-		ReefService.onSlotClicked(clicker, part)
+		ReefService.onSlotClicked(clicker, tile)
 	end)
-	click.Parent = part
-
-	CollectionService:AddTag(part, SLOT_TAG)
-	part.Parent = state.plot
+	click.Parent = hitbox
+	hitbox.Parent = tile
 
 	local data = PlayerStore.get(player)
-	local coral = data and data.corals[tostring(slot)]
-	if coral then
-		part:SetAttribute("PlantedAt", coral.plantedAt)
-		renderCoral(part, coral.type)
-	end
+	setCoral(tile, data and data.corals[tostring(slot)])
+	CollectionService:AddTag(tile, SLOT_TAG)
+	tile.Parent = state.plot
 end
 
 local function updatePad(player: Player, state: PlayerState)
@@ -196,25 +200,94 @@ local function buildPlot(player: Player, state: PlayerState)
 	local model = Instance.new("Model")
 	model.Name = player.Name .. "'s Reef"
 
-	local base = Instance.new("Part")
-	base.Name = "Base"
 	local rows = math.ceil(Balance.maxSlots / GRID_COLUMNS)
-	base.Size = Vector3.new(GRID_COLUMNS * CELL + 4, 1, rows * CELL + 4)
-	base.CFrame = plotCFrame(state.plotIndex)
-	base.Color = Color3.fromRGB(70, 150, 170)
-	base.Material = Enum.Material.SmoothPlastic
-	base.Anchored = true
+	local base = anchoredPart({
+		Name = "Base",
+		Size = Vector3.new(GRID_COLUMNS * CELL + 4, 1, rows * CELL + 4),
+		CFrame = plotCFrame(state.plotIndex),
+		Color = Color3.fromRGB(226, 205, 150),
+		Material = Enum.Material.Sand,
+	})
 	base.Parent = model
 	model.PrimaryPart = base
 
-	local pad = Instance.new("Part")
-	pad.Name = "BuyPad"
-	pad.Size = Vector3.new(8, 1, 4)
-	pad.CFrame = base.CFrame * CFrame.new(0, 0.2, -(base.Size.Z / 2 + 3))
-	pad.Color = Color3.fromRGB(255, 210, 90)
-	pad.Material = Enum.Material.SmoothPlastic
-	pad.Anchored = true
+	-- Low rock border so the plot reads as its own little reef.
+	local rng = Random.new(state.plotIndex)
+	local halfX, halfZ = base.Size.X / 2, base.Size.Z / 2
+	local perimeter = 2 * (base.Size.X + base.Size.Z)
+	for i = 0, 27 do
+		local d = i / 28 * perimeter
+		local x, z
+		if d < base.Size.X then
+			x, z = -halfX + d, halfZ
+		elseif d < base.Size.X + base.Size.Z then
+			x, z = halfX, halfZ - (d - base.Size.X)
+		elseif d < 2 * base.Size.X + base.Size.Z then
+			x, z = halfX - (d - base.Size.X - base.Size.Z), -halfZ
+		else
+			x, z = -halfX, -halfZ + (d - 2 * base.Size.X - base.Size.Z)
+		end
+		if z == -halfZ and math.abs(x) < 7 then
+			continue -- leave a gap at the front for the buy pad
+		end
+		local size = rng:NextNumber(1.6, 3)
+		anchoredPart({
+			Name = "Rock",
+			Size = Vector3.new(size * rng:NextNumber(1, 1.6), size * 0.7, size),
+			CFrame = base.CFrame
+				* CFrame.new(x, 0.6, z)
+				* CFrame.Angles(rng:NextNumber(-0.3, 0.3), rng:NextNumber(0, math.pi * 2), rng:NextNumber(-0.3, 0.3)),
+			Color = Color3.fromRGB(110, 120, 135):Lerp(Color3.fromRGB(150, 140, 125), rng:NextNumber()),
+			Material = Enum.Material.Slate,
+			CanCollide = false,
+		}).Parent = model
+	end
+
+	-- Name sign so visitors know whose reef this is.
+	local sign = Instance.new("BillboardGui")
+	sign.Size = UDim2.fromOffset(240, 50)
+	sign.StudsOffsetWorldSpace = Vector3.new(0, 14, 0)
+	sign.MaxDistance = 200
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.fromScale(1, 1)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Font = Enum.Font.FredokaOne
+	nameLabel.TextScaled = true
+	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	nameLabel.TextStrokeTransparency = 0.4
+	nameLabel.Text = player.DisplayName .. "'s Reef"
+	nameLabel.Parent = sign
+	sign.Parent = base
+
+	-- Golden shell-like pad for buying slots.
+	local pad = anchoredPart({
+		Name = "BuyPad",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.8, 7, 7),
+		CFrame = base.CFrame * CFrame.new(0, 0.1, -(halfZ + 4)) * CFrame.Angles(0, 0, math.pi / 2),
+		Color = Color3.fromRGB(255, 205, 90),
+	})
 	pad:SetAttribute("OwnerId", player.UserId)
+	anchoredPart({
+		Name = "Glow",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.85, 5, 5),
+		CFrame = pad.CFrame,
+		Color = Color3.fromRGB(255, 240, 170),
+		Material = Enum.Material.Neon,
+		CanCollide = false,
+		CanQuery = false,
+	}).Parent = pad
+	local sparkle = Instance.new("ParticleEmitter")
+	sparkle.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	sparkle.Color = ColorSequence.new(Color3.fromRGB(255, 235, 150))
+	sparkle.Size = NumberSequence.new(0.4, 0)
+	sparkle.Lifetime = NumberRange.new(1, 1.6)
+	sparkle.Rate = 4
+	sparkle.Speed = NumberRange.new(1, 2)
+	sparkle.EmissionDirection = Enum.NormalId.Right -- the cylinder's axis points up
+	sparkle.LightEmission = 1
+	sparkle.Parent = pad
 	local click = Instance.new("ClickDetector")
 	click.MaxActivationDistance = MAX_REACH
 	click.MouseClick:Connect(function(clicker)
@@ -253,6 +326,7 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 		end
 		coral.plantedAt = newPlantedAt
 		part:SetAttribute("PlantedAt", newPlantedAt)
+		effectRemote:FireAllClients("harvest", part, gained, player.UserId)
 		setPearls(player, data.pearls + gained)
 		logPearls(player, Enum.AnalyticsEconomyFlowType.Source, gained, data.pearls, "Harvest_" .. coral.type)
 		if data.stats.harvests == 0 then
@@ -273,9 +347,10 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 		toast(player, "Need " .. def.cost .. " pearls for " .. def.displayName)
 		return
 	end
-	data.corals[key] = { type = coralType, plantedAt = now }
-	part:SetAttribute("PlantedAt", now)
-	renderCoral(part, coralType)
+	local planted = { type = coralType, plantedAt = now, bornAt = now }
+	data.corals[key] = planted
+	setCoral(part, planted)
+	effectRemote:FireAllClients("plant", part, 0, player.UserId)
 	setPearls(player, data.pearls - def.cost)
 	logPearls(player, Enum.AnalyticsEconomyFlowType.Sink, def.cost, data.pearls, "Plant_" .. coralType)
 	if data.stats.planted == 0 then
@@ -312,6 +387,8 @@ function ReefService.onBuySlot(player: Player, pad: BasePart)
 	createSlot(player, state, data.slots)
 	updatePad(player, state)
 	toast(player, "New slot unlocked!", "unlock")
+	local newTile = state.plot:FindFirstChild("Slot" .. data.slots)
+	effectRemote:FireAllClients("slot", newTile, 0, player.UserId)
 end
 
 local function onSelectCoral(player: Player, coralType: unknown)

@@ -1,14 +1,25 @@
 -- Client: draws the HUD, coral picker, and timers over the local player's
--- slots. It only reads attributes the server sets; the one request it sends
--- (SelectCoral) is validated on the server.
+-- slots, and starts the visual modules (corals, effects, world, fish). It only
+-- reads attributes the server sets; the one request it sends (SelectCoral) is
+-- validated on the server.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
 local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
+local CoralRenderer = require(script.CoralRenderer)
+local Effects = require(script.Effects)
+local Fish = require(script.Fish)
+local WorldDecor = require(script.WorldDecor)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+
+WorldDecor.start()
+CoralRenderer.start()
+Effects.start(Remotes)
+task.spawn(Fish.start)
 
 local player = Players.LocalPlayer
 local UPDATE_SECONDS = 0.25
@@ -27,14 +38,33 @@ local function make(className: string, props: { [string]: any }, children: { Ins
 	for key, value in props do
 		(inst :: any)[key] = value
 	end
-	for _, child in children or {} do
-		child.Parent = inst
+	if children then
+		for _, child in children do
+			child.Parent = inst
+		end
 	end
 	return inst
 end
 
 local function corner(): UICorner
 	return make("UICorner", { CornerRadius = UDim.new(0, 12) })
+end
+
+local function stroke(): UIStroke
+	return make("UIStroke", { Color = Color3.fromRGB(150, 230, 240), Thickness = 2, Transparency = 0.3 })
+end
+
+local function gradient(): UIGradient
+	return make("UIGradient", {
+		Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 190, 200)),
+		Rotation = 90,
+	})
+end
+
+-- Briefly grows a GUI object and springs it back.
+local function bump(scale: UIScale, from: number)
+	scale.Scale = from
+	TweenService:Create(scale, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
 end
 
 -- HUD --------------------------------------------------------------------
@@ -46,18 +76,39 @@ local gui = make("ScreenGui", {
 	Parent = player:WaitForChild("PlayerGui"),
 })
 
+local pearlScale = make("UIScale", {})
 local pearlLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 0),
 	Position = UDim2.new(0.5, 0, 0, 8),
-	Size = UDim2.fromOffset(200, 52),
+	Size = UDim2.fromOffset(210, 52),
 	BackgroundColor3 = COLORS.panel,
-	BackgroundTransparency = 0.2,
+	BackgroundTransparency = 0.15,
 	TextColor3 = COLORS.pearl,
+	TextXAlignment = Enum.TextXAlignment.Right,
 	Font = Enum.Font.FredokaOne,
 	TextSize = 28,
-	Text = "0 pearls",
+	Text = "0",
 	Parent = gui,
-}, { corner() })
+}, {
+	corner(),
+	stroke(),
+	gradient(),
+	pearlScale,
+	make("UIPadding", { PaddingRight = UDim.new(0, 16) }),
+	-- A shiny pearl icon.
+	make("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 10, 0.5, 0),
+		Size = UDim2.fromOffset(34, 34),
+		BackgroundColor3 = Color3.fromRGB(255, 250, 240),
+	}, {
+		make("UICorner", { CornerRadius = UDim.new(1, 0) }),
+		make("UIGradient", {
+			Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(225, 200, 230)),
+			Rotation = 45,
+		}),
+	}),
+})
 
 local nextLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 0),
@@ -72,18 +123,19 @@ local nextLabel = make("TextLabel", {
 	Parent = gui,
 })
 
+local toastScale = make("UIScale", {})
 local toastLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Position = UDim2.fromScale(0.5, 0.3),
 	Size = UDim2.fromOffset(320, 48),
 	BackgroundColor3 = COLORS.panel,
-	BackgroundTransparency = 0.2,
+	BackgroundTransparency = 0.15,
 	TextColor3 = COLORS.text,
 	Font = Enum.Font.FredokaOne,
 	TextSize = 22,
 	Visible = false,
 	Parent = gui,
-}, { corner() })
+}, { corner(), stroke(), toastScale })
 
 local toastSerial = 0
 Remotes:WaitForChild("Toast").OnClientEvent:Connect(function(text: string, kind: string)
@@ -92,6 +144,7 @@ Remotes:WaitForChild("Toast").OnClientEvent:Connect(function(text: string, kind:
 	toastLabel.Text = text
 	toastLabel.TextColor3 = if kind == "pearls" then COLORS.pearl elseif kind == "unlock" then COLORS.ready else COLORS.text
 	toastLabel.Visible = true
+	bump(toastScale, 0.6)
 	task.delay(1.5, function()
 		if toastSerial == serial then
 			toastLabel.Visible = false
@@ -99,8 +152,14 @@ Remotes:WaitForChild("Toast").OnClientEvent:Connect(function(text: string, kind:
 	end)
 end)
 
+local shownPearls = 0
 local function updatePearls()
-	pearlLabel.Text = string.format("%d pearls", player:GetAttribute("Pearls") or 0)
+	local pearls = player:GetAttribute("Pearls") or 0
+	if pearls > shownPearls then
+		bump(pearlScale, 1.15)
+	end
+	shownPearls = pearls
+	pearlLabel.Text = string.format("%d", pearls)
 end
 player:GetAttributeChangedSignal("Pearls"):Connect(updatePearls)
 updatePearls()
@@ -135,16 +194,32 @@ local selectRemote = Remotes:WaitForChild("SelectCoral")
 local pickerButtons: { [string]: TextButton } = {}
 for _, name in shopCorals do
 	local def = Balance.corals[name]
+	local buttonScale = make("UIScale", {})
 	local button = make("TextButton", {
 		Size = UDim2.fromOffset(140, 64),
 		BackgroundColor3 = COLORS.panel,
 		TextColor3 = COLORS.text,
 		Font = Enum.Font.FredokaOne,
-		TextSize = 18,
+		TextSize = 17,
 		TextWrapped = true,
+		AutoButtonColor = false,
 		Parent = picker,
-	}, { corner() })
+	}, {
+		corner(),
+		stroke(),
+		gradient(),
+		buttonScale,
+		make("UIPadding", { PaddingLeft = UDim.new(0, 26) }),
+		-- Color swatch so each coral is recognizable at a glance.
+		make("Frame", {
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, -18, 0.5, 0),
+			Size = UDim2.fromOffset(16, 16),
+			BackgroundColor3 = Color3.fromRGB(def.color[1], def.color[2], def.color[3]),
+		}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) }),
+	})
 	button.Activated:Connect(function()
+		bump(buttonScale, 0.85)
 		selectRemote:FireServer(name)
 	end)
 	pickerButtons[name] = button
@@ -212,13 +287,14 @@ local function watchTag(tag: string, labels: { [BasePart]: TextLabel }, offset: 
 	end
 end
 
-watchTag("ReefSlot", slotLabels, 4.5)
+watchTag("ReefSlot", slotLabels, 5.5)
 watchTag("ReefBuyPad", padLabels, 3)
 updatePicker()
 
 -- One loop updates every timer a few times a second, instead of per frame.
 while true do
 	local now = workspace:GetServerTimeNow()
+	CoralRenderer.update(now)
 	local soonest: number? = nil
 	local soonestName = ""
 	local readyCount = 0

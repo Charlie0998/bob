@@ -33,7 +33,26 @@ Saves work in Studio only when **Game Settings → Security → Enable Studio Ac
 | Phone first: big buttons, safe-area HUD, content streaming, one timer loop at 4 Hz | `src/client/init.client.luau`, `default.project.json` |
 | Return hook: HUD always shows the next coral to mature | client timer loop |
 
-Not built yet: creatures, reef health, collection book, prestige, social features, shop rotation, monetization, and art/audio. The design doc's system order is the suggested build order.
+## Visuals and effects
+
+Everything is built from parts and Roblox's built-in effects in code, so there is nothing to upload. Decoration is created on each client and never replicated, which keeps server and network costs low.
+
+![Procedural coral models](docs/coral_preview.png)
+
+| What | Where |
+|---|---|
+| A distinct model for each coral, 9 to 27 parts each, that grows from a small fragment to full size over its first cycle | `src/shared/CoralModels.luau`, `src/client/CoralRenderer.luau` |
+| A sparkle on ready corals; a pearl burst, flying pearls, a floating "+N", and a sound on harvest; a sand puff on planting; new slots rising out of the sand | `src/client/Effects.luau` |
+| Fish that circle each reef, one more for every 2 corals (up to 10), plus a school at spawn | `src/client/Fish.luau` |
+| A coral garden at spawn, rocks, swaying kelp, flickering sunbeams, bubble vents, drifting plankton, and a water surface | `src/client/WorldDecor.luau` |
+| Underwater lighting: atmosphere haze, bloom, color tint, sun rays | `Lighting` in `default.project.json` |
+| Sand plots with rock borders and name signs, round sand slots, a glowing gold buy pad | `buildPlot` / `createSlot` in `ReefService.luau` |
+
+Sounds use built-in Roblox placeholder sounds (`SOUNDS` in `Effects.luau`). Swap in your own uploaded audio IDs there.
+
+To preview coral shapes without Studio, run `python3 tools/preview/render_corals.py`. It runs the real `CoralModels.luau` in the `luau` CLI against a small mock of Roblox's math types and writes `docs/coral_preview.png`. It needs matplotlib.
+
+Not built yet: creature conditions, reef health, collection book, prestige, social features, shop rotation, monetization, custom audio, and uploaded meshes. The design doc's system order is the suggested build order.
 
 ## Project layout
 
@@ -42,12 +61,19 @@ default.project.json     Rojo tree (Workspace, Lighting, script locations)
 src/shared/              ReplicatedStorage.Shared
   Balance.json           coral stats, costs, caps (loaded as a ModuleScript)
   ReefMath.luau          pure growth/cost math used by server, client, and the sim
+  CoralModels.luau       procedural coral models built from parts
 src/server/              ServerScriptService.Server
   init.server.luau       entry point
   PlayerStore.luau       save/load with session lock
   ReefService.luau       plots, planting, harvesting, slot purchases
-src/client/init.client.luau   HUD, coral picker, slot timers
+src/client/              StarterPlayerScripts.Client
+  init.client.luau       HUD, coral picker, slot timers; starts the modules below
+  CoralRenderer.luau     draws and grows corals on slot tiles
+  Effects.luau           harvest/plant/slot effects and sounds
+  Fish.luau              fish schools
+  WorldDecor.luau        seafloor decoration
 tools/economy_sim.py     economy simulator
+tools/preview/           offline coral preview renderer
 tests/reefmath_parity.py checks ReefMath.luau against the simulator's Python mirror
 docs/DESIGN.md           full design and development plan
 ```

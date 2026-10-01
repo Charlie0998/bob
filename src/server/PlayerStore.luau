@@ -17,7 +17,9 @@ local LOCK_ATTEMPTS = 6
 local MAX_ATTEMPTS = 5
 local AUTOSAVE_SECONDS = 120
 
-export type CoralSave = { type: string, plantedAt: number }
+-- plantedAt starts the current harvest cycle; bornAt is when the coral was
+-- first planted (drives its visual size) and is missing from older saves.
+export type CoralSave = { type: string, plantedAt: number, bornAt: number? }
 export type PlayerData = {
 	version: number,
 	pearls: number,
@@ -58,7 +60,7 @@ local function newData(): PlayerData
 		stats = { harvests = 0, planted = 0 },
 	}
 	-- First session: the player spawns with one starter coral already growing.
-	data.corals["1"] = { type = Balance.starterCoral, plantedAt = os.time() }
+	data.corals["1"] = { type = Balance.starterCoral, plantedAt = os.time(), bornAt = os.time() }
 	return data
 end
 
