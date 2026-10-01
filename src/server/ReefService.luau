@@ -754,11 +754,26 @@ local function onLoaded(player: Player)
 		logOnboarding(player, ONBOARDING.joined)
 	end
 
-	-- Spawn the player at their own reef.
+	-- Spawn the player at their own reef. Roblox places a new character at
+	-- the SpawnLocation after CharacterAdded fires, so wait until it's really
+	-- in the world, move it, then check again a moment later.
 	local function moveToPlot(character: Model)
 		local base = state.plot.PrimaryPart :: BasePart
-		task.defer(function()
-			character:PivotTo(base.CFrame * CFrame.new(0, 5, -(base.Size.Z / 2 + 8)) * CFrame.Angles(0, math.pi, 0))
+		local target = base.CFrame * CFrame.new(0, 5, -(base.Size.Z / 2 + 8)) * CFrame.Angles(0, math.pi, 0)
+		task.spawn(function()
+			local root = character:WaitForChild("HumanoidRootPart", 10) :: BasePart?
+			while root and not character:IsDescendantOf(workspace) and character.Parent ~= nil do
+				task.wait()
+			end
+			for _ = 1, 3 do
+				if not root or not character:IsDescendantOf(workspace) then
+					return
+				end
+				if (root.Position - target.Position).Magnitude > 20 then
+					character:PivotTo(target)
+				end
+				task.wait(0.5)
+			end
 		end)
 	end
 	player.CharacterAdded:Connect(moveToPlot)
