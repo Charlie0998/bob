@@ -8,14 +8,13 @@ local Icons = require(ReplicatedStorage.Shared.Icons)
 local UIKit = {}
 
 -- The image for an icon in assets/icons, or nil until its upload ID is set
--- in src/shared/Icons.json. Loading through rbxthumb works whether the ID
--- is an Image or a Decal asset.
+-- in src/shared/Icons.json. IDs must be Image assets (Asset Manager > Images).
 function UIKit.iconImage(name: string): string?
 	local id = (Icons :: any)[name]
 	if type(id) ~= "number" or id == 0 then
 		return nil
 	end
-	return string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", id)
+	return "rbxassetid://" .. id
 end
 
 -- An ImageLabel for an icon, or nil when the icon isn't uploaded yet, so
