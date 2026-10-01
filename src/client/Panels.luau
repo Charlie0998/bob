@@ -132,7 +132,7 @@ function Panels.tide(gui: ScreenGui, remotes: Instance): () -> ()
 				elseif confirming then "Tap again to confirm reset"
 				else "Tide Reset",
 			if ready then "gold" else "muted",
-			{ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, -24, 0, 48), Parent = resetCard }
+			{ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.new(1, -24, 0, 40), Parent = resetCard }
 		)
 		resetButton.Activated:Connect(function()
 			if not ready then
@@ -232,7 +232,7 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 			local button = UIKit.button(
 				if open then Balance.zones[zoneId].name else string.format("%s (Lv %d)", Balance.zones[zoneId].name, at),
 				if open then "gold" else "muted",
-				{ Size = UDim2.new(1 / 3, -4, 0, 56), TextSize = 15, TextWrapped = true, Parent = zoneRow }
+				{ Size = UDim2.new(1 / 3, -4, 0, 46), TextSize = 13, TextWrapped = true, Parent = zoneRow }
 			)
 			UIKit.addIcon(button, ({ KelpForest = "zone_kelp_forest", Shipwreck = "zone_shipwreck", DeepSea = "zone_deep_sea" })[zoneId])
 			button.Activated:Connect(function()
@@ -271,8 +271,8 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 			})
 			local trade = UIKit.button("Trade", "muted", {
 				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -196, 0.5, 0),
-				Size = UDim2.fromOffset(88, 46),
+				Position = UDim2.new(1, -176, 0.5, 0),
+				Size = UDim2.fromOffset(78, 38),
 				Parent = card,
 			})
 			UIKit.addIcon(trade, "trade")
@@ -281,8 +281,8 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 			end)
 			local visit = UIKit.button("Visit", "accent", {
 				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -102, 0.5, 0),
-				Size = UDim2.fromOffset(88, 46),
+				Position = UDim2.new(1, -92, 0.5, 0),
+				Size = UDim2.fromOffset(78, 38),
 				Parent = card,
 			})
 			UIKit.addIcon(visit, "visit")
@@ -293,7 +293,7 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 			local like = UIKit.button("Like", "gold", {
 				AnchorPoint = Vector2.new(1, 0.5),
 				Position = UDim2.new(1, -8, 0.5, 0),
-				Size = UDim2.fromOffset(88, 46),
+				Size = UDim2.fromOffset(78, 38),
 				Parent = card,
 			})
 			UIKit.addIcon(like, "like")
@@ -364,8 +364,8 @@ function Panels.trade(gui: ScreenGui, remotes: Instance): (userId: number) -> ()
 			for i, delta in { -1, 1 } do
 				local step = UIKit.button(if delta < 0 then "-" else "+", "accent", {
 					AnchorPoint = Vector2.new(1, 0.5),
-					Position = UDim2.new(1, if i == 1 then -64 else -8, 0.5, 0),
-					Size = UDim2.fromOffset(50, 44),
+					Position = UDim2.new(1, if i == 1 then -54 else -8, 0.5, 0),
+					Size = UDim2.fromOffset(40, 36),
 					TextSize = 24,
 					Parent = card,
 				})
@@ -407,12 +407,12 @@ function Panels.trade(gui: ScreenGui, remotes: Instance): (userId: number) -> ()
 		local primary = UIKit.button(
 			if state.stage == "offer" then "Ready" else "Confirm trade",
 			"gold",
-			{ Position = UDim2.fromOffset(0, 6), Size = UDim2.new(0.5, -6, 0, 48), Parent = buttons }
+			{ Position = UDim2.fromOffset(0, 6), Size = UDim2.new(0.5, -6, 0, 40), Parent = buttons }
 		)
 		primary.Activated:Connect(function()
 			actionRemote:FireServer(if state.stage == "offer" then "ready" else "confirm")
 		end)
-		local cancel = UIKit.button("Cancel", "muted", { Position = UDim2.new(0.5, 6, 0, 6), Size = UDim2.new(0.5, -6, 0, 48), Parent = buttons })
+		local cancel = UIKit.button("Cancel", "muted", { Position = UDim2.new(0.5, 6, 0, 6), Size = UDim2.new(0.5, -6, 0, 40), Parent = buttons })
 		cancel.Activated:Connect(function()
 			actionRemote:FireServer("cancel")
 		end)
@@ -444,14 +444,14 @@ function Panels.trade(gui: ScreenGui, remotes: Instance): (userId: number) -> ()
 	local popup = make("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 140),
-		Size = UDim2.fromOffset(340, 110),
-		BackgroundColor3 = COLORS.panel,
+		Size = UDim2.fromOffset(300, 100),
 		Visible = false,
 		Parent = gui,
-	}, { UIKit.corner(14), make("UIStroke", { Color = COLORS.gold, Thickness = 2 }) })
+	})
+	UIKit.gloss(popup, COLORS.panel, 14)
 	local popupText = UIKit.label("", { Position = UDim2.fromOffset(12, 6), Size = UDim2.new(1, -24, 0, 40), Parent = popup })
-	local accept = UIKit.button("Accept", "gold", { Position = UDim2.fromOffset(12, 54), Size = UDim2.fromOffset(150, 46), Parent = popup })
-	local decline = UIKit.button("Decline", "muted", { Position = UDim2.fromOffset(176, 54), Size = UDim2.fromOffset(150, 46), Parent = popup })
+	local accept = UIKit.button("Accept", "gold", { Position = UDim2.fromOffset(12, 52), Size = UDim2.fromOffset(132, 38), Parent = popup })
+	local decline = UIKit.button("Decline", "muted", { Position = UDim2.fromOffset(156, 52), Size = UDim2.fromOffset(132, 38), Parent = popup })
 	local fromId: number? = nil
 	accept.Activated:Connect(function()
 		popup.Visible = false
@@ -489,8 +489,8 @@ function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () 
 
 	local function itemRow(order: number, title: string, description: string, buttonText: string, style: string, onBuy: (() -> ())?, iconName: string?)
 		local card = UIKit.card(panel.body, 64, order)
-		local icon = if iconName then UIKit.icon(iconName, { Position = UDim2.fromOffset(6, 4), Size = UDim2.fromOffset(56, 56), Parent = card }) else nil
-		local left = if icon then 68 else 12
+		local icon = if iconName then UIKit.icon(iconName, { Position = UDim2.fromOffset(6, 7), Size = UDim2.fromOffset(46, 46), Parent = card }) else nil
+		local left = if icon then 58 else 12
 		UIKit.label(title, { Position = UDim2.fromOffset(left, 4), Size = UDim2.new(1, -190 - left + 12, 0, 26), Parent = card })
 		UIKit.label(description, {
 			Position = UDim2.fromOffset(left, 30),
@@ -669,11 +669,11 @@ function Panels.streakPopup(gui: ScreenGui)
 	local popup = make("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.42),
-		Size = UDim2.fromOffset(360, 150),
-		BackgroundColor3 = COLORS.panel,
+		Size = UDim2.fromOffset(300, 132),
 		Visible = false,
 		Parent = gui,
-	}, { UIKit.corner(18), make("UIStroke", { Color = COLORS.gold, Thickness = 3 }) })
+	})
+	UIKit.gloss(popup, COLORS.panel, 18)
 	local title = UIKit.label("", {
 		Position = UDim2.fromOffset(16, 10),
 		Size = UDim2.new(1, -32, 0, 34),
@@ -689,7 +689,7 @@ function Panels.streakPopup(gui: ScreenGui)
 		Parent = popup,
 	})
 	-- The gift icon pops up above the card.
-	UIKit.icon("daily_reward", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 30), Size = UDim2.fromOffset(84, 84), Parent = popup })
+	UIKit.icon("daily_reward", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 26), Size = UDim2.fromOffset(64, 64), Parent = popup })
 	local ok = UIKit.button("Collect!", "gold", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -12), Parent = popup })
 	ok.Activated:Connect(function()
 		popup.Visible = false
@@ -713,14 +713,13 @@ function Panels.project(gui: ScreenGui)
 	local ReplicatedStorage_ = game:GetService("ReplicatedStorage")
 	local card = make("Frame", {
 		Position = UDim2.fromOffset(12, 8),
-		Size = UDim2.fromOffset(250, 52),
-		BackgroundColor3 = COLORS.panel,
-		BackgroundTransparency = 0.15,
+		Size = UDim2.fromOffset(210, 42),
 		Parent = gui,
-	}, { UIKit.corner(10) })
-	local text = UIKit.label("", { Position = UDim2.fromOffset(10, 2), Size = UDim2.new(1, -20, 0, 26), TextSize = 14, Parent = card })
+	})
+	UIKit.gloss(card, COLORS.panel, 10)
+	local text = UIKit.label("", { Position = UDim2.fromOffset(8, 2), Size = UDim2.new(1, -16, 0, 22), TextSize = 12, TextScaled = true, Parent = card })
 	local bar = make("Frame", {
-		Position = UDim2.fromOffset(10, 32),
+		Position = UDim2.fromOffset(8, 27),
 		Size = UDim2.new(1, -20, 0, 10),
 		BackgroundColor3 = COLORS.muted,
 		Parent = card,

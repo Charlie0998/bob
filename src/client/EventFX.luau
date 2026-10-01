@@ -141,15 +141,15 @@ function EventFX.start(gui: ScreenGui)
 
 	local banner = UIKit.make("TextLabel", {
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 128),
-		Size = UDim2.fromOffset(300, 34),
-		BackgroundColor3 = UIKit.COLORS.gold,
+		Position = UDim2.new(0.5, 0, 0, 108),
+		Size = UDim2.fromOffset(230, 28),
 		TextColor3 = UIKit.COLORS.goldText,
 		Font = Enum.Font.FredokaOne,
-		TextSize = 18,
+		TextSize = 15,
 		Visible = false,
 		Parent = gui,
-	}, { UIKit.corner(10) })
+	})
+	UIKit.gloss(banner, UIKit.COLORS.gold, 10)
 
 	local EVENT_ICONS = { Bloom = "event_coral_bloom", NightGlow = "event_night_glow", Storm = "event_storm" }
 	local bannerIcon: ImageLabel? = nil
@@ -164,7 +164,7 @@ function EventFX.start(gui: ScreenGui)
 			bannerIcon = UIKit.icon(EVENT_ICONS[id], {
 				AnchorPoint = Vector2.new(1, 0.5),
 				Position = UDim2.new(0, -4, 0.5, 0),
-				Size = UDim2.fromOffset(44, 44),
+				Size = UDim2.fromOffset(36, 36),
 				Parent = banner,
 			})
 		end

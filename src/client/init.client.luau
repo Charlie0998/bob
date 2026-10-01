@@ -13,6 +13,7 @@ local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
 local ReefLevel = require(ReplicatedStorage.Shared.ReefLevel)
 local ShopRotation = require(ReplicatedStorage.Shared.ShopRotation)
 local Book = require(script.Book)
+local ButtonFX = require(script.ButtonFX)
 local CoralRenderer = require(script.CoralRenderer)
 local CreatureRenderer = require(script.CreatureRenderer)
 local Effects = require(script.Effects)
@@ -26,6 +27,7 @@ local WorldDecor = require(script.WorldDecor)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 WorldDecor.start()
+ButtonFX.start()
 CoralRenderer.start()
 CreatureRenderer.start()
 PetRenderer.start()
@@ -57,20 +59,6 @@ local function make(className: string, props: { [string]: any }, children: { Ins
 	return inst
 end
 
-local function corner(): UICorner
-	return make("UICorner", { CornerRadius = UDim.new(0, 12) })
-end
-
-local function stroke(): UIStroke
-	return make("UIStroke", { Color = Color3.fromRGB(150, 230, 240), Thickness = 2, Transparency = 0.3 })
-end
-
-local function gradient(): UIGradient
-	return make("UIGradient", {
-		Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 190, 200)),
-		Rotation = 90,
-	})
-end
 
 -- Briefly grows a GUI object and springs it back.
 local function bump(scale: UIScale, from: number)
@@ -91,26 +79,22 @@ local pearlScale = make("UIScale", {})
 local pearlLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 0),
 	Position = UDim2.new(0.5, 0, 0, 8),
-	Size = UDim2.fromOffset(210, 52),
-	BackgroundColor3 = COLORS.panel,
-	BackgroundTransparency = 0.15,
+	Size = UDim2.fromOffset(160, 40),
 	TextColor3 = COLORS.pearl,
+	TextStrokeTransparency = 0.6,
 	TextXAlignment = Enum.TextXAlignment.Right,
 	Font = Enum.Font.FredokaOne,
-	TextSize = 28,
+	TextSize = 22,
 	Text = "0",
 	Parent = gui,
 }, {
-	corner(),
-	stroke(),
-	gradient(),
 	pearlScale,
-	make("UIPadding", { PaddingRight = UDim.new(0, 16) }),
+	make("UIPadding", { PaddingRight = UDim.new(0, 12) }),
 	-- A shiny pearl icon.
 	make("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 10, 0.5, 0),
-		Size = UDim2.fromOffset(34, 34),
+		Position = UDim2.new(0, 8, 0.5, 0),
+		Size = UDim2.fromOffset(24, 24),
 		BackgroundColor3 = Color3.fromRGB(255, 250, 240),
 	}, {
 		make("UICorner", { CornerRadius = UDim.new(1, 0) }),
@@ -121,10 +105,12 @@ local pearlLabel = make("TextLabel", {
 	}),
 })
 
+UIKit.gloss(pearlLabel, UIKit.COLORS.panel, 12)
+
 local nextLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, 64),
-	Size = UDim2.fromOffset(320, 24),
+	Position = UDim2.new(0.5, 0, 0, 52),
+	Size = UDim2.fromOffset(300, 20),
 	BackgroundTransparency = 1,
 	TextColor3 = COLORS.text,
 	TextStrokeTransparency = 0.5,
@@ -144,35 +130,35 @@ local xpFill = make("Frame", {
 }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 local levelButton = make("TextButton", {
 	AnchorPoint = Vector2.new(1, 0),
-	Position = UDim2.new(0.5, -113, 0, 8),
-	Size = UDim2.fromOffset(86, 52),
+	Position = UDim2.new(0.5, -88, 0, 8),
+	Size = UDim2.fromOffset(66, 40),
 	BackgroundColor3 = COLORS.panel,
 	BackgroundTransparency = 0.15,
-	TextColor3 = Color3.fromRGB(150, 235, 255),
+	TextColor3 = Color3.fromRGB(255, 255, 255),
+	TextStrokeTransparency = 0.6,
 	Font = Enum.Font.FredokaOne,
-	TextSize = 22,
+	TextSize = 17,
 	TextYAlignment = Enum.TextYAlignment.Top,
 	Text = "Lv 1",
 	AutoButtonColor = false,
 	Parent = gui,
 }, {
-	corner(),
-	stroke(),
 	levelScale,
-	make("UIPadding", { PaddingTop = UDim.new(0, 6) }),
+	make("UIPadding", { PaddingTop = UDim.new(0, 4) }),
 	UIKit.icon("reef_level", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0, -4, 0, 14),
-		Size = UDim2.fromOffset(34, 34),
+		Position = UDim2.new(0, -2, 0, 8),
+		Size = UDim2.fromOffset(28, 28),
 		ZIndex = 2,
 	}) :: any,
 	make("Frame", {
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -8),
-		Size = UDim2.new(1, -16, 0, 8),
+		Position = UDim2.new(0.5, 0, 1, -6),
+		Size = UDim2.new(1, -14, 0, 6),
 		BackgroundColor3 = COLORS.locked,
 	}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }), xpFill }),
 })
+UIKit.gloss(levelButton, UIKit.COLORS.blue, 12)
 local shownLevel = 0
 local function updateLevel()
 	local level = player:GetAttribute("Level") or 1
@@ -193,16 +179,16 @@ updateLevel()
 
 local shellLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0, 0),
-	Position = UDim2.new(0.5, 115, 0, 14),
-	Size = UDim2.fromOffset(110, 40),
-	BackgroundColor3 = COLORS.panel,
-	BackgroundTransparency = 0.15,
-	TextColor3 = Color3.fromRGB(255, 190, 230),
+	Position = UDim2.new(0.5, 88, 0, 8),
+	Size = UDim2.fromOffset(100, 40),
+	TextColor3 = Color3.fromRGB(255, 255, 255),
+	TextStrokeTransparency = 0.6,
 	Font = Enum.Font.FredokaOne,
-	TextSize = 22,
+	TextSize = 16,
 	Text = "0 shells",
 	Parent = gui,
-}, { corner(), stroke() })
+})
+UIKit.gloss(shellLabel, UIKit.COLORS.purple, 12)
 local function updateShells()
 	shellLabel.Text = string.format("%d shells", player:GetAttribute("Shells") or 0)
 end
@@ -214,7 +200,7 @@ updateShells()
 local menu = make("Frame", {
 	AnchorPoint = Vector2.new(0, 0.5),
 	Position = UDim2.new(0, 12, 0.5, 0),
-	Size = UDim2.fromOffset(84, 500),
+	Size = UDim2.fromOffset(70, 420),
 	BackgroundTransparency = 1,
 	Parent = gui,
 }, {
@@ -230,40 +216,39 @@ local function addMenuButton(text: string, onActivated: () -> (), iconName: stri
 	local button: GuiButton
 	if image then
 		button = make("ImageButton", {
-			Size = UDim2.fromOffset(76, 92),
+			Size = UDim2.fromOffset(58, 72),
 			BackgroundTransparency = 1,
 			Image = "",
 			Parent = menu,
 		}, {
 			scale,
 			make("ImageLabel", {
-				Size = UDim2.fromOffset(76, 76),
+				Size = UDim2.fromOffset(58, 58),
 				BackgroundTransparency = 1,
 				Image = image,
 				ScaleType = Enum.ScaleType.Fit,
 			}),
 			make("TextLabel", {
-				Position = UDim2.fromOffset(0, 72),
-				Size = UDim2.new(1, 0, 0, 20),
+				Position = UDim2.fromOffset(-8, 55),
+				Size = UDim2.new(1, 16, 0, 16),
 				BackgroundTransparency = 1,
 				TextColor3 = COLORS.text,
 				TextStrokeTransparency = 0.4,
 				Font = Enum.Font.FredokaOne,
-				TextSize = 16,
+				TextSize = 13,
 				Text = text,
 			}),
 		})
 	else
 		button = make("TextButton", {
-			Size = UDim2.fromOffset(84, 56),
-			BackgroundColor3 = COLORS.panel,
-			BackgroundTransparency = 0.1,
+			Size = UDim2.fromOffset(70, 44),
 			TextColor3 = COLORS.text,
 			Font = Enum.Font.FredokaOne,
-			TextSize = 18,
+			TextSize = 15,
 			Text = text,
 			Parent = menu,
-		}, { corner(), stroke(), scale })
+		}, { scale })
+		UIKit.gloss(button, UIKit.COLORS.accent, 12)
 	end
 	button.Activated:Connect(function()
 		bump(scale, 0.85)
@@ -299,7 +284,7 @@ local healthFill = make("Frame", {
 }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 local healthLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, 90),
+	Position = UDim2.new(0.5, 0, 0, 72),
 	Size = UDim2.fromOffset(240, 20),
 	BackgroundTransparency = 1,
 	TextColor3 = COLORS.text,
@@ -311,7 +296,7 @@ local healthLabel = make("TextLabel", {
 })
 make("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, 112),
+	Position = UDim2.new(0.5, 0, 0, 92),
 	Size = UDim2.fromOffset(200, 10),
 	BackgroundColor3 = COLORS.panel,
 	BackgroundTransparency = 0.2,
@@ -334,15 +319,15 @@ local toastScale = make("UIScale", {})
 local toastLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Position = UDim2.fromScale(0.5, 0.3),
-	Size = UDim2.fromOffset(320, 48),
-	BackgroundColor3 = COLORS.panel,
-	BackgroundTransparency = 0.15,
+	Size = UDim2.fromOffset(280, 40),
 	TextColor3 = COLORS.text,
+	TextStrokeTransparency = 0.6,
 	Font = Enum.Font.FredokaOne,
-	TextSize = 22,
+	TextSize = 17,
 	Visible = false,
 	Parent = gui,
-}, { corner(), stroke(), toastScale })
+}, { toastScale })
+UIKit.gloss(toastLabel, UIKit.COLORS.panel, 12)
 
 local toastSerial = 0
 Remotes:WaitForChild("Toast").OnClientEvent:Connect(function(text: string, kind: string)
@@ -404,7 +389,7 @@ end)
 local picker = make("Frame", {
 	AnchorPoint = Vector2.new(0.5, 1),
 	Position = UDim2.new(0.5, 0, 1, -12),
-	Size = UDim2.fromOffset(#shopCorals * 148, 64),
+	Size = UDim2.fromOffset(#shopCorals * 122, 50),
 	BackgroundTransparency = 1,
 	Parent = gui,
 }, {
@@ -421,25 +406,22 @@ for _, name in shopCorals do
 	local def = Balance.corals[name]
 	local buttonScale = make("UIScale", {})
 	local button = make("TextButton", {
-		Size = UDim2.fromOffset(140, 64),
-		BackgroundColor3 = COLORS.panel,
+		Size = UDim2.fromOffset(116, 50),
 		TextColor3 = COLORS.text,
+		TextStrokeTransparency = 0.6,
 		Font = Enum.Font.FredokaOne,
-		TextSize = 17,
+		TextSize = 13,
 		TextWrapped = true,
 		AutoButtonColor = false,
 		Parent = picker,
 	}, {
-		corner(),
-		stroke(),
-		gradient(),
 		buttonScale,
-		make("UIPadding", { PaddingLeft = UDim.new(0, 26) }),
+		make("UIPadding", { PaddingLeft = UDim.new(0, 20) }),
 		-- Color swatch so each coral is recognizable at a glance.
 		make("Frame", {
 			AnchorPoint = Vector2.new(0, 0.5),
-			Position = UDim2.new(0, -18, 0.5, 0),
-			Size = UDim2.fromOffset(16, 16),
+			Position = UDim2.new(0, -14, 0.5, 0),
+			Size = UDim2.fromOffset(12, 12),
 			BackgroundColor3 = Color3.fromRGB(def.color[1], def.color[2], def.color[3]),
 		}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) }),
 	})
@@ -479,10 +461,11 @@ local function updatePicker()
 			end
 		end
 		button.Text = text
-		button.BackgroundColor3 = if locked then COLORS.locked
-			elseif name == selected then COLORS.selected
-			elseif not def.inShop then Color3.fromRGB(120, 80, 170)
-			else COLORS.panel
+		local styleKey = if locked then "muted" elseif name == selected then "accent" elseif not def.inShop then "purple" else "panel"
+		if button:GetAttribute("StyleKey") ~= styleKey then
+			button:SetAttribute("StyleKey", styleKey)
+			UIKit.gloss(button, (UIKit.COLORS :: any)[styleKey], 12)
+		end
 	end
 end
 player:GetAttributeChangedSignal("SelectedCoral"):Connect(updatePicker)

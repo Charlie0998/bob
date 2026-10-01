@@ -53,7 +53,7 @@ end
 local function preview(card: Frame, id: string, isCoral: boolean, known: boolean)
 	local viewport = make("ViewportFrame", {
 		Position = UDim2.fromOffset(4, 4),
-		Size = UDim2.new(1, -8, 0, 78),
+		Size = UDim2.new(1, -8, 0, 62),
 		BackgroundTransparency = 1,
 		Ambient = if known then Color3.fromRGB(170, 170, 170) else Color3.new(0, 0, 0),
 		LightColor = if known then Color3.new(1, 1, 1) else Color3.new(0, 0, 0),
@@ -92,41 +92,37 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		Size = UDim2.new(0.9, 0, 0.75, 0),
-		BackgroundColor3 = COLORS.panel,
-		BackgroundTransparency = 0.05,
 		Visible = false,
 		Parent = gui,
 	}, {
-		corner(18),
-		make("UISizeConstraint", { MaxSize = Vector2.new(720, 520) }),
-		make("UIStroke", { Color = Color3.fromRGB(150, 230, 240), Thickness = 2 }),
+		make("UISizeConstraint", { MaxSize = Vector2.new(620, 450) }),
 	})
+	UIKit.gloss(panel, COLORS.panel, 18)
+	local panelScale = make("UIScale", { Parent = panel })
 
 	local title = make("TextLabel", {
-		Position = UDim2.fromOffset(16, 10),
-		Size = UDim2.new(1, -90, 0, 36),
+		Position = UDim2.fromOffset(52, 8),
+		Size = UDim2.new(1, -110, 0, 30),
 		BackgroundTransparency = 1,
 		Font = Enum.Font.FredokaOne,
-		TextSize = 26,
+		TextSize = 20,
+		TextStrokeTransparency = 0.6,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextColor3 = COLORS.text,
 		Parent = panel,
 	})
-	local close = make("TextButton", {
+	UIKit.icon("book", { Position = UDim2.fromOffset(10, 6), Size = UDim2.fromOffset(36, 36), Parent = panel })
+	local close = UIKit.button("X", "pink", {
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -10, 0, 8),
-		Size = UDim2.fromOffset(48, 48),
-		BackgroundColor3 = COLORS.card,
-		Font = Enum.Font.FredokaOne,
-		TextSize = 24,
-		TextColor3 = COLORS.text,
-		Text = "X",
+		Position = UDim2.new(1, -8, 0, 7),
+		Size = UDim2.fromOffset(34, 34),
+		TextSize = 18,
 		Parent = panel,
-	}, { corner() })
+	})
 
 	local tabs = make("Frame", {
-		Position = UDim2.fromOffset(12, 56),
-		Size = UDim2.new(1, -24, 0, 48),
+		Position = UDim2.fromOffset(10, 48),
+		Size = UDim2.new(1, -20, 0, 36),
 		BackgroundTransparency = 1,
 		Parent = panel,
 	}, {
@@ -134,39 +130,36 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 	})
 
 	local grid = make("ScrollingFrame", {
-		Position = UDim2.fromOffset(12, 112),
-		Size = UDim2.new(1, -24, 1, -180),
+		Position = UDim2.fromOffset(10, 92),
+		Size = UDim2.new(1, -20, 1, -146),
 		BackgroundTransparency = 1,
 		ScrollBarThickness = 6,
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		CanvasSize = UDim2.new(),
 		Parent = panel,
 	}, {
-		make("UIGridLayout", { CellSize = UDim2.fromOffset(160, 152), CellPadding = UDim2.fromOffset(8, 8) }),
+		make("UIGridLayout", { CellSize = UDim2.fromOffset(132, 128), CellPadding = UDim2.fromOffset(6, 6) }),
 	})
 
-	local claim = make("TextButton", {
+	local claim = UIKit.button("", "gold", {
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -10),
-		Size = UDim2.fromOffset(280, 52),
-		BackgroundColor3 = COLORS.gold,
-		Font = Enum.Font.FredokaOne,
-		TextSize = 20,
-		TextColor3 = Color3.fromRGB(60, 40, 10),
+		Position = UDim2.new(0.5, 0, 1, -8),
+		Size = UDim2.fromOffset(240, 40),
+		TextSize = 16,
 		Parent = panel,
-	}, { corner() })
+	})
 
 	local tabButtons = {}
 	for i, page in Balance.book do
 		local tab = make("TextButton", {
-			Size = UDim2.new(1 / #Balance.book, -6, 1, 0),
-			BackgroundColor3 = COLORS.card,
+			Size = UDim2.new(1 / #Balance.book, -6, 0, 36),
 			Font = Enum.Font.FredokaOne,
+			TextStrokeTransparency = 0.7,
 			TextScaled = true,
 			TextColor3 = COLORS.text,
 			Text = page.title,
 			Parent = tabs,
-		}, { corner(10), make("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }) })
+		}, { make("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6), PaddingTop = UDim.new(0, 6), PaddingBottom = UDim.new(0, 6) }) })
 		local tabIcons = { corals = "tab_corals", reefFish = "tab_reef_regulars", visitors = "tab_visitors", rare = "tab_rare_finds", zones = "zone_deep_sea" }
 		if tabIcons[page.id] then
 			UIKit.addIcon(tab, tabIcons[page.id])
@@ -210,7 +203,7 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 			}, {
 				corner(10),
 				make("TextLabel", {
-					Position = UDim2.fromOffset(8, 84),
+					Position = UDim2.fromOffset(6, 66),
 					Size = UDim2.new(1, -16, 0, 22),
 					BackgroundTransparency = 1,
 					Font = Enum.Font.FredokaOne,
@@ -219,8 +212,8 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 					Text = if known then def.displayName else "???",
 				}),
 				make("TextLabel", {
-					Position = UDim2.fromOffset(8, 108),
-					Size = UDim2.new(1, -16, 0, 40),
+					Position = UDim2.fromOffset(6, 88),
+					Size = UDim2.new(1, -12, 0, 36),
 					BackgroundTransparency = 1,
 					Font = Enum.Font.Gotham,
 					TextSize = 11,
@@ -252,14 +245,21 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 		end
 		title.Text = string.format("Collection Book: %s (%d/%d)", page.title, found, #entries)
 		for i, tab in tabButtons do
-			tab.BackgroundColor3 = if i == currentPage then Color3.fromRGB(60, 170, 190) else COLORS.card
+			local key = if i == currentPage then "accent" else "card"
+			if tab:GetAttribute("StyleKey") ~= key then
+				tab:SetAttribute("StyleKey", key)
+				UIKit.gloss(tab, (UIKit.COLORS :: any)[key], 10)
+			end
 		end
 		local claimed = player:GetAttribute("Claimed_" .. page.id) == true
 		local complete = found == #entries
 		claim.Text = if claimed then "Reward claimed" elseif complete then string.format("Claim %d shells!", page.rewardShells) else string.format("Find all to earn %d shells", page.rewardShells)
-		claim.AutoButtonColor = complete and not claimed
-		claim.BackgroundColor3 = if complete and not claimed then COLORS.gold else COLORS.unknown
-		claim.TextColor3 = if complete and not claimed then Color3.fromRGB(60, 40, 10) else COLORS.hint
+		local claimKey = if complete and not claimed then "gold" else "muted"
+		if claim:GetAttribute("StyleKey") ~= claimKey then
+			claim:SetAttribute("StyleKey", claimKey)
+			UIKit.gloss(claim, (UIKit.COLORS :: any)[claimKey], 10)
+		end
+		claim.TextColor3 = if claimKey == "gold" then UIKit.COLORS.goldText else COLORS.text
 	end
 
 	claim.Activated:Connect(function()
@@ -276,6 +276,10 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 
 	function Book.toggle()
 		panel.Visible = not panel.Visible
+		if panel.Visible then
+			panelScale.Scale = 0.8
+			game:GetService("TweenService"):Create(panelScale, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = 1 }):Play()
+		end
 		Book.refresh()
 	end
 end
