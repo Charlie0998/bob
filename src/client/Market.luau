@@ -232,7 +232,8 @@ function Market.start(gui: ScreenGui, remotes: Instance, openTravel: () -> ()): 
 		local row = make("Frame", { Size = UDim2.new(1, -8, 0, 40), BackgroundTransparency = 1, LayoutOrder = 0, Parent = panel.body }, {
 			make("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6) }),
 		})
-		for _, name in if only then { only } else TABS do
+		local tabList: { string } = if only then { only } else TABS
+		for _, name in tabList do
 			local button = UIKit.button(name, if name == tab then "accent" else "card", { Size = UDim2.new(0.25, -5, 1, 0), TextSize = 14, Parent = row })
 			UIKit.addIcon(button, TAB_ICONS[name])
 			button.Activated:Connect(function()
