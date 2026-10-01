@@ -15,7 +15,7 @@ local PANEL = Color3.fromRGB(12, 42, 60)
 local GOLD = Color3.fromRGB(255, 200, 60)
 local WHITE = Color3.new(1, 1, 1)
 
-local MIN_SECONDS = 7 -- always show the scene at least this long
+local MIN_SECONDS = 3 -- at least this long; slow devices stay until loading really finishes
 local PHRASES = { "Growing corals", "Waking up the fish", "Polishing pearls", "Filling the ocean", "Inviting sea creatures" }
 local TIPS = {
 	"Tip: Tap a swimming fish for a pearl!",
