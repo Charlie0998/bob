@@ -169,7 +169,7 @@ local function rebuild(tile: BasePart, entry: Entry)
 	ring.Material = Enum.Material.Neon
 	ring.Color = Color3.fromRGB(255, 230, 120)
 	ring.Transparency = 1
-	ring.CFrame = uprightFrame(tile) * CFrame.new(0, 0.08, 0) * CFrame.Angles(0, 0, math.pi / 2)
+	ring.CFrame = uprightFrame(tile) * CFrame.new(0, 0.2, 0) * CFrame.Angles(0, 0, math.pi / 2)
 	ring.Parent = model
 	local light = Instance.new("PointLight")
 	light.Color = Color3.fromRGB(255, 225, 140)

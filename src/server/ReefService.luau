@@ -335,7 +335,7 @@ local function buildPlot(player: Player, state: PlayerState)
 	anchoredPart({
 		Name = "Glow",
 		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.85, 5, 5),
+		Size = Vector3.new(1.1, 5, 5), -- pokes out of the pad so the faces don't flicker
 		CFrame = pad.CFrame,
 		Color = Color3.fromRGB(255, 240, 170),
 		Material = Enum.Material.Neon,

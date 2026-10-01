@@ -225,9 +225,10 @@ updateShells()
 
 -- Side menu ---------------------------------------------------------------
 
--- Sits between the server project card (top) and the mute button (bottom),
--- and shrinks on short screens so the buttons never overlap them.
-local MENU_TOP = 58
+-- A Menu button under the server project card shows or hides the side
+-- buttons. The buttons sit between it and the mute button (bottom) and
+-- shrink on short screens so they never overlap either.
+local MENU_TOP = 96
 local MENU_BOTTOM = 64
 local MENU_PADDING = 8
 local menuScale = make("UIScale", {})
@@ -252,8 +253,20 @@ local function fitMenu()
 	local available = gui.AbsoluteSize.Y - MENU_TOP - MENU_BOTTOM
 	menuScale.Scale = math.clamp(available / content, 0.5, 1)
 end
-menu.ChildAdded:Connect(fitMenu)
+menu.ChildAdded:Connect(function()
+	task.defer(fitMenu) -- after the new button has its size
+end)
 gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(fitMenu)
+
+local menuToggle = UIKit.button("Menu", "accent", {
+	Position = UDim2.fromOffset(12, 56),
+	Size = UDim2.fromOffset(70, 32),
+	TextSize = 16,
+	Parent = gui,
+})
+menuToggle.Activated:Connect(function()
+	menu.Visible = not menu.Visible
+end)
 
 -- Adds a big, thumb-friendly menu button. Other systems call this too.
 -- With its icon uploaded, a button is the icon with a small caption;
@@ -581,12 +594,12 @@ while true do
 		local def = coralType and Balance.corals[coralType]
 		local billboard = label.Parent :: BillboardGui
 		if not def then
-			billboard.Enabled = part:GetAttribute("Slot") == firstEmpty
+			billboard.Enabled = gui.Enabled and part:GetAttribute("Slot") == firstEmpty
 			label.Text = "Tap to plant"
 			label.TextColor3 = COLORS.text
 			continue
 		end
-		billboard.Enabled = true
+		billboard.Enabled = gui.Enabled -- Photo mode hides the HUD and these labels
 		local plantedAt = part:GetAttribute("PlantedAt") or now
 		local cycles = ReefMath.readyCycles(plantedAt, now, def.growSeconds, Balance.offlineCapSeconds)
 		local mutation = part:GetAttribute("Mutation")

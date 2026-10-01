@@ -56,7 +56,10 @@ function Water.start()
 	local rippleId = textureId("water_ripple")
 
 	-- Caustics: two layers drifting in different directions make the light dance.
-	local floorPlane = plane("Caustics", Vector3.new(CAUSTIC_SIZE, 0.05, CAUSTIC_SIZE))
+	-- They're painted straight onto the seafloor; a separate plane hovering just
+	-- above the sand flickered against it.
+	local seafloor = workspace:WaitForChild("Seafloor", 5) :: BasePart?
+	local floorPlane = seafloor or plane("Caustics", Vector3.new(CAUSTIC_SIZE, 0.05, CAUSTIC_SIZE))
 	local layers: { Texture } = {}
 	if causticId then
 		table.insert(layers, texture(floorPlane, causticId, Enum.NormalId.Top, CAUSTIC_TILE, 0.55, Color3.fromRGB(200, 255, 245)))
@@ -95,7 +98,9 @@ function Water.start()
 		local position = camera.CFrame.Position
 		local snapX = math.floor(position.X / SNAP) * SNAP
 		local snapZ = math.floor(position.Z / SNAP) * SNAP
-		floorPlane.CFrame = CFrame.new(snapX, 0.06, snapZ)
+		if not seafloor then
+			floorPlane.CFrame = CFrame.new(snapX, 0.3, snapZ)
+		end
 		surfacePlane.CFrame = CFrame.new(snapX, SURFACE - 0.6, snapZ)
 		for i, layer in layers do
 			local direction = if i == 1 then Vector2.new(1, 0.4) else Vector2.new(-0.5, 1)
@@ -111,7 +116,7 @@ function Water.start()
 			local o = patch.offset + patch.speed * t
 			local x = (o.X + 90) % 180 - 90
 			local z = (o.Y + 90) % 180 - 90
-			patch.part.CFrame = CFrame.new(position.X + x, 0.08, position.Z + z) * CFrame.Angles(0, 0, math.pi / 2)
+			patch.part.CFrame = CFrame.new(position.X + x, 0.25, position.Z + z) * CFrame.Angles(0, 0, math.pi / 2)
 			patch.part.Transparency = 0.86 + math.sin(t * 1.3 + patch.phase) * 0.05
 		end
 	end)
