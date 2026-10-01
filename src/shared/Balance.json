@@ -1679,15 +1679,15 @@
 	],
 	"world": {
 		"plots": {
-			"perRing": 8,
+			"perRing": 5,
 			"radius": 150,
 			"ringStep": 120,
 			"ringTwist": 22.5,
-			"rings": 2
+			"rings": 1
 		},
 		"plaza": {
-			"angle": 22.5,
-			"radius": 86,
+			"angle": 36,
+			"radius": 90,
 			"size": 30
 		},
 		"landmarks": {

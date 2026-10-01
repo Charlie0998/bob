@@ -62,8 +62,8 @@ do
 	end
 end
 
--- Where ReefService lays the walkways from the spawn disc to every plot (the
--- 22.5 degree one runs through the Market). Kept clear of rocks and kelp.
+-- Where ReefService lays the walkways from the spawn disc to every plot.
+-- Kept clear of rocks and kelp.
 local PATH_WIDTH = 7
 local SPAWN_DISC = 22
 local paths: { { from: Vector3, to: Vector3 } } = {}
