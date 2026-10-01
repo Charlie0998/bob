@@ -246,7 +246,7 @@ local function buildPlaza()
 	disc(64, 0.9, Color3.fromRGB(150, 125, 98))
 	disc(61, 1.4, Color3.fromRGB(170, 145, 115))
 	disc(58, 1.9, Color3.fromRGB(190, 165, 132))
-	disc(55, 2.3, Color3.fromRGB(205, 188, 160))
+	disc(55, 2.3, Color3.fromRGB(225, 205, 170))
 	disc(18, 2.6, Color3.fromRGB(38, 172, 186))
 	-- Four stalls in an arc behind the plaza center, facing spawn.
 	-- Each stall sells one thing and opens just that Market tab.

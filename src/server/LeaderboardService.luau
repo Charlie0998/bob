@@ -87,13 +87,13 @@ end
 
 -- The platform (between the first two plots) and a path out from the ring road.
 local function buildArea()
-	newPart({ Name = "Platform", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, PLATFORM_SIZE + 2, PLATFORM_SIZE + 2), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(150, 125, 98) }).Parent = folder
-	newPart({ Name = "Platform", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.8, PLATFORM_SIZE, PLATFORM_SIZE), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(225, 205, 170) }).Parent = folder
+	newPart({ Name = "Platform", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, PLATFORM_SIZE + 2, PLATFORM_SIZE + 2), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(150, 125, 98) }).Parent = folder
+	newPart({ Name = "Platform", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.6, PLATFORM_SIZE, PLATFORM_SIZE), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(225, 205, 170) }).Parent = folder
 	local plaza = Balance.world.plaza
 	local pathStart = direction * (plaza.ringRadius + plaza.ringWidth / 2 - 0.5)
 	local pathEnd = center - direction * (PLATFORM_SIZE / 2 - 0.5)
 	local length = (pathEnd - pathStart).Magnitude
-	newPart({ Name = "Path", Size = Vector3.new(8, 1, length), CFrame = CFrame.lookAt((pathStart + pathEnd) / 2, pathEnd), Color = Color3.fromRGB(150, 162, 176) }).Parent = folder
+	newPart({ Name = "Path", Size = Vector3.new(8, 1.6, length), CFrame = CFrame.lookAt((pathStart + pathEnd) / 2, pathEnd), Color = Color3.fromRGB(150, 162, 176) }).Parent = folder
 	for i, board in BOARDS do
 		board.label = LeaderboardService.makePanel(i, board.title)
 	end

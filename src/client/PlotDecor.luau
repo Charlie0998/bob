@@ -268,7 +268,7 @@ local function buildPath(plot: Plot, base: BasePart)
 	local length = (flatFront - start).Magnitude
 	local mine = plot.model:GetAttribute("OwnerId") == player.UserId
 	for d = 0, length, PATH_SPACING do
-		local p = start + direction * d + Vector3.new(0, 0.6, 0) -- on top of the stone walkway
+		local p = start + direction * d + Vector3.new(0, 0.9, 0) -- on top of the stone walkway
 		-- Don't lay shells across another plot (outer-ring paths pass inner plots).
 		local blocked = false
 		for _, center in plotSites do
