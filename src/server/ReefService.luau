@@ -309,10 +309,11 @@ end
 -- so no two surfaces overlap at the same height and flicker.
 local PATH_START = Balance.world.plaza.size + 1 -- just outside the Market steps
 local PATH_WIDTH = 10
-local PATH_COLOR = Color3.fromRGB(200, 170, 135)
+-- Grey-blue stone: tan paths vanished against the sand.
+local PATH_COLOR = Color3.fromRGB(150, 162, 176)
 local RING_RADIUS = Balance.world.plaza.ringRadius
 local RING_WIDTH = Balance.world.plaza.ringWidth
-local CURB_COLOR = Color3.fromRGB(120, 85, 65)
+local CURB_COLOR = Color3.fromRGB(88, 98, 116)
 local LANTERN_COLOR = Color3.fromRGB(255, 215, 140)
 local LANTERN_SPACING = 18
 

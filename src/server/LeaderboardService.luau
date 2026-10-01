@@ -93,7 +93,7 @@ local function buildArea()
 	local pathStart = direction * (plaza.ringRadius + plaza.ringWidth / 2 - 0.5)
 	local pathEnd = center - direction * (PLATFORM_SIZE / 2 - 0.5)
 	local length = (pathEnd - pathStart).Magnitude
-	newPart({ Name = "Path", Size = Vector3.new(8, 1, length), CFrame = CFrame.lookAt((pathStart + pathEnd) / 2, pathEnd), Color = Color3.fromRGB(200, 170, 135) }).Parent = folder
+	newPart({ Name = "Path", Size = Vector3.new(8, 1, length), CFrame = CFrame.lookAt((pathStart + pathEnd) / 2, pathEnd), Color = Color3.fromRGB(150, 162, 176) }).Parent = folder
 	for i, board in BOARDS do
 		board.label = LeaderboardService.makePanel(i, board.title)
 	end
