@@ -62,9 +62,8 @@ do
 	end
 end
 
--- Stone walkways from the spawn disc to every plot (the 22.5 degree one runs
--- through the Market). They start where neighbors are far enough apart not
--- to overlap. Kept clear of rocks and kelp.
+-- Where ReefService lays the walkways from the spawn disc to every plot (the
+-- 22.5 degree one runs through the Market). Kept clear of rocks and kelp.
 local PATH_WIDTH = 7
 local SPAWN_DISC = 22
 local paths: { { from: Vector3, to: Vector3 } } = {}
@@ -628,32 +627,6 @@ function WorldDecor.addSwaying(position: Vector3, segments: number, color: Color
 	return kelp.parts
 end
 
--- Walkways are flat slabs (top 0.25) with a raised border (top 0.35); the
--- spawn disc (top 0.45) is higher still so no two tops ever line up.
-local function buildPaths()
-	-- Grey stone so the walkways stand out against the sand. Solid, so you
-	-- walk on top of them instead of through them.
-	local stone = Color3.fromRGB(150, 158, 168)
-	local border = Color3.fromRGB(92, 102, 118)
-	newPart({
-		Name = "SpawnDisc",
-		Shape = Enum.PartType.Cylinder,
-		Size = Vector3.new(0.9, SPAWN_DISC * 2 + 3, SPAWN_DISC * 2 + 3),
-		CFrame = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.pi / 2),
-		Color = Color3.fromRGB(38, 172, 186),
-		Material = Enum.Material.Pavement,
-		CanCollide = true,
-	})
-	for _, path in paths do
-		local length = (path.to - path.from).Magnitude
-		local frame = CFrame.lookAt((path.from + path.to) / 2, path.to)
-		newPart({ Name = "Path", Size = Vector3.new(PATH_WIDTH, 0.5, length), CFrame = frame, Color = stone, Material = Enum.Material.Cobblestone, CanCollide = true })
-		for _, side in { -1, 1 } do
-			newPart({ Name = "PathEdge", Size = Vector3.new(0.6, 0.7, length), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.3), 0, 0), Color = border, Material = Enum.Material.Slate, CanCollide = true })
-		end
-	end
-end
-
 -- Big soft patches of lighter, darker, and pebbly sand break up the flat
 -- seafloor. Low domes, so overlapping ones never flicker.
 local function buildGroundPatches(rng: Random)
@@ -683,7 +656,6 @@ end
 
 function WorldDecor.start()
 	local rng = Random.new(SEED)
-	buildPaths()
 	buildGroundPatches(rng)
 	buildGarden(rng)
 	buildRocks(rng)

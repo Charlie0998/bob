@@ -2,7 +2,8 @@
 -- drawn on the client:
 --   * a sandstone rim with coral trim, corner pillars with lanterns, and an
 --     entrance arch with a banner showing the owner's name
---   * a stone ring under every slot
+--   * a scalloped seashell dish around every slot, and a giant clam with a
+--     floating pearl on the buy pad
 --   * extra scenery as the reef grows (10 / 20 / 30 slots)
 --   * a glowing shell path from spawn to the plot (yours is gold and pulses)
 --   * sand ripples, seashells, starfish, sea urchins, and swaying anemones
@@ -342,23 +343,77 @@ local function onPlot(model: Instance)
 	end
 end
 
--- Stone rings under each slot tile.
+-- Each slot is a scalloped seashell dish: pink and peach lobes around the
+-- sand, plus a stone ring underneath. Your empty slots sparkle softly.
+local SHELL_PINK = Color3.fromRGB(255, 170, 185)
+local SHELL_PEACH = Color3.fromRGB(255, 210, 165)
+local LOBES = 10
+
 local function onTile(tile: Instance)
-	if not tile:IsA("BasePart") or tile:FindFirstChild("TileRim") then
+	if not tile:IsA("BasePart") or tile:FindFirstChild("ShellDish") then
 		return
 	end
-	local rim = Instance.new("Part")
-	rim.Name = "TileRim"
-	rim.Shape = Enum.PartType.Cylinder
-	rim.Size = Vector3.new(0.3, tile.Size.Y + 0.8, tile.Size.Z + 0.8)
-	rim.CFrame = tile.CFrame * CFrame.new(-0.05, 0, 0)
-	rim.Color = Color3.fromRGB(150, 130, 105)
-	rim.Material = Enum.Material.Sandstone
-	rim.Anchored = true
-	rim.CanCollide = false
-	rim.CanQuery = false
-	rim.CastShadow = false
-	rim.Parent = tile
+	local dish = Instance.new("Folder")
+	dish.Name = "ShellDish"
+	-- The tile is a cylinder on its side; this frame has +Y pointing up.
+	local upright = tile.CFrame * CFrame.Angles(0, 0, -math.pi / 2)
+	local radius = tile.Size.Z / 2
+	part(dish, { Name = "TileRim", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, tile.Size.Z + 0.8, tile.Size.Z + 0.8), CFrame = tile.CFrame * CFrame.new(-0.05, 0, 0), Color = Color3.fromRGB(150, 130, 105), Material = Enum.Material.Sandstone })
+	for i = 1, LOBES do
+		local a = i / LOBES * math.pi * 2
+		ellipsoid(dish, Vector3.new(1.5, 0.6, 1.1), upright * CFrame.Angles(0, a, 0) * CFrame.new(0, tile.Size.X / 2, -(radius + 0.2)), if i % 2 == 0 then SHELL_PINK else SHELL_PEACH)
+	end
+	if tile:GetAttribute("OwnerId") == player.UserId then
+		local sparkle = Instance.new("ParticleEmitter")
+		sparkle.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		sparkle.Color = ColorSequence.new(Color3.fromRGB(255, 240, 180))
+		sparkle.Size = NumberSequence.new(0.35, 0)
+		sparkle.Lifetime = NumberRange.new(0.8, 1.4)
+		sparkle.Rate = 3
+		sparkle.Speed = NumberRange.new(0.5, 1.5)
+		sparkle.EmissionDirection = Enum.NormalId.Right -- the tile's axis points up
+		sparkle.LightEmission = 1
+		sparkle.Parent = tile
+		local function update()
+			sparkle.Enabled = (tile:GetAttribute("CoralType") or "") == ""
+		end
+		tile:GetAttributeChangedSignal("CoralType"):Connect(update)
+		update()
+	end
+	dish.Parent = tile
+end
+
+-- The buy pad becomes a giant open clam with a floating, spinning pearl.
+type Clam = { pad: BasePart, pearl: BasePart, home: CFrame }
+local clams: { [BasePart]: Clam } = {}
+
+local function onPad(pad: Instance)
+	if not pad:IsA("BasePart") or clams[pad] then
+		return
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "Clam"
+	local upright = pad.CFrame * CFrame.Angles(0, 0, -math.pi / 2) -- +Y up, +Z toward the plot
+	local shell = Color3.fromRGB(240, 150, 175)
+	-- Bottom shell cupped under the pad, and the lid hinged open behind it.
+	ellipsoid(folder, Vector3.new(9, 1.6, 8.5), upright * CFrame.new(0, -0.6, 0), shell) -- rim peeks out around the pad
+	ellipsoid(folder, Vector3.new(9, 1.2, 8.5), upright * CFrame.new(0, 3.2, 4.4) * CFrame.Angles(math.rad(70), 0, 0), shell:Lerp(Color3.new(1, 1, 1), 0.15))
+	for i = -3, 3 do
+		-- Ridges on the lid.
+		part(folder, { Size = Vector3.new(0.25, 0.3, 7.5), CFrame = upright * CFrame.new(0, 3.2, 4.4) * CFrame.Angles(math.rad(70), math.rad(i * 9), 0) * CFrame.new(0, 0.55, 0), Color = Color3.fromRGB(255, 200, 215) })
+	end
+	local home = upright * CFrame.new(0, 3.4, 0)
+	local pearl = part(folder, { Name = "Pearl", Shape = Enum.PartType.Ball, Size = Vector3.one * 2.4, CFrame = home, Color = Color3.fromRGB(255, 250, 240), Reflectance = 0.3 })
+	local light = Instance.new("PointLight")
+	light.Color = Color3.fromRGB(255, 235, 200)
+	light.Range = 10
+	light.Brightness = 1.4
+	light.Parent = pearl
+	folder.Parent = pad
+	clams[pad] = { pad = pad, pearl = pearl, home = home }
+	pad.Destroying:Connect(function()
+		clams[pad] = nil
+	end)
 end
 
 function PlotDecor.start()
@@ -378,6 +433,10 @@ function PlotDecor.start()
 	for _, tile in CollectionService:GetTagged("ReefSlot") do
 		onTile(tile)
 	end
+	CollectionService:GetInstanceAddedSignal("ReefBuyPad"):Connect(onPad)
+	for _, pad in CollectionService:GetTagged("ReefBuyPad") do
+		onPad(pad)
+	end
 
 	local camera = workspace.CurrentCamera
 	-- Hide far plots; pulse your own path.
@@ -393,6 +452,9 @@ function PlotDecor.start()
 	end)
 	RunService.Heartbeat:Connect(function()
 		local t = os.clock()
+		for _, clam in clams do
+			clam.pearl.CFrame = clam.home * CFrame.new(0, math.sin(t * 2) * 0.4, 0) * CFrame.Angles(0, t, 0)
+		end
 		for _, plot in plots do
 			if plot.model:GetAttribute("OwnerId") == player.UserId then
 				for i, shell in plot.path do

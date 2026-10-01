@@ -62,8 +62,8 @@ function Water.start()
 	local floorPlane = seafloor or plane("Caustics", Vector3.new(CAUSTIC_SIZE, 0.05, CAUSTIC_SIZE))
 	local layers: { Texture } = {}
 	if causticId then
-		table.insert(layers, texture(floorPlane, causticId, Enum.NormalId.Top, CAUSTIC_TILE, 0.55, Color3.fromRGB(200, 255, 245)))
-		table.insert(layers, texture(floorPlane, causticId, Enum.NormalId.Top, CAUSTIC_TILE * 2, 0.7, Color3.fromRGB(180, 240, 255)))
+		table.insert(layers, texture(floorPlane, causticId, Enum.NormalId.Top, CAUSTIC_TILE, 0.82, Color3.fromRGB(200, 255, 245)))
+		table.insert(layers, texture(floorPlane, causticId, Enum.NormalId.Top, CAUSTIC_TILE * 2, 0.9, Color3.fromRGB(180, 240, 255)))
 	end
 
 	-- Fallback: soft neon patches that drift and pulse near the camera.
@@ -106,7 +106,7 @@ function Water.start()
 			local direction = if i == 1 then Vector2.new(1, 0.4) else Vector2.new(-0.5, 1)
 			layer.OffsetStudsU = t * 1.6 * direction.X
 			layer.OffsetStudsV = t * 1.6 * direction.Y
-			layer.Transparency = (if i == 1 then 0.55 else 0.7) + math.sin(t * 0.7 + i) * 0.06
+			layer.Transparency = (if i == 1 then 0.82 else 0.9) + math.sin(t * 0.7 + i) * 0.04
 		end
 		for i, ripple in ripples do
 			ripple.OffsetStudsU = t * (if i == 1 then 2 else -1.3)

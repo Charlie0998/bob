@@ -303,6 +303,47 @@ local function updatePad(player: Player, state: PlayerState)
 	pad:SetAttribute("Cost", if full then -1 else ReefMath.slotCost(data.slots, Balance))
 end
 
+-- Walkways: brick paths from the spawn disc to each plot's front, with
+-- glowing lanterns along them. Heights are staggered (path top 0.25, curbs
+-- 0.35, spawn disc 0.45) so no two surfaces line up and flicker.
+local SPAWN_DISC = 22 -- paths start here, where neighbors no longer overlap
+local PATH_WIDTH = 7
+local PATH_COLOR = Color3.fromRGB(196, 112, 84)
+local CURB_COLOR = Color3.fromRGB(120, 72, 58)
+local LANTERN_COLOR = Color3.fromRGB(255, 215, 140)
+local LANTERN_SPACING = 26
+
+local function buildWalkway(model: Model, base: BasePart)
+	local front = (base.CFrame * CFrame.new(0, 0, -(base.Size.Z / 2 + 1))).Position
+	local finish = Vector3.new(front.X, 0, front.Z)
+	local direction = finish.Unit
+	local start = direction * SPAWN_DISC
+	local length = (finish - start).Magnitude
+	local frame = CFrame.lookAt((start + finish) / 2, finish)
+	local plaza = Balance.world.plaza
+	local plazaCenter = Vector3.new(math.cos(math.rad(plaza.angle)), 0, math.sin(math.rad(plaza.angle))) * plaza.radius
+	anchoredPart({ Name = "Walkway", Size = Vector3.new(PATH_WIDTH, 0.5, length), CFrame = frame, Color = PATH_COLOR, Material = Enum.Material.Brick, CanQuery = false }).Parent = model
+	for _, side in { -1, 1 } do
+		anchoredPart({ Name = "Curb", Size = Vector3.new(0.6, 0.7, length), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.3), 0, 0), Color = CURB_COLOR, Material = Enum.Material.Slate, CanQuery = false }).Parent = model
+	end
+	-- Lanterns on alternating sides, skipping the Market plaza.
+	local side = 1
+	for d = LANTERN_SPACING / 2, length - 4, LANTERN_SPACING do
+		local spot = (frame * CFrame.new(side * (PATH_WIDTH / 2 + 1.2), 0, length / 2 - d)).Position
+		if (Vector3.new(spot.X, 0, spot.Z) - plazaCenter).Magnitude > plaza.size + 2 then
+			anchoredPart({ Name = "LanternPost", Size = Vector3.new(0.5, 5, 0.5), CFrame = CFrame.new(spot + Vector3.new(0, 2.5, 0)), Color = CURB_COLOR, Material = Enum.Material.Wood, CanQuery = false }).Parent = model
+			local glow = anchoredPart({ Name = "Lantern", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.3, CFrame = CFrame.new(spot + Vector3.new(0, 5.4, 0)), Color = LANTERN_COLOR, Material = Enum.Material.Neon, CanCollide = false, CanQuery = false })
+			local light = Instance.new("PointLight")
+			light.Color = LANTERN_COLOR
+			light.Range = 12
+			light.Brightness = 1.2
+			light.Parent = glow
+			glow.Parent = model
+		end
+		side = -side
+	end
+end
+
 local function buildPlot(player: Player, state: PlayerState)
 	local model = Instance.new("Model")
 	model.Name = player.Name .. "'s Reef"
@@ -361,6 +402,7 @@ local function buildPlot(player: Player, state: PlayerState)
 	CollectionService:AddTag(pad, PAD_TAG)
 	pad.Parent = model
 
+	buildWalkway(model, base)
 	model.Parent = plotsFolder
 	state.plot = model
 end
@@ -785,6 +827,15 @@ function ReefService.resetReef(player: Player)
 end
 
 function ReefService.start()
+	-- The round meeting spot every walkway starts from.
+	anchoredPart({
+		Name = "SpawnDisc",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.9, SPAWN_DISC * 2 + 3, SPAWN_DISC * 2 + 3),
+		CFrame = CFrame.Angles(0, 0, math.pi / 2),
+		Color = Color3.fromRGB(38, 172, 186),
+		Material = Enum.Material.Pavement,
+	}).Parent = workspace
 	-- Care decays while players are away, so rescore everyone each minute.
 	task.spawn(function()
 		while true do
