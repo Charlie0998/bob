@@ -1290,26 +1290,26 @@
 		"_note": "Create these in Creator Hub (Monetization > Passes / Developer Products) and paste each ID here. An ID of 0 shows the item as not set up yet.",
 		"passes": {
 			"Pearls2x": {
-				"id": 0,
+				"id": 2002136995,
 				"name": "2x Pearls",
 				"price": 399,
 				"description": "Double pearl income, forever"
 			},
 			"AutoHarvest": {
-				"id": 0,
+				"id": 2002202951,
 				"name": "Auto-Harvest",
 				"price": 249,
 				"description": "Ready corals harvest themselves while you play"
 			},
 			"ExtraSlots": {
-				"id": 0,
+				"id": 2001128989,
 				"name": "Extra Plot Slots",
 				"price": 199,
 				"description": "+10 slots on your reef",
 				"slots": 10
 			},
 			"VIP": {
-				"id": 0,
+				"id": 2003516705,
 				"name": "VIP Reef Pack",
 				"price": 599,
 				"description": "Pearlescent Oyster coral, VIP name tag, +10% pearls",
@@ -1319,25 +1319,25 @@
 		},
 		"products": {
 			"SpeedUp1": {
-				"id": 0,
+				"id": 3715842662,
 				"name": "Growth Speed-Up",
 				"price": 25,
 				"speedups": 1
 			},
 			"SpeedUp5": {
-				"id": 0,
+				"id": 3715842829,
 				"name": "5 Growth Speed-Ups",
 				"price": 99,
 				"speedups": 5
 			},
 			"SpeedUp20": {
-				"id": 0,
+				"id": 3715842939,
 				"name": "20 Growth Speed-Ups",
 				"price": 349,
 				"speedups": 20
 			},
 			"RareBundle": {
-				"id": 0,
+				"id": 3715843085,
 				"name": "Rare Coral Bundle",
 				"price": 149,
 				"corals": {
