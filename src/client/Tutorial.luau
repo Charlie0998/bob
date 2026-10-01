@@ -1,7 +1,6 @@
 -- First-time tutorial: an animated hint card (pops in, types out its text,
 -- bobs, shows step dots) with a Skip button, a big bouncing arrow over the
--- thing to tap, a pulsing ring on the ground under it, and a sparkly guide
--- line from the player to it.
+-- thing to tap, and a pulsing ring on the ground under it.
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -121,31 +120,6 @@ function Tutorial.start(gui: ScreenGui, remotes: Instance)
 	light.Range = 10
 	light.Parent = arrowParts[1]
 
-	-- A glowing guide line from the player to the target.
-	local anchor = Instance.new("Part")
-	anchor.Anchored = true
-	anchor.CanCollide = false
-	anchor.CanQuery = false
-	anchor.Transparency = 1
-	anchor.Size = Vector3.one * 0.2
-	local targetAttachment = Instance.new("Attachment")
-	targetAttachment.Parent = anchor
-	local beam = Instance.new("Beam")
-	beam.Attachment1 = targetAttachment
-	beam.Color = ColorSequence.new(COLORS.gold)
-	beam.LightEmission = 1
-	beam.Width0 = 0.4
-	beam.Width1 = 0.4
-	beam.FaceCamera = true
-	beam.Transparency = NumberSequence.new(0.2, 0.6)
-	-- Sparkles stream along the line toward the target, in a gentle arc.
-	beam.Texture = "rbxasset://textures/particles/sparkles_main.dds"
-	beam.TextureMode = Enum.TextureMode.Wrap
-	beam.TextureLength = 3
-	beam.TextureSpeed = -1.5
-	beam.CurveSize0 = 4
-	beam.Segments = 20
-	beam.Parent = anchor
 
 	-- A ring on the ground under the target that grows and fades, over and over.
 	local ring = Instance.new("Part")
@@ -168,7 +142,6 @@ function Tutorial.start(gui: ScreenGui, remotes: Instance)
 		local s = step()
 		local active = s < #HINTS
 		arrow.Parent = if active then workspace else nil
-		anchor.Parent = if active then workspace else nil
 		if not active then
 			if card.Visible then
 				-- All done: the card shrinks away.
@@ -237,15 +210,6 @@ function Tutorial.start(gui: ScreenGui, remotes: Instance)
 			frames[i] = base * offsets[i]
 		end
 		workspace:BulkMoveTo(arrowParts, frames, Enum.BulkMoveMode.FireCFrameChanged)
-		anchor.CFrame = CFrame.new(position + Vector3.new(0, 1, 0))
-		local rootAttachment = root:FindFirstChild("TutorialAttachment") :: Attachment?
-		if not rootAttachment then
-			local made = Instance.new("Attachment")
-			made.Name = "TutorialAttachment"
-			made.Parent = root
-			rootAttachment = made
-		end
-		beam.Attachment0 = rootAttachment
 	end)
 	-- Re-show the arrow once its target exists again (e.g. after respawning).
 	task.spawn(function()

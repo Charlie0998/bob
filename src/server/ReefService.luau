@@ -307,10 +307,12 @@ end
 -- to each plot's front, with glowing lanterns on both sides, and a round
 -- ring road around the plaza. Each walkway is laid as short tiles that
 -- butt end to end (like the ring pieces) and stops at the ring road's edges
--- instead of running under it. It sits up off the sand just enough to see
--- (top 0.8, curbs 1.0), and never overlaps another surface at the same
--- height, so nothing flickers.
-local PATH_START = Balance.world.plaza.size + 1 -- just outside the plaza rim
+-- instead of running under it. Toward the middle it slides under the
+-- Market's bottom steps, so the two meet with no gap. It sits up off the sand
+-- just enough to see (top 0.7, curbs 1.0, Market steps from 0.9), and never
+-- overlaps another surface at the same height, so nothing flickers.
+local PLAZA_EDGE = 32 -- the Market's bottom step (Landmarks.luau)
+local PATH_START = PLAZA_EDGE - 4 -- tiles start under the steps
 local PATH_WIDTH = 10
 local PATH_COLOR = Color3.fromRGB(200, 170, 135)
 local RING_RADIUS = Balance.world.plaza.ringRadius
@@ -322,7 +324,7 @@ local LANTERN_SPACING = 18
 local TILE_LENGTH = 10
 
 -- One straight run of walkway tiles with a curb down each side.
-local function walkwayRun(model: Instance, from: Vector3, to: Vector3)
+local function walkwayRun(model: Instance, from: Vector3, to: Vector3, curbFrom: Vector3?)
 	local total = (to - from).Magnitude
 	if total < 1 then
 		return
@@ -333,11 +335,14 @@ local function walkwayRun(model: Instance, from: Vector3, to: Vector3)
 	for k = 0, tiles - 1 do
 		local a = from + direction * (k * tileLength)
 		local b = a + direction * tileLength
-		anchoredPart({ Name = "Walkway", Size = Vector3.new(PATH_WIDTH, 1.6, tileLength), CFrame = CFrame.lookAt((a + b) / 2, b), Color = PATH_COLOR, Material = Enum.Material.Cobblestone, CanQuery = false }).Parent = model
+		anchoredPart({ Name = "Walkway", Size = Vector3.new(PATH_WIDTH, 1.4, tileLength), CFrame = CFrame.lookAt((a + b) / 2, b), Color = PATH_COLOR, Material = Enum.Material.Cobblestone, CanQuery = false }).Parent = model
 	end
-	local frame = CFrame.lookAt((from + to) / 2, to)
+	-- Curbs stop at the Market's edge rather than running under its steps.
+	local curbStart = curbFrom or from
+	local curbLength = (to - curbStart).Magnitude
+	local frame = CFrame.lookAt((curbStart + to) / 2, to)
 	for _, side in { -1, 1 } do
-		anchoredPart({ Name = "Curb", Size = Vector3.new(0.8, 2, total), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.4), 0, 0), Color = CURB_COLOR, Material = Enum.Material.SmoothPlastic, CanQuery = false }).Parent = model
+		anchoredPart({ Name = "Curb", Size = Vector3.new(0.8, 2, curbLength), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.4), 0, 0), Color = CURB_COLOR, Material = Enum.Material.SmoothPlastic, CanQuery = false }).Parent = model
 	end
 end
 
@@ -347,7 +352,7 @@ local function buildWalkway(model: Instance, site: Vector3)
 	local direction = site.Unit
 	local start = direction * PATH_START
 	local finish = site - direction * (halfZ + 1)
-	walkwayRun(model, start, direction * (RING_RADIUS - RING_WIDTH / 2))
+	walkwayRun(model, start, direction * (RING_RADIUS - RING_WIDTH / 2), direction * (PLAZA_EDGE + 0.5))
 	walkwayRun(model, direction * (RING_RADIUS + RING_WIDTH / 2), finish)
 	local length = (finish - start).Magnitude
 	local frame = CFrame.lookAt((start + finish) / 2, finish)
