@@ -17,14 +17,7 @@ local Book = {}
 Book.refresh = function() end
 Book.toggle = function() end
 
-local COLORS = {
-	panel = Color3.fromRGB(20, 60, 80),
-	card = Color3.fromRGB(30, 85, 105),
-	unknown = Color3.fromRGB(45, 65, 75),
-	text = Color3.fromRGB(255, 255, 255),
-	hint = Color3.fromRGB(170, 210, 220),
-	gold = Color3.fromRGB(255, 205, 90),
-}
+local COLORS = UIKit.COLORS
 
 local function make(className: string, props: { [string]: any }, children: { Instance }?): any
 	local inst = Instance.new(className)
@@ -55,8 +48,8 @@ local function preview(card: Frame, id: string, isCoral: boolean, known: boolean
 		Position = UDim2.fromOffset(4, 4),
 		Size = UDim2.new(1, -8, 0, 62),
 		BackgroundTransparency = 1,
-		Ambient = if known then Color3.fromRGB(170, 170, 170) else Color3.new(0, 0, 0),
-		LightColor = if known then Color3.new(1, 1, 1) else Color3.new(0, 0, 0),
+		Ambient = if known then COLORS.previewAmbient else COLORS.silhouette,
+		LightColor = if known then COLORS.previewLight else COLORS.silhouette,
 		LightDirection = Vector3.new(-1, -2, -1),
 		Parent = card,
 	})
@@ -66,7 +59,7 @@ local function preview(card: Frame, id: string, isCoral: boolean, known: boolean
 		if item:IsA("Light") or item:IsA("ParticleEmitter") then
 			item:Destroy()
 		elseif item:IsA("BasePart") and not known and item.Transparency < 1 then
-			item.Color = Color3.new(0, 0, 0)
+			item.Color = COLORS.silhouette
 			item.Material = Enum.Material.SmoothPlastic
 			item.Transparency = 0
 		end
@@ -198,7 +191,7 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 				hint = "Sold in the " .. def.zone .. " market"
 			end
 			local card = make("Frame", {
-				BackgroundColor3 = if known then COLORS.card else COLORS.unknown,
+				BackgroundColor3 = if known then COLORS.card else COLORS.muted,
 				Parent = grid,
 			}, {
 				corner(10),
@@ -231,10 +224,10 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 					AnchorPoint = Vector2.new(1, 0),
 					Position = UDim2.new(1, -6, 0, 6),
 					Size = UDim2.fromOffset(62, 26),
-					BackgroundColor3 = if isPet then COLORS.gold else Color3.fromRGB(60, 170, 190),
+					BackgroundColor3 = if isPet then COLORS.gold else COLORS.accent,
 					Font = Enum.Font.FredokaOne,
 					TextSize = 13,
-					TextColor3 = if isPet then Color3.fromRGB(60, 40, 10) else COLORS.text,
+					TextColor3 = if isPet then COLORS.goldText else COLORS.text,
 					Text = if isPet then "Pet ✓" else "Make pet",
 					Parent = card,
 				}, { corner(8) })

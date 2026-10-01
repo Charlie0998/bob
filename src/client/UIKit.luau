@@ -35,21 +35,41 @@ function UIKit.icon(name: string, props: { [string]: any }?): ImageLabel?
 	return label
 end
 
--- Colors matched to the icon set: deep navy panels and bright, glossy tiles.
+-- The one place UI colors are defined (coral-reef palette): deep navy and
+-- teal panels, teal cards, sunny-gold buttons, coral-pink accents. The HUD,
+-- Book, and panels all read from here.
 UIKit.COLORS = {
-	panel = Color3.fromRGB(16, 44, 62),
-	card = Color3.fromRGB(28, 70, 92),
-	muted = Color3.fromRGB(70, 92, 108),
+	-- Surfaces
+	panel = Color3.fromRGB(12, 42, 60), -- deep navy-teal
+	card = Color3.fromRGB(18, 96, 108), -- teal
+	muted = Color3.fromRGB(70, 92, 108), -- locked / unavailable
+	-- Text
 	text = Color3.fromRGB(255, 255, 255),
-	hint = Color3.fromRGB(175, 215, 228),
-	gold = Color3.fromRGB(255, 196, 64),
-	goldText = Color3.fromRGB(70, 40, 5),
-	accent = Color3.fromRGB(38, 172, 186),
-	pink = Color3.fromRGB(232, 88, 140),
+	hint = Color3.fromRGB(180, 222, 232),
+	pearl = Color3.fromRGB(255, 240, 200),
+	ready = Color3.fromRGB(255, 225, 90),
+	goldText = Color3.fromRGB(60, 36, 0),
+	-- Buttons and accents
+	gold = Color3.fromRGB(255, 200, 60), -- sunny gold
+	accent = Color3.fromRGB(38, 172, 186), -- aqua (selected / primary)
+	coral = Color3.fromRGB(240, 96, 110), -- coral pink
+	pink = Color3.fromRGB(240, 96, 110),
 	purple = Color3.fromRGB(140, 92, 222),
 	blue = Color3.fromRGB(56, 132, 232),
 	green = Color3.fromRGB(58, 182, 108),
 	orange = Color3.fromRGB(245, 140, 48),
+	-- Meters
+	xp = Color3.fromRGB(120, 230, 255),
+	healthStruggling = Color3.fromRGB(240, 110, 90),
+	healthHealthy = Color3.fromRGB(110, 205, 135),
+	healthThriving = Color3.fromRGB(90, 215, 215),
+	-- The little pearl on the pearl counter
+	pearlIcon = Color3.fromRGB(255, 250, 240),
+	pearlIconShade = Color3.fromRGB(225, 200, 230),
+	-- Book 3D previews: lit when found, a black silhouette when not
+	previewAmbient = Color3.fromRGB(170, 170, 170),
+	previewLight = Color3.fromRGB(255, 255, 255),
+	silhouette = Color3.fromRGB(0, 0, 0),
 }
 
 function UIKit.make(className: string, props: { [string]: any }, children: { Instance }?): any

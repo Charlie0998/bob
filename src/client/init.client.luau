@@ -21,10 +21,10 @@ local EventFX = require(script.EventFX)
 local Fish = require(script.Fish)
 local Panels = require(script.Panels)
 local SoundFX = require(script.SoundFX)
-local UIKit = require(script.UIKit)
 local PetRenderer = require(script.PetRenderer)
 local PhotoMode = require(script.PhotoMode)
 local WorldDecor = require(script.WorldDecor)
+local UIKit = require(script.UIKit)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
 WorldDecor.start()
@@ -39,14 +39,7 @@ task.spawn(Fish.start)
 local player = Players.LocalPlayer
 local UPDATE_SECONDS = 0.25
 
-local COLORS = {
-	panel = Color3.fromRGB(20, 60, 80),
-	text = Color3.fromRGB(255, 255, 255),
-	pearl = Color3.fromRGB(255, 240, 200),
-	ready = Color3.fromRGB(255, 225, 90),
-	locked = Color3.fromRGB(90, 110, 120),
-	selected = Color3.fromRGB(60, 170, 190),
-}
+local COLORS = UIKit.COLORS
 
 local function make(className: string, props: { [string]: any }, children: { Instance }?): any
 	local inst = Instance.new(className)
@@ -97,11 +90,11 @@ local pearlLabel = make("TextLabel", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 8, 0.5, 0),
 		Size = UDim2.fromOffset(24, 24),
-		BackgroundColor3 = Color3.fromRGB(255, 250, 240),
+		BackgroundColor3 = COLORS.pearlIcon,
 	}, {
 		make("UICorner", { CornerRadius = UDim.new(1, 0) }),
 		make("UIGradient", {
-			Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(225, 200, 230)),
+			Color = ColorSequence.new(COLORS.pearlIcon, COLORS.pearlIconShade),
 			Rotation = 45,
 		}),
 	}),
@@ -127,7 +120,7 @@ local nextLabel = make("TextLabel", {
 local levelScale = make("UIScale", {})
 local xpFill = make("Frame", {
 	Size = UDim2.fromScale(0, 1),
-	BackgroundColor3 = Color3.fromRGB(120, 230, 255),
+	BackgroundColor3 = COLORS.xp,
 	BorderSizePixel = 0,
 }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 local levelButton = make("TextButton", {
@@ -136,7 +129,7 @@ local levelButton = make("TextButton", {
 	Size = UDim2.fromOffset(66, 40),
 	BackgroundColor3 = COLORS.panel,
 	BackgroundTransparency = 0.15,
-	TextColor3 = Color3.fromRGB(255, 255, 255),
+	TextColor3 = COLORS.text,
 	TextStrokeTransparency = 0.6,
 	Font = Enum.Font.FredokaOne,
 	TextSize = 17,
@@ -157,7 +150,7 @@ local levelButton = make("TextButton", {
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -6),
 		Size = UDim2.new(1, -14, 0, 6),
-		BackgroundColor3 = COLORS.locked,
+		BackgroundColor3 = COLORS.muted,
 	}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }), xpFill }),
 })
 UIKit.gloss(levelButton, UIKit.COLORS.blue, 12)
@@ -183,7 +176,7 @@ local shellLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0, 0),
 	Position = UDim2.new(0.5, 88, 0, 8),
 	Size = UDim2.fromOffset(100, 40),
-	TextColor3 = Color3.fromRGB(255, 255, 255),
+	TextColor3 = COLORS.text,
 	TextStrokeTransparency = 0.6,
 	Font = Enum.Font.FredokaOne,
 	TextSize = 16,
@@ -288,9 +281,9 @@ EventFX.start(gui)
 -- Reef health meter ------------------------------------------------------
 
 local HEALTH_COLORS = {
-	Struggling = Color3.fromRGB(230, 120, 90),
-	Healthy = Color3.fromRGB(120, 210, 140),
-	Thriving = Color3.fromRGB(110, 230, 230),
+	Struggling = COLORS.healthStruggling,
+	Healthy = COLORS.healthHealthy,
+	Thriving = COLORS.healthThriving,
 }
 local healthFill = make("Frame", {
 	Size = UDim2.fromScale(0, 1),
