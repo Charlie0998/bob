@@ -38,7 +38,7 @@ local plazaCenter = Vector3.new(math.cos(math.rad(plaza.angle)) * plaza.radius, 
 
 local PlotDecor = {}
 
-type Plot = { model: Model, folder: Folder, tierFolder: Folder, path: { BasePart }, center: Vector3, tier: number, flags: { { part: BasePart, top: CFrame } }, lanterns: { PointLight } }
+type Plot = { model: Model, folder: Folder, tierFolder: Folder, path: { BasePart }, center: Vector3, tier: number, flags: { { part: BasePart, top: CFrame } } }
 local plots: { [Model]: Plot } = {}
 
 local function part(parent: Instance, props: { [string]: any }): Part
@@ -320,14 +320,8 @@ local function onPlot(model: Instance)
 	local tierFolder = Instance.new("Folder")
 	tierFolder.Name = "Growth"
 	tierFolder.Parent = folder
-	local plot: Plot = { model = model, folder = folder, tierFolder = tierFolder, path = {}, center = base.Position, tier = -1, flags = {}, lanterns = {} }
-	-- Walkway lanterns (built by the server) flicker like little flames.
-	for _, child in model:GetChildren() do
-		local light = child.Name == "Lantern" and child:FindFirstChildOfClass("PointLight")
-		if light then
-			table.insert(plot.lanterns, light)
-		end
-	end
+	local plot: Plot = { model = model, folder = folder, tierFolder = tierFolder, path = {}, center = base.Position, tier = -1, flags = {} }
+
 	plots[model] = plot
 	buildFrame(plot, base)
 	buildSurroundings(plot, base)
@@ -457,8 +451,28 @@ function PlotDecor.start()
 			task.wait(1)
 		end
 	end)
+	-- Walkway lanterns (built by the server) flicker like little flames.
+	local lanterns: { [PointLight]: number } = {} -- light -> flicker phase
+	local walkways = workspace:WaitForChild("Walkways", 10)
+	if walkways then
+		local function addLantern(item: Instance)
+			if item:IsA("PointLight") and item.Parent and item.Parent.Name == "Lantern" and not lanterns[item] then
+				lanterns[item] = math.random() * 10
+				item.Destroying:Connect(function()
+					lanterns[item] = nil
+				end)
+			end
+		end
+		walkways.DescendantAdded:Connect(addLantern) -- streamed in later
+		for _, item in walkways:GetDescendants() do
+			addLantern(item)
+		end
+	end
 	RunService.Heartbeat:Connect(function()
 		local t = os.clock()
+		for light, phase in lanterns do
+			light.Brightness = 1 + math.sin(t * 9 + phase) * 0.15 + math.sin(t * 23 + phase) * 0.1
+		end
 		for _, clam in clams do
 			clam.pearl.CFrame = clam.home * CFrame.new(0, math.sin(t * 2) * 0.4, 0) * CFrame.Angles(0, t, 0)
 			-- The lid slowly opens and closes, like the clam is breathing.
@@ -471,9 +485,6 @@ function PlotDecor.start()
 			if plot.folder.Parent then
 				for i, flag in plot.flags do
 					flag.part.CFrame = flag.top * CFrame.Angles(0, math.sin(t * 3 + i) * 0.35, 0) * CFrame.new(0, 0, 1.2)
-				end
-				for i, light in plot.lanterns do
-					light.Brightness = 1 + math.sin(t * 9 + i * 1.7) * 0.15 + math.sin(t * 23 + i) * 0.1
 				end
 			end
 		end

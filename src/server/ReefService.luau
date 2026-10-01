@@ -314,7 +314,7 @@ local LANTERN_COLOR = Color3.fromRGB(255, 215, 140)
 local LANTERN_SPACING = 26
 
 -- One straight stretch of walkway with curbs and lanterns.
-local function walkwaySegment(model: Model, start: Vector3, finish: Vector3)
+local function walkwaySegment(model: Instance, start: Vector3, finish: Vector3)
 	local length = (finish - start).Magnitude
 	if length < 2 then
 		return
@@ -343,10 +343,11 @@ end
 -- From the spawn disc to the plot's front. A walkway that would cross the
 -- Market plaza stops at its edge and picks up again on the far side, so it
 -- never sits under the plaza floor.
-local function buildWalkway(model: Model, base: BasePart)
-	local front = (base.CFrame * CFrame.new(0, 0, -(base.Size.Z / 2 + 1))).Position
-	local finish = Vector3.new(front.X, 0, front.Z)
-	local direction = finish.Unit
+local function buildWalkway(model: Instance, site: Vector3)
+	-- Plots face spawn, so the front edge is the side nearest the middle.
+	local halfZ = (math.ceil(GRID_CAPACITY / GRID_COLUMNS) * CELL + 4) / 2
+	local direction = site.Unit
+	local finish = site - direction * (halfZ + 1)
 	local start = direction * SPAWN_DISC
 	local plaza = Balance.world.plaza
 	local plazaCenter = Vector3.new(math.cos(math.rad(plaza.angle)), 0, math.sin(math.rad(plaza.angle))) * plaza.radius
@@ -420,7 +421,6 @@ local function buildPlot(player: Player, state: PlayerState)
 	CollectionService:AddTag(pad, PAD_TAG)
 	pad.Parent = model
 
-	buildWalkway(model, base)
 	model.Parent = plotsFolder
 	state.plot = model
 end
@@ -854,6 +854,14 @@ function ReefService.start()
 		Color = Color3.fromRGB(38, 172, 186),
 		Material = Enum.Material.Pavement,
 	}).Parent = workspace
+	-- A walkway to every plot spot, empty or not, so the map always shows
+	-- where reefs go.
+	local walkways = Instance.new("Folder")
+	walkways.Name = "Walkways"
+	for _, site in PlotLayout.sites() do
+		buildWalkway(walkways, site)
+	end
+	walkways.Parent = workspace
 	-- Care decays while players are away, so rescore everyone each minute.
 	task.spawn(function()
 		while true do
