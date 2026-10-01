@@ -106,6 +106,7 @@ local function feed(feeder: Player, owner: Player, visit: Visit)
 		end
 	end
 	feedSignal:Fire(feeder, owner, visit.creature)
+	ReefService.activity(feeder, "feed", 1)
 end
 
 local function spawnVisitor(owner: Player): boolean

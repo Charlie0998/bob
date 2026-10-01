@@ -857,5 +857,91 @@
 			"kind": "creatures"
 		}
 	],
-	"startingShells": 0
+	"startingShells": 0,
+	"prestige": {
+		"requiredSlots": 24,
+		"multiplierPerLevel": 0.25,
+		"rewardCoral": "Crystal",
+		"shop": [
+			{
+				"id": "Crystal",
+				"coral": "Crystal",
+				"shells": 300,
+				"minLevel": 1
+			},
+			{
+				"id": "GlowingTube",
+				"coral": "GlowingTube",
+				"shells": 120,
+				"minLevel": 1
+			}
+		]
+	},
+	"daily": {
+		"goalsPerDay": 3,
+		"streakShellsPerDay": 5,
+		"streakCap": 7,
+		"templates": [
+			{
+				"id": "harvest",
+				"text": "Harvest %d times",
+				"activity": "harvest",
+				"target": [
+					10,
+					25
+				],
+				"shells": 10
+			},
+			{
+				"id": "plant",
+				"text": "Plant %d corals",
+				"activity": "plant",
+				"target": [
+					3,
+					8
+				],
+				"shells": 10
+			},
+			{
+				"id": "feed",
+				"text": "Feed %d creatures",
+				"activity": "feed",
+				"target": [
+					2,
+					5
+				],
+				"shells": 15
+			},
+			{
+				"id": "pearls",
+				"text": "Earn %d pearls",
+				"activity": "pearls",
+				"target": [
+					200,
+					2000
+				],
+				"shells": 15
+			},
+			{
+				"id": "slot",
+				"text": "Unlock %d new slot",
+				"activity": "slot",
+				"target": [
+					1,
+					1
+				],
+				"shells": 20
+			},
+			{
+				"id": "visit",
+				"text": "Visit %d friend's reef",
+				"activity": "visit",
+				"target": [
+					1,
+					1
+				],
+				"shells": 20
+			}
+		]
+	}
 }

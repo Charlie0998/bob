@@ -16,6 +16,7 @@ local CoralRenderer = require(script.CoralRenderer)
 local CreatureRenderer = require(script.CreatureRenderer)
 local Effects = require(script.Effects)
 local Fish = require(script.Fish)
+local Panels = require(script.Panels)
 local WorldDecor = require(script.WorldDecor)
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
@@ -180,7 +181,9 @@ local function addMenuButton(text: string, onActivated: () -> ()): TextButton
 end
 
 Book.start(gui, Remotes)
+addMenuButton("Goals", Panels.goals(gui, Remotes))
 addMenuButton("Book", Book.toggle)
+addMenuButton("Tide", Panels.tide(gui, Remotes))
 
 -- Reef health meter ------------------------------------------------------
 

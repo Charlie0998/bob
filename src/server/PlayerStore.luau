@@ -32,6 +32,13 @@ export type PlayerData = {
 	inventory: { [string]: number },
 	discovered: { corals: { [string]: boolean }, creatures: { [string]: boolean } },
 	bookClaimed: { [string]: boolean },
+	prestige: { level: number },
+	daily: {
+		day: number,
+		goals: { { id: string, target: number, progress: number, claimed: boolean } },
+		streak: number,
+		lastLoginDay: number,
+	},
 }
 
 type Profile = { data: PlayerData, key: string }
@@ -67,6 +74,8 @@ local function newData(): PlayerData
 		inventory = {},
 		discovered = { corals = { [Balance.starterCoral] = true }, creatures = {} },
 		bookClaimed = {},
+		prestige = { level = 0 },
+		daily = { day = -1, goals = {}, streak = 0, lastLoginDay = -1 },
 	}
 	-- First session: the player spawns with one starter coral already growing.
 	data.corals["1"] = { type = Balance.starterCoral, plantedAt = os.time(), bornAt = os.time() }

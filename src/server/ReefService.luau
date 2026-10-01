@@ -176,6 +176,9 @@ function ReefService.addCurrency(player: Player, pearls: number, shells: number,
 	if pearls ~= 0 then
 		setPearls(player, data.pearls + pearls)
 		logPearls(player, Enum.AnalyticsEconomyFlowType.Source, pearls, data.pearls, sku)
+		if pearls > 0 then
+			ReefService.activity(player, "pearls", pearls)
+		end
 	end
 	if shells ~= 0 then
 		setShells(player, data.shells + shells)
@@ -201,6 +204,14 @@ end
 
 function ReefService.effect(kind: string, target: Instance?, amount: number, actorId: number)
 	effectRemote:FireAllClients(kind, target, amount, actorId)
+end
+
+local activitySignal = Instance.new("BindableEvent")
+-- Fires with (player, kind, amount) for goal tracking: "harvest", "plant",
+-- "slot", "pearls", plus kinds other services report through ReefService.activity.
+ReefService.Activity = activitySignal.Event
+function ReefService.activity(player: Player, kind: string, amount: number)
+	activitySignal:Fire(player, kind, amount)
 end
 
 local discoveredSignal = Instance.new("BindableEvent")
@@ -438,6 +449,8 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 		end
 		data.stats.harvests += 1
 		refreshHealth(player)
+		ReefService.activity(player, "harvest", 1)
+		ReefService.activity(player, "pearls", gained)
 		toast(player, "+" .. gained .. " pearls", "pearls")
 		return
 	end
@@ -482,6 +495,7 @@ function ReefService.onSlotClicked(player: Player, part: BasePart)
 	end
 	data.stats.planted += 1
 	refreshHealth(player)
+	ReefService.activity(player, "plant", 1)
 end
 
 function ReefService.onBuySlot(player: Player, pad: BasePart)
@@ -512,6 +526,7 @@ function ReefService.onBuySlot(player: Player, pad: BasePart)
 	createSlot(player, state, data.slots)
 	updatePad(player, state)
 	refreshHealth(player)
+	ReefService.activity(player, "slot", 1)
 	toast(player, "New slot unlocked!", "unlock")
 	local newTile = state.plot:FindFirstChild("Slot" .. data.slots)
 	effectRemote:FireAllClients("slot", newTile, 0, player.UserId)
@@ -607,10 +622,47 @@ local function onPlayerRemoving(player: Player)
 	end
 end
 
--- Total harvest multiplier. Other systems (prestige, friends, passes) add
--- their factors here as they are built.
+-- Extra income factors registered by other systems (prestige, friends,
+-- passes). Each returns a multiplier for the player.
+local multiplierSources: { [string]: (Player) -> number } = {}
+function ReefService.addMultiplier(name: string, source: (Player) -> number)
+	multiplierSources[name] = source
+end
+
+-- Total harvest multiplier: reef health times every registered source.
 function ReefService.incomeMultiplier(player: Player): number
-	return player:GetAttribute("HealthMultiplier") :: number? or 1
+	local total = player:GetAttribute("HealthMultiplier") :: number? or 1
+	for _, source in multiplierSources do
+		total *= source(player)
+	end
+	player:SetAttribute("IncomeMultiplier", total)
+	return total
+end
+
+-- Tide Reset: clears the plot back to a fresh start. Shells, inventory,
+-- discoveries, book rewards, and prestige level are kept by the caller.
+function ReefService.resetReef(player: Player)
+	local state = states[player]
+	local data = PlayerStore.get(player)
+	if not state or not data then
+		return
+	end
+	for _, child in state.plot:GetChildren() do
+		if CollectionService:HasTag(child, SLOT_TAG) or CollectionService:HasTag(child, "ReefCreature") then
+			child:Destroy()
+		end
+	end
+	local now = os.time()
+	data.pearls = Balance.startingPearls
+	data.slots = Balance.startingSlots
+	data.corals = { ["1"] = { type = Balance.starterCoral, plantedAt = now, bornAt = now } }
+	for slot = 1, data.slots do
+		createSlot(player, state, slot)
+	end
+	updatePad(player, state)
+	setPearls(player, data.pearls)
+	player:SetAttribute("Slots", data.slots)
+	refreshHealth(player)
 end
 
 function ReefService.start()

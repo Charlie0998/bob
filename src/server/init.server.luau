@@ -3,10 +3,14 @@
 
 local BookService = require(script.BookService)
 local CreatureService = require(script.CreatureService)
+local DailyService = require(script.DailyService)
 local PlayerStore = require(script.PlayerStore)
+local PrestigeService = require(script.PrestigeService)
 local ReefService = require(script.ReefService)
 
 ReefService.start()
 CreatureService.start()
 BookService.start()
+PrestigeService.start()
+DailyService.start()
 PlayerStore.start()
