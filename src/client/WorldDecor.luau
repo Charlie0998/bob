@@ -58,6 +58,10 @@ do
 		table.insert(landmarkSpots, { center = Vector3.new(math.cos(a) * cfg.radius, 0, math.sin(a) * cfg.radius), radius = cfg.size })
 	end
 	add(Balance.world.plaza)
+	-- The Leaderboard area (LeaderboardService) and the path out to it.
+	local gap = 0.5 / Balance.world.plots.perRing * 360
+	add({ angle = gap, radius = 115, size = 22 })
+	add({ angle = gap, radius = 88, size = 8 })
 	for _, cfg in Balance.world.landmarks do
 		add(cfg)
 	end
