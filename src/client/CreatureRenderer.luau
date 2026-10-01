@@ -33,6 +33,8 @@ folder.Name = "Creatures"
 
 local rayParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
+-- Skip invisible non-solid parts such as the slots' tap boxes.
+rayParams.RespectCanCollide = true
 
 local function onAdded(instance: Instance)
 	if not instance:IsA("BasePart") or entries[instance] then

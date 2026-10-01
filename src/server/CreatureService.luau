@@ -138,10 +138,17 @@ local function spawnVisitor(owner: Player): boolean
 	anchor.Anchored = true
 	anchor.CanCollide = false
 	anchor.CanTouch = false
-	-- Crawlers sit on the sand next to the coral; swimmers hover above it.
+	-- Swimmers hover above a coral. Crawlers walk the open sand strip at the
+	-- front of the plot, clear of the slots' tap boxes, so tapping one never
+	-- harvests a coral by mistake.
 	local crawler = def.kind == "crab" or def.kind == "star"
-	local height = if crawler then 2 else rng:NextNumber(5, 7)
-	anchor.CFrame = CFrame.new(tile.Position + Vector3.new(rng:NextNumber(-2, 2), height, rng:NextNumber(-2, 2)))
+	if crawler then
+		local base = plot.PrimaryPart :: BasePart
+		anchor.Size = Vector3.new(4, 3, 3)
+		anchor.CFrame = base.CFrame * CFrame.new(rng:NextNumber(-base.Size.X / 2 + 6, base.Size.X / 2 - 6), 2, -(base.Size.Z / 2 - 1.5))
+	else
+		anchor.CFrame = CFrame.new(tile.Position + Vector3.new(rng:NextNumber(-2, 2), rng:NextNumber(5, 7), rng:NextNumber(-2, 2)))
+	end
 	anchor:SetAttribute("CreatureId", creature)
 	anchor:SetAttribute("OwnerId", owner.UserId)
 
