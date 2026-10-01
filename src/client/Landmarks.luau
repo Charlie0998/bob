@@ -479,6 +479,85 @@ end
 
 -- Animation and level-of-detail ------------------------------------------------
 
+-- Big glowing jellyfish floating over the Leaderboard area (built by
+-- LeaderboardService in the gap between the first two plots). Each has a
+-- see-through bell, a glowing core that lights the boards, a frilly rim, and
+-- long tentacles that ripple as it bobs.
+local poseJellies: (number, { BasePart }, { CFrame }) -> ()
+type Jelly = { bell: BasePart, core: BasePart, frills: { BasePart }, tentacles: { { BasePart } }, home: Vector3, phase: number }
+local jellies: { Jelly } = {}
+local TENTACLES = 8
+local SEGMENTS = 7
+
+local function buildJellies()
+	local gap = 0.5 / Balance.world.plots.perRing * math.pi * 2
+	local area = Vector3.new(math.cos(gap), 0, math.sin(gap)) * 115
+	local model = group("LeaderboardJellies", area)
+	local looks = {
+		{ Color3.fromRGB(255, 140, 210), Color3.fromRGB(255, 200, 240) },
+		{ Color3.fromRGB(140, 200, 255), Color3.fromRGB(200, 240, 255) },
+		{ Color3.fromRGB(190, 150, 255), Color3.fromRGB(230, 210, 255) },
+	}
+	for i, look in looks do
+		local a = i / #looks * math.pi * 2
+		local home = area + Vector3.new(math.cos(a) * 9, 20 + i * 2, math.sin(a) * 9)
+		local bell = ellipsoid(model, Vector3.new(8, 5, 8), CFrame.new(home), look[1])
+		bell.Transparency = 0.35
+		local core = ellipsoid(model, Vector3.new(4.5, 2.6, 4.5), CFrame.new(home), look[2], Enum.Material.Neon)
+		core.Transparency = 0.3
+		light(core, look[1], 28, 2.2)
+		local frills = {}
+		for _ = 1, 10 do
+			local frill = ellipsoid(model, Vector3.new(1.6, 0.6, 1.2), CFrame.new(home), look[2], Enum.Material.Neon)
+			frill.Transparency = 0.4
+			table.insert(frills, frill)
+		end
+		local tentacles = {}
+		for _ = 1, TENTACLES do
+			local strand = {}
+			for k = 1, SEGMENTS do
+				local seg = part(model, { Size = Vector3.new(0.3, 1.5, 0.3), Color = look[2]:Lerp(look[1], k / SEGMENTS), Material = Enum.Material.Neon })
+				seg.Transparency = 0.15 + k * 0.08
+				table.insert(strand, seg)
+			end
+			table.insert(tentacles, strand)
+		end
+		table.insert(jellies, { bell = bell, core = core, frills = frills, tentacles = tentacles, home = home, phase = i * 2.1 })
+	end
+end
+
+-- Bobs each jelly, pulses its bell, and ripples its tentacles.
+poseJellies = function(t: number, outParts: { BasePart }, outFrames: { CFrame })
+	for _, jelly in jellies do
+		local p = jelly.phase
+		local center = jelly.home + Vector3.new(math.sin(t * 0.3 + p) * 2, math.sin(t * 0.8 + p) * 1.5, math.cos(t * 0.25 + p) * 2)
+		local root = CFrame.new(center) * CFrame.Angles(0, t * 0.2 + p, 0)
+		local squish = 1 + math.sin(t * 2 + p) * 0.08
+		outParts[#outParts + 1] = jelly.bell
+		outFrames[#outFrames + 1] = root
+		outParts[#outParts + 1] = jelly.core
+		outFrames[#outFrames + 1] = root * CFrame.new(0, -0.4, 0)
+		for i, frill in jelly.frills do
+			local a = i / #jelly.frills * math.pi * 2
+			outParts[#outParts + 1] = frill
+			outFrames[#outFrames + 1] = root * CFrame.new(math.cos(a) * 3.6 * squish, -1.6, math.sin(a) * 3.6 * squish) * CFrame.Angles(0, -a, 0.4)
+		end
+		for i, strand in jelly.tentacles do
+			local a = i / #jelly.tentacles * math.pi * 2
+			local position = (root * CFrame.new(math.cos(a) * 2.2, -1.8, math.sin(a) * 2.2)).Position
+			for k, seg in strand do
+				-- Each segment hangs from the last, swinging a bit more further down.
+				local swing = math.sin(t * 1.6 + p + i * 0.8 - k * 0.6) * 0.18 * k
+				local direction = Vector3.new(math.cos(a) * 0.25 + swing, -1, math.sin(a) * 0.25 + math.cos(t * 1.3 + i + k * 0.5) * 0.12 * k).Unit
+				local nextPosition = position + direction * 1.4
+				outParts[#outParts + 1] = seg
+				outFrames[#outFrames + 1] = CFrame.lookAt((position + nextPosition) / 2, nextPosition) * CFrame.Angles(math.pi / 2, 0, 0)
+				position = nextPosition
+			end
+		end
+	end
+end
+
 -- A shopkeeper behind each deep zone's market counter (ZoneService builds
 -- the counter at the zone center, facing spawn).
 local ZONE_KEEPERS = {
@@ -508,6 +587,7 @@ function Landmarks.start(onOpenMarket: (string?) -> ())
 	openMarket = onOpenMarket
 	buildPlaza()
 	buildZoneKeepers()
+	buildJellies()
 	buildRuin()
 	buildLighthouse()
 	buildWhale()
@@ -558,8 +638,9 @@ function Landmarks.start(onOpenMarket: (string?) -> ())
 				frames[#frames + 1] = hinge * clam.offsets[i]
 			end
 		end
-		-- Shopkeepers bob and wave; shoppers stroll around the plaza.
+		-- Shopkeepers bob and wave; jellyfish drift over the Leaderboard area.
 		posePeople(t, parts, frames)
+		poseJellies(t, parts, frames)
 		if lighthouseBeam then
 			local beam = lighthouseBeam :: BasePart
 			parts[#parts + 1] = beam

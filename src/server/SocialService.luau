@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
 local PlayerStore = require(script.Parent.PlayerStore)
+local LeaderboardService = require(script.Parent.LeaderboardService)
 local ReefService = require(script.Parent.ReefService)
 
 local CONFIG = Balance.social
@@ -163,31 +164,12 @@ local function onLike(player: Player, targetId: unknown)
 	end
 end
 
--- The Top Reefs board: a sign at spawn listing this week's most-liked reefs.
+-- The Top Reefs board: a sign in the Leaderboard area listing this week's most-liked reefs.
 local boardLabel: TextLabel
 
 local function buildBoard()
-	local board = Instance.new("Part")
-	board.Name = "TopReefsBoard"
-	board.Anchored = true
-	board.Size = Vector3.new(14, 11, 0.6)
-	board.CFrame = CFrame.new(0, 8.5, -9) -- standing on the raised Market floor
-	board.Color = Color3.fromRGB(20, 60, 80)
-	board.Material = Enum.Material.SmoothPlastic
-	local gui = Instance.new("SurfaceGui")
-	gui.Face = Enum.NormalId.Back
-	gui.CanvasSize = Vector2.new(560, 440)
-	gui.Parent = board
-	boardLabel = Instance.new("TextLabel")
-	boardLabel.Size = UDim2.fromScale(1, 1)
-	boardLabel.BackgroundTransparency = 1
-	boardLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	boardLabel.Font = Enum.Font.FredokaOne
-	boardLabel.TextSize = 26
-	boardLabel.TextYAlignment = Enum.TextYAlignment.Top
+	boardLabel = LeaderboardService.makePanel(4, "Top Reefs this week")
 	boardLabel.Text = "Top Reefs this week\n\nNo likes yet. Visit a reef and like it!"
-	boardLabel.Parent = gui
-	board.Parent = workspace
 end
 
 local nameCache: { [number]: string } = {}

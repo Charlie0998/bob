@@ -1,6 +1,7 @@
 -- Leaderboards: Shells and Rebirths join Pearls in the player list, and a
 -- Leaderboard area (its own stone platform, reached by a path off the ring
--- road) has three all-time boards: Most Rebirths, Most Shells, Most Pearls.
+-- road) has three all-time boards: Most Rebirths, Most Shells, Most Pearls,
+-- plus SocialService's Top Reefs this week board (via makePanel).
 -- Scores are saved to OrderedDataStores; if those are unavailable (Studio
 -- without API access) the boards rank the players on this server instead.
 
@@ -48,47 +49,53 @@ local function newPart(props: { [string]: any }): Part
 	return part
 end
 
--- The area sits in the gap between the first two plots, facing the Market.
+local PANELS = 4 -- Rebirths, Shells, Pearls, and the Top Reefs board
+local angle = 0.5 / Balance.world.plots.perRing * math.pi * 2
+local direction = Vector3.new(math.cos(angle), 0, math.sin(angle))
+local center = direction * AREA_RADIUS
+local folder = Instance.new("Folder")
+folder.Name = "LeaderboardArea"
+
+-- A board on two posts in an arc on the far side of the platform, facing its
+-- middle. Returns the label to write rows into.
+function LeaderboardService.makePanel(index: number, title: string): TextLabel
+	local spread = (index - (PANELS + 1) / 2) * math.rad(52)
+	local frame = CFrame.lookAt(center, Vector3.zero) * CFrame.Angles(0, spread, 0) * CFrame.new(0, 0, 13)
+	frame = CFrame.lookAt(frame.Position, center)
+	local panel = newPart({ Name = title, Size = Vector3.new(11, 14, 0.6), CFrame = frame * CFrame.new(0, 8.4, 0), Color = Color3.fromRGB(20, 60, 80) })
+	for _, x in { -5.1, 5.1 } do
+		newPart({ Name = "Post", Size = Vector3.new(0.6, 15.4, 0.6), CFrame = frame * CFrame.new(x, 7.7, 0.5), Color = Color3.fromRGB(95, 65, 40), Material = Enum.Material.Wood }).Parent = folder
+	end
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Front
+	gui.CanvasSize = Vector2.new(440, 560)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.Font = Enum.Font.FredokaOne
+	label.TextSize = 28
+	label.TextWrapped = true
+	label.TextYAlignment = Enum.TextYAlignment.Top
+	label.Text = title .. "\n\nLoading..."
+	label.Parent = gui
+	gui.Parent = panel
+	panel.Parent = folder
+	folder.Parent = workspace
+	return label
+end
+
+-- The platform (between the first two plots) and a path out from the ring road.
 local function buildArea()
-	local folder = Instance.new("Folder")
-	folder.Name = "LeaderboardArea"
-	local angle = 0.5 / Balance.world.plots.perRing * math.pi * 2
-	local direction = Vector3.new(math.cos(angle), 0, math.sin(angle))
-	local center = direction * AREA_RADIUS
-	-- Platform (top 0.9 over a rim at 0.6) and a path from the ring road.
 	newPart({ Name = "Platform", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, PLATFORM_SIZE + 2, PLATFORM_SIZE + 2), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(150, 125, 98) }).Parent = folder
 	newPart({ Name = "Platform", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.8, PLATFORM_SIZE, PLATFORM_SIZE), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(225, 205, 170) }).Parent = folder
 	local plaza = Balance.world.plaza
 	local pathStart = direction * (plaza.ringRadius + plaza.ringWidth / 2 - 0.5)
 	local pathEnd = center - direction * (PLATFORM_SIZE / 2 - 0.5)
 	local length = (pathEnd - pathStart).Magnitude
-	newPart({ Name = "Path", Size = Vector3.new(8, 1, length), CFrame = CFrame.lookAt((pathStart + pathEnd) / 2, pathEnd), Color = Color3.fromRGB(200, 170, 135), Material = Enum.Material.Cobblestone }).Parent = folder
-
-	-- Three boards in an arc on the far side, facing back toward the Market.
-	local facing = CFrame.lookAt(center, Vector3.zero)
+	newPart({ Name = "Path", Size = Vector3.new(8, 1, length), CFrame = CFrame.lookAt((pathStart + pathEnd) / 2, pathEnd), Color = Color3.fromRGB(200, 170, 135) }).Parent = folder
 	for i, board in BOARDS do
-		local spread = (i - 2) * math.rad(60)
-		local frame = facing * CFrame.Angles(0, spread, 0) * CFrame.new(0, 0, 13)
-		frame = CFrame.lookAt(frame.Position, center) -- face the platform's middle
-		local panel = newPart({ Name = board.title, Size = Vector3.new(12, 14, 0.6), CFrame = frame * CFrame.new(0, 8.4, 0), Color = Color3.fromRGB(20, 60, 80) })
-		for _, x in { -5.6, 5.6 } do
-			newPart({ Name = "Post", Size = Vector3.new(0.6, 15.4, 0.6), CFrame = frame * CFrame.new(x, 7.7, 0.5), Color = Color3.fromRGB(95, 65, 40), Material = Enum.Material.Wood }).Parent = folder
-		end
-		local gui = Instance.new("SurfaceGui")
-		gui.Face = Enum.NormalId.Front
-		gui.CanvasSize = Vector2.new(480, 560)
-		local label = Instance.new("TextLabel")
-		label.Size = UDim2.fromScale(1, 1)
-		label.BackgroundTransparency = 1
-		label.TextColor3 = Color3.fromRGB(255, 255, 255)
-		label.Font = Enum.Font.FredokaOne
-		label.TextSize = 30
-		label.TextYAlignment = Enum.TextYAlignment.Top
-		label.Text = board.title .. "\n\nLoading..."
-		label.Parent = gui
-		gui.Parent = panel
-		board.label = label
-		panel.Parent = folder
+		board.label = LeaderboardService.makePanel(i, board.title)
 	end
 	folder.Parent = workspace
 end
