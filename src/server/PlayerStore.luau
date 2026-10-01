@@ -39,6 +39,7 @@ export type PlayerData = {
 		streak: number,
 		lastLoginDay: number,
 	},
+	friendBonus: { [string]: boolean }, -- friends this player already got the join bonus with
 	social: { day: number, visitsRewarded: number, hostRewarded: number, liked: { [string]: boolean }, likesReceived: number },
 	trades: { day: number, count: number },
 	-- Inventory corals bought with Robux; these can't be traded.
@@ -91,6 +92,7 @@ local function newData(): PlayerData
 		bookClaimed = {},
 		prestige = { level = 0 },
 		daily = { day = -1, goals = {}, streak = 0, lastLoginDay = -1 },
+		friendBonus = {},
 		social = { day = -1, visitsRewarded = 0, hostRewarded = 0, liked = {}, likesReceived = 0 },
 		trades = { day = -1, count = 0 },
 		untradeable = {},

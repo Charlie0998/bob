@@ -59,6 +59,27 @@ local function publishBoost(player: Player)
 	ReefService.incomeMultiplier(player)
 end
 
+-- Joining a friend's server (following them or accepting their invite) pays
+-- both of them once per friend, ever.
+local function friendJoinBonus(player: Player)
+	local host = Players:GetPlayerByUserId(player.FollowUserId)
+	if not host or host == player or not (friends[player] and friends[player][host]) then
+		return
+	end
+	local joinerData, hostData = PlayerStore.get(player), PlayerStore.get(host)
+	local hostKey, joinerKey = tostring(host.UserId), tostring(player.UserId)
+	if not joinerData or not hostData or joinerData.friendBonus[hostKey] or hostData.friendBonus[joinerKey] then
+		return
+	end
+	joinerData.friendBonus[hostKey] = true
+	hostData.friendBonus[joinerKey] = true
+	local reward = string.format("+%d pearls, +%d shells", CONFIG.friendJoinPearls, CONFIG.friendJoinShells)
+	for _, pair in { { player, host }, { host, player } } do
+		ReefService.addCurrency(pair[1], CONFIG.friendJoinPearls, CONFIG.friendJoinShells, "FriendJoin")
+		ReefService.toast(pair[1], "Friend bonus with " .. pair[2].DisplayName .. "! " .. reward, "unlock")
+	end
+end
+
 local function onJoined(player: Player)
 	friends[player] = friends[player] or {}
 	for _, other in Players:GetPlayers() do
@@ -71,6 +92,7 @@ local function onJoined(player: Player)
 		end
 	end
 	publishBoost(player)
+	friendJoinBonus(player)
 	local data = PlayerStore.get(player)
 	if data then
 		player:SetAttribute("LikesReceived", data.social.likesReceived)

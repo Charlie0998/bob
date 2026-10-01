@@ -1247,6 +1247,8 @@
 		"hostedRewardsPerDay": 20,
 		"friendBoostPerFriend": 0.05,
 		"friendBoostMaxFriends": 3,
+		"friendJoinPearls": 100,
+		"friendJoinShells": 10,
 		"boardSize": 10,
 		"boardRefreshSeconds": 120
 	},

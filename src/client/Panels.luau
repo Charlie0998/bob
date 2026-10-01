@@ -257,7 +257,7 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 		end
 		if #others == 0 then
 			local empty = UIKit.card(panel.body, 50, 1)
-			UIKit.label("Nobody else is here yet. Invite a friend!", { Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), Parent = empty })
+			UIKit.label("Nobody else is here yet. Invite a friend: you both get 100 pearls and 10 shells!", { Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), Parent = empty })
 		end
 		for i, other in others do
 			if friendCache[other.UserId] == nil then

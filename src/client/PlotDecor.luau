@@ -19,7 +19,7 @@ local PlotLayout = require(ReplicatedStorage.Shared.PlotLayout)
 local WorldDecor = require(script.Parent.WorldDecor)
 
 local HIDE_DISTANCE = 360
-local PATH_START_RADIUS = 14
+local PATH_START_RADIUS = 24 -- just past the spawn disc
 local PATH_SPACING = 5
 local TIERS = { 10, 20, 30 }
 
@@ -270,7 +270,7 @@ local function buildPath(plot: Plot, base: BasePart)
 	local length = (flatFront - start).Magnitude
 	local mine = plot.model:GetAttribute("OwnerId") == player.UserId
 	for d = 0, length, PATH_SPACING do
-		local p = start + direction * d + Vector3.new(0, 0.12, 0)
+		local p = start + direction * d + Vector3.new(0, 0.35, 0) -- on top of the stone walkway
 		-- Don't lay shells across another plot (outer-ring paths pass inner plots).
 		local blocked = false
 		for _, center in plotSites do

@@ -62,7 +62,38 @@ do
 	end
 end
 
+-- Stone walkways from the spawn disc to every plot (the 22.5 degree one runs
+-- through the Market). They start where neighbors are far enough apart not
+-- to overlap. Kept clear of rocks and kelp.
+local PATH_WIDTH = 7
+local SPAWN_DISC = 22
+local paths: { { from: Vector3, to: Vector3 } } = {}
+do
+	local function add(target: Vector3, stopShort: number)
+		local direction = target.Unit
+		table.insert(paths, { from = direction * SPAWN_DISC, to = target - direction * stopShort })
+	end
+	for _, site in plotCenters do
+		add(site, 24) -- stops at the plot's front rim
+	end
+end
+
+local function onPath(position: Vector3, margin: number): boolean
+	local flat = Vector3.new(position.X, 0, position.Z)
+	for _, path in paths do
+		local along = path.to - path.from
+		local t = math.clamp((flat - path.from):Dot(along) / along:Dot(along), 0, 1)
+		if (flat - (path.from + along * t)).Magnitude < PATH_WIDTH / 2 + margin then
+			return true
+		end
+	end
+	return false
+end
+
 local function isClear(position: Vector3, margin: number): boolean
+	if onPath(position, margin) then
+		return false
+	end
 	if Vector3.new(position.X, 0, position.Z).Magnitude < 10 + margin then
 		return false -- keep the spawn point open
 	end
@@ -98,7 +129,7 @@ local function buildGarden(rng: Random)
 	end
 	table.sort(types)
 	for i = 1, 16 do
-		local angle = i / 16 * math.pi * 2 + rng:NextNumber(-0.15, 0.15)
+		local angle = (i + 0.5) / 16 * math.pi * 2 + rng:NextNumber(-0.1, 0.1) -- between the walkways
 		local radius = rng:NextNumber(13, 24)
 		local coralType = types[rng:NextInteger(1, #types)]
 		local model = CoralModels.build(coralType, Balance.corals[coralType].color, SEED + i)
@@ -597,8 +628,60 @@ function WorldDecor.addSwaying(position: Vector3, segments: number, color: Color
 	return kelp.parts
 end
 
+-- Walkways are flat slabs (top 0.25) with a raised border (top 0.35); the
+-- spawn disc (top 0.45) is higher still so no two tops ever line up.
+local function buildPaths()
+	local stone = Color3.fromRGB(196, 178, 146)
+	local border = Color3.fromRGB(150, 132, 108)
+	newPart({
+		Name = "SpawnDisc",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.9, SPAWN_DISC * 2 + 3, SPAWN_DISC * 2 + 3),
+		CFrame = CFrame.new(0, 0, 0) * CFrame.Angles(0, 0, math.pi / 2),
+		Color = Color3.fromRGB(38, 172, 186),
+		Material = Enum.Material.Pavement,
+	})
+	for _, path in paths do
+		local length = (path.to - path.from).Magnitude
+		local frame = CFrame.lookAt((path.from + path.to) / 2, path.to)
+		newPart({ Name = "Path", Size = Vector3.new(PATH_WIDTH, 0.5, length), CFrame = frame, Color = stone, Material = Enum.Material.Cobblestone })
+		for _, side in { -1, 1 } do
+			newPart({ Name = "PathEdge", Size = Vector3.new(0.6, 0.7, length), CFrame = frame * CFrame.new(side * (PATH_WIDTH / 2 + 0.3), 0, 0), Color = border, Material = Enum.Material.Slate })
+		end
+	end
+end
+
+-- Big soft patches of lighter, darker, and pebbly sand break up the flat
+-- seafloor. Low domes, so overlapping ones never flicker.
+local function buildGroundPatches(rng: Random)
+	local looks = {
+		{ Color3.fromRGB(214, 196, 150), Enum.Material.Sand },
+		{ Color3.fromRGB(176, 160, 124), Enum.Material.Sand },
+		{ Color3.fromRGB(160, 150, 130), Enum.Material.Pebble },
+		{ Color3.fromRGB(205, 182, 140), Enum.Material.Ground },
+	}
+	for _ = 1, 70 do
+		local spot = randomClearSpot(rng, 30, 520, 10)
+		if spot then
+			local look = looks[rng:NextInteger(1, #looks)]
+			local p = newPart({
+				Name = "SandPatch",
+				Size = Vector3.new(rng:NextNumber(18, 40), rng:NextNumber(0.4, 0.8), rng:NextNumber(14, 30)),
+				CFrame = CFrame.new(spot) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0),
+				Color = look[1],
+				Material = look[2],
+			})
+			local mesh = Instance.new("SpecialMesh")
+			mesh.MeshType = Enum.MeshType.Sphere
+			mesh.Parent = p
+		end
+	end
+end
+
 function WorldDecor.start()
 	local rng = Random.new(SEED)
+	buildPaths()
+	buildGroundPatches(rng)
 	buildGarden(rng)
 	buildRocks(rng)
 	buildKelp(rng)
