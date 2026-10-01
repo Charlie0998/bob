@@ -140,6 +140,11 @@
 					"Spread": 0.5
 				}
 			}
+		},
+		"ReplicatedFirst": {
+			"LoadingScreen": {
+				"$path": "src/first/LoadingScreen.client.luau"
+			}
 		}
 	}
 }

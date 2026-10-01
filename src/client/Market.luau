@@ -10,6 +10,7 @@ local DecorModels = require(ReplicatedStorage.Shared.DecorModels)
 local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
 local ShopRotation = require(ReplicatedStorage.Shared.ShopRotation)
 local Preview = require(script.Parent.Preview)
+local Tutorial = require(script.Parent.Tutorial)
 local UIKit = require(script.Parent.UIKit)
 
 local player = Players.LocalPlayer
@@ -241,7 +242,10 @@ function Market.start(gui: ScreenGui, remotes: Instance, openTravel: () -> ()): 
 		ticker = if tab == "Corals" then buildCorals() elseif tab == "Daily Deal" then buildDaily() elseif tab == "Decor" then buildDecor() else buildTrade()
 	end
 
-	panel = UIKit.panel(gui, "Market", refresh, "market")
+	panel = UIKit.panel(gui, "Market", function()
+		Tutorial.marketOpened(remotes)
+		refresh()
+	end, "market")
 	player.AttributeChanged:Connect(function(name)
 		if
 			name == "MarketBought"

@@ -22,6 +22,8 @@ local Fish = require(script.Fish)
 local Landmarks = require(script.Landmarks)
 local Market = require(script.Market)
 local Panels = require(script.Panels)
+local Toasts = require(script.Toasts)
+local Tutorial = require(script.Tutorial)
 local SoundFX = require(script.SoundFX)
 local PetRenderer = require(script.PetRenderer)
 local PhotoMode = require(script.PhotoMode)
@@ -106,7 +108,7 @@ UIKit.gloss(pearlLabel, UIKit.COLORS.panel, 12)
 
 local nextLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, 52),
+	Position = UDim2.new(0.5, 0, 0, 58),
 	Size = UDim2.fromOffset(300, 20),
 	BackgroundTransparency = 1,
 	TextColor3 = COLORS.text,
@@ -186,6 +188,30 @@ local shellLabel = make("TextLabel", {
 	Parent = gui,
 })
 UIKit.gloss(shellLabel, UIKit.COLORS.purple, 12)
+
+-- Top bar: reef level, pearls, and shells together in one glossy strip.
+local topBar = make("Frame", {
+	Name = "TopBar",
+	AnchorPoint = Vector2.new(0.5, 0),
+	Position = UDim2.new(0.5, 0, 0, 4),
+	Size = UDim2.fromOffset(372, 50),
+	Parent = gui,
+}, {
+	make("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	}),
+})
+UIKit.gloss(topBar, UIKit.COLORS.panel, 16)
+for order, element in { levelButton, pearlLabel, shellLabel } :: { GuiObject } do
+	element.AnchorPoint = Vector2.zero
+	element.LayoutOrder = order
+	element.Parent = topBar
+end
+levelButton.Size = UDim2.fromOffset(96, 40)
 local function updateShells()
 	shellLabel.Text = string.format("%d shells", player:GetAttribute("Shells") or 0)
 end
@@ -263,6 +289,7 @@ local travelToggle = Panels.friends(gui, Remotes, Panels.trade(gui, Remotes))
 addMenuButton("Market", Market.start(gui, Remotes, travelToggle), "market")
 addMenuButton("Travel", travelToggle, "travel")
 Landmarks.start(Market.open)
+Tutorial.start(gui, Remotes)
 addMenuButton("Goals", Panels.goals(gui, Remotes), "goals")
 addMenuButton("Photo", PhotoMode.start(gui), "photo")
 Panels.project(gui)
@@ -297,7 +324,7 @@ local healthFill = make("Frame", {
 }, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
 local healthLabel = make("TextLabel", {
 	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, 72),
+	Position = UDim2.new(0.5, 0, 0, 78),
 	Size = UDim2.fromOffset(240, 20),
 	BackgroundTransparency = 1,
 	TextColor3 = COLORS.text,
@@ -309,7 +336,7 @@ local healthLabel = make("TextLabel", {
 })
 make("Frame", {
 	AnchorPoint = Vector2.new(0.5, 0),
-	Position = UDim2.new(0.5, 0, 0, 92),
+	Position = UDim2.new(0.5, 0, 0, 98),
 	Size = UDim2.fromOffset(200, 10),
 	BackgroundColor3 = COLORS.panel,
 	BackgroundTransparency = 0.2,
@@ -328,51 +355,16 @@ player:GetAttributeChangedSignal("ReefHealth"):Connect(updateHealth)
 player:GetAttributeChangedSignal("HealthTier"):Connect(updateHealth)
 updateHealth()
 
-local toastScale = make("UIScale", {})
-local toastLabel = make("TextLabel", {
-	AnchorPoint = Vector2.new(0.5, 0.5),
-	Position = UDim2.fromScale(0.5, 0.3),
-	Size = UDim2.fromOffset(280, 40),
-	TextColor3 = COLORS.text,
-	TextStrokeTransparency = 0.6,
-	Font = Enum.Font.FredokaOne,
-	TextSize = 17,
-	Visible = false,
-	Parent = gui,
-}, { toastScale })
-UIKit.gloss(toastLabel, UIKit.COLORS.panel, 12)
-
-local toastSerial = 0
+Toasts.start(gui)
 Remotes:WaitForChild("Toast").OnClientEvent:Connect(function(text: string, kind: string)
-	toastSerial += 1
-	local serial = toastSerial
-	toastLabel.Text = text
-	toastLabel.TextColor3 = if kind == "pearls" then COLORS.pearl elseif kind == "unlock" then COLORS.ready else COLORS.text
-	toastLabel.Visible = true
-	bump(toastScale, 0.6)
-	task.delay(1.5, function()
-		if toastSerial == serial then
-			toastLabel.Visible = false
-		end
-	end)
+	Toasts.show(text, kind)
 end)
 
 levelButton.Activated:Connect(function()
 	local level = player:GetAttribute("Level") or 1
 	local at, text = ReefLevel.nextReward(level, Balance.levels)
 	local xp, xpNext = player:GetAttribute("XP") or 0, player:GetAttribute("XPNext") or 1
-	local message = if at then string.format("%d/%d XP. Next reward at Lv %d: %s", xp, xpNext, at, text) else "Max reef level!"
-	toastSerial += 1
-	local serial = toastSerial
-	toastLabel.Text = message
-	toastLabel.TextColor3 = COLORS.text
-	toastLabel.Visible = true
-	bump(toastScale, 0.6)
-	task.delay(3, function()
-		if toastSerial == serial then
-			toastLabel.Visible = false
-		end
-	end)
+	Toasts.show(if at then string.format("%d/%d XP. Next at Lv %d: %s", xp, xpNext, at, text) else "Max reef level!", "unlock", 4)
 end)
 
 local shownPearls = 0

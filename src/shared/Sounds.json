@@ -38,5 +38,9 @@
 	"ocean_ambience_loop": {
 		"id": 128077697745538,
 		"volume": 0.2
+	},
+	"ambient_music": {
+		"id": 0,
+		"volume": 0.25
 	}
 }

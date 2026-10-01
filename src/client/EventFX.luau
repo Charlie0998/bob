@@ -143,7 +143,7 @@ function EventFX.start(gui: ScreenGui)
 
 	local banner = UIKit.make("TextLabel", {
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 108),
+		Position = UDim2.new(0.5, 0, 0, 114),
 		Size = UDim2.fromOffset(230, 28),
 		TextColor3 = UIKit.COLORS.goldText,
 		Font = Enum.Font.FredokaOne,

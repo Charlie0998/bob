@@ -18,7 +18,7 @@ local PLACEHOLDERS = {
 local SoundFX = {}
 
 local cache: { [string]: Sound } = {}
-local ambience: Sound? = nil
+local loops: { Sound } = {}
 local muted = false
 
 local function soundId(name: string): string?
@@ -58,22 +58,25 @@ end
 function SoundFX.setMuted(value: boolean)
 	muted = value
 	Players.LocalPlayer:SetAttribute("SoundMuted", value)
-	if ambience then
-		ambience.Playing = not value
+	for _, sound in loops do
+		sound.Playing = not value
 	end
 end
 
+-- Background loops: ocean ambience and music (each once it's uploaded).
 function SoundFX.start()
-	local id = soundId("ocean_ambience_loop")
-	if id then
-		ambience = Instance.new("Sound")
-		local sound = ambience :: Sound
-		sound.Name = "OceanAmbience"
-		sound.SoundId = id
-		sound.Volume = Sounds.ocean_ambience_loop.volume
-		sound.Looped = true
-		sound.Parent = SoundService
-		sound:Play()
+	for _, name in { "ocean_ambience_loop", "ambient_music" } do
+		local id = soundId(name)
+		if id then
+			local sound = Instance.new("Sound")
+			sound.Name = name
+			sound.SoundId = id
+			sound.Volume = (Sounds :: any)[name].volume
+			sound.Looped = true
+			sound.Parent = SoundService
+			sound:Play()
+			table.insert(loops, sound)
+		end
 	end
 end
 
