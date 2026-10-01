@@ -303,12 +303,11 @@ local function updatePad(player: Player, state: PlayerState)
 	pad:SetAttribute("Cost", if full then -1 else ReefMath.slotCost(data.slots, Balance))
 end
 
--- Walkways: wide smooth stone floors from the ring road out to each plot's
--- front, with glowing lanterns on both sides. Heights are staggered (walkway
--- top 0.5, curbs 0.6, ring road 0.4, courtyard 0.7, Market steps from 0.9)
--- and walkways start right at the ring road's edge, so no two surfaces
--- overlap at the same height and flicker.
-local PATH_START = Balance.world.plaza.ringRadius + Balance.world.plaza.ringWidth / 2 -- butts up to the ring road's edge
+-- Walkways: wide smooth stone floors from the Market steps out to each
+-- plot's front, with glowing lanterns on both sides, crossed by the ring
+-- road. Heights are staggered (walkway top 0.5, curbs 0.6, ring road 0.75)
+-- so no two surfaces overlap at the same height and flicker.
+local PATH_START = Balance.world.plaza.size + 1 -- just outside the Market steps
 local PATH_WIDTH = 10
 local PATH_COLOR = Color3.fromRGB(200, 170, 135)
 local RING_RADIUS = Balance.world.plaza.ringRadius
@@ -331,6 +330,9 @@ local function buildWalkway(model: Instance, site: Vector3)
 		-- A lantern pair every few steps, one on each side of the floor.
 		for d = LANTERN_SPACING / 2, length - 4, LANTERN_SPACING do
 			local spot = (frame * CFrame.new(side * (PATH_WIDTH / 2 + 1.6), 0, length / 2 - d)).Position
+			if math.abs(Vector3.new(spot.X, 0, spot.Z).Magnitude - RING_RADIUS) < RING_WIDTH / 2 + 2 then
+				continue -- leave the ring road clear
+			end
 			anchoredPart({ Name = "LanternPost", Size = Vector3.new(0.5, 5, 0.5), CFrame = CFrame.new(spot + Vector3.new(0, 2.5, 0)), Color = CURB_COLOR, Material = Enum.Material.Wood, CanQuery = false }).Parent = model
 			local glow = anchoredPart({ Name = "Lantern", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.3, CFrame = CFrame.new(spot + Vector3.new(0, 5.4, 0)), Color = LANTERN_COLOR, Material = Enum.Material.Neon, CanCollide = false, CanQuery = false })
 			local light = Instance.new("PointLight")
@@ -343,16 +345,38 @@ local function buildWalkway(model: Instance, site: Vector3)
 	end
 end
 
--- The courtyard: one big round stone floor around the Market reaching out to
--- the ring road, which is the darker outer band. Two plain discs (tops 0.4
--- and 0.7) instead of many straight pieces, whose overlapping joints and
--- patterned material looked broken. Lanterns line the outer edge, leaving
--- gaps where walkways and the Leaderboard path leave.
+-- The ring road around the Market: one smooth stone ring (top 0.75) cut
+-- from a disc, so there are no joints or overlaps to flicker. Walkways pass
+-- underneath it (they're lower). If cutting fails, short pieces stand in.
+-- Lanterns line its outer edge, leaving gaps where paths leave.
 local function buildRing(parent: Instance)
 	local outer = RING_RADIUS + RING_WIDTH / 2
 	local inner = RING_RADIUS - RING_WIDTH / 2
-	anchoredPart({ Name = "RingRoad", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, outer * 2, outer * 2), CFrame = CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(165, 135, 105), CanQuery = false }).Parent = parent
-	anchoredPart({ Name = "Courtyard", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, inner * 2, inner * 2), CFrame = CFrame.Angles(0, 0, math.pi / 2), Color = PATH_COLOR, CanQuery = false }).Parent = parent
+	local flat = CFrame.Angles(0, 0, math.pi / 2)
+	local made = pcall(function()
+		local disc = anchoredPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.5, outer * 2, outer * 2), CFrame = flat, Color = PATH_COLOR })
+		local hole = anchoredPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(4, inner * 2, inner * 2), CFrame = flat })
+		local ring = disc:SubtractAsync({ hole })
+		disc:Destroy()
+		hole:Destroy()
+		ring.Name = "RingRoad"
+		ring.Anchored = true
+		ring.UsePartColor = true
+		ring.Color = PATH_COLOR
+		ring.Material = Enum.Material.SmoothPlastic
+		ring.CanQuery = false
+		ring.Parent = parent
+	end)
+	if not made then
+		local pieces = 48
+		local pieceLength = 2 * math.pi * outer / pieces + 0.3
+		for i = 1, pieces do
+			local angle = (i - 0.5) / pieces * math.pi * 2
+			local center = Vector3.new(math.cos(angle), 0, math.sin(angle)) * RING_RADIUS
+			local top = if i % 2 == 0 then 0.75 else 0.95 -- neighbors overlap, so alternate heights
+			anchoredPart({ Name = "RingRoad", Size = Vector3.new(RING_WIDTH, top * 2, pieceLength), CFrame = CFrame.lookAt(center, center + Vector3.new(-math.sin(angle), 0, math.cos(angle))), Color = PATH_COLOR, CanQuery = false }).Parent = parent
+		end
+	end
 
 	local exits = {}
 	for _, site in PlotLayout.sites() do
