@@ -204,6 +204,22 @@ local function onFeed(anchor: BasePart, shells: number, isMine: boolean)
 	end
 end
 
+local function onLevelUp(root: BasePart, level: number, isMine: boolean)
+	burst(root.Position, {
+		Texture = SPARKLE,
+		Color = ColorSequence.new(Color3.fromRGB(150, 235, 255), Color3.fromRGB(255, 230, 120)),
+		LightEmission = 1,
+		Size = NumberSequence.new(1, 0),
+		Lifetime = NumberRange.new(0.8, 1.3),
+		Speed = NumberRange.new(8, 14),
+		Drag = 3,
+	}, 40)
+	floatingText(root.Position + Vector3.new(0, 4, 0), "Level " .. level .. "!", Color3.fromRGB(150, 235, 255))
+	if isMine then
+		playSound("slot")
+	end
+end
+
 function Effects.start(remotes: Instance)
 	(remotes:WaitForChild("Effect") :: RemoteEvent).OnClientEvent:Connect(function(kind: string, target: Instance?, amount: number, actorId: number)
 		-- The target may not be streamed in on this client.
@@ -219,6 +235,8 @@ function Effects.start(remotes: Instance)
 			onSlot(target, isMine)
 		elseif kind == "feed" then
 			onFeed(target, amount, isMine)
+		elseif kind == "levelup" then
+			onLevelUp(target, amount, isMine)
 		elseif kind == "leave" then
 			CreatureRenderer.leave(target)
 		end

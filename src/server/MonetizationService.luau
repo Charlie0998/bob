@@ -42,30 +42,6 @@ local function publishSpeedups(player: Player)
 	end
 end
 
-local function addVipTag(player: Player, character: Model)
-	local head = character:WaitForChild("Head", 5)
-	if not head or head:FindFirstChild("VipTag") then
-		return
-	end
-	local tag = Instance.new("BillboardGui")
-	tag.Name = "VipTag"
-	tag.Size = UDim2.fromOffset(80, 28)
-	tag.StudsOffset = Vector3.new(0, 2.6, 0)
-	tag.MaxDistance = 80
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.fromScale(1, 1)
-	label.BackgroundColor3 = Color3.fromRGB(255, 205, 90)
-	label.TextColor3 = Color3.fromRGB(60, 40, 10)
-	label.Font = Enum.Font.FredokaOne
-	label.TextScaled = true
-	label.Text = "VIP"
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = label
-	label.Parent = tag
-	tag.Parent = head
-end
-
 -- Applies a pass's effect. Safe to call more than once.
 local function applyPass(player: Player, key: string)
 	owned[player] = owned[player] or {}
@@ -83,12 +59,7 @@ local function applyPass(player: Player, key: string)
 			data.untradeable[coral] = (data.untradeable[coral] or 0) + 1
 			ReefService.addInventory(player, coral, 0)
 		end
-		if player.Character then
-			task.spawn(addVipTag, player, player.Character)
-		end
-		player.CharacterAdded:Connect(function(character)
-			addVipTag(player, character)
-		end)
+		-- The VIP label is shown by Nametags.
 	end
 	ReefService.incomeMultiplier(player)
 end

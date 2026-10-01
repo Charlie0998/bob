@@ -47,6 +47,8 @@ export type PlayerData = {
 	-- Recently granted Robux purchase IDs, so a receipt is never granted twice.
 	receipts: { string },
 	vipGranted: boolean,
+	level: number,
+	xp: number,
 }
 
 type Profile = { data: PlayerData, key: string }
@@ -90,6 +92,8 @@ local function newData(): PlayerData
 		speedups = 0,
 		receipts = {},
 		vipGranted = false,
+		level = 1,
+		xp = 0,
 	}
 	-- First session: the player spawns with one starter coral already growing.
 	data.corals["1"] = { type = Balance.starterCoral, plantedAt = os.time(), bornAt = os.time() }

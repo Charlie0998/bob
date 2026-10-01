@@ -2,6 +2,7 @@
 -- may reset it for a permanent income multiplier and a special coral. The
 -- prestige shop sells rare corals for Shells to players who have reset.
 
+local BadgeService = game:GetService("BadgeService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
@@ -52,6 +53,11 @@ local function onReset(player: Player)
 		"unlock"
 	)
 	ReefService.activity(player, "prestige", 1)
+	if CONFIG.badgeId ~= 0 then
+		task.spawn(pcall, function()
+			BadgeService:AwardBadgeAsync(player.UserId, CONFIG.badgeId)
+		end)
+	end
 end
 
 local function onBuy(player: Player, itemId: unknown)

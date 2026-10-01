@@ -446,6 +446,8 @@ function ReefService.harvestTile(player: Player, part: BasePart, quiet: boolean)
 	data.stats.harvests += 1
 	refreshHealth(player)
 	ReefService.activity(player, "harvest", 1)
+	ReefService.activity(player, "harvest_" .. coral.type, 1)
+	ReefService.activity(player, "harvested", gained)
 	ReefService.activity(player, "pearls", gained)
 	if not quiet then
 		toast(player, "+" .. gained .. " pearls", "pearls")
@@ -499,6 +501,23 @@ end
 -- Slot cap for this player (the Extra Plot Slots pass raises it).
 function ReefService.maxSlots(player: Player): number
 	return Balance.maxSlots + (player:GetAttribute("BonusSlots") :: number? or 0)
+end
+
+-- Adds one slot for free (level rewards). Returns false if the reef is full.
+function ReefService.grantSlot(player: Player): boolean
+	local state = states[player]
+	local data = PlayerStore.get(player)
+	if not state or not data or data.slots >= ReefService.maxSlots(player) then
+		return false
+	end
+	data.slots += 1
+	player:SetAttribute("Slots", data.slots)
+	createSlot(player, state, data.slots)
+	updatePad(player, state)
+	refreshHealth(player)
+	local tile = state.plot:FindFirstChild("Slot" .. data.slots)
+	effectRemote:FireAllClients("slot", tile, 0, player.UserId)
+	return true
 end
 
 function ReefService.refreshPad(player: Player)

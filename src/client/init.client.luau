@@ -10,6 +10,7 @@ local TweenService = game:GetService("TweenService")
 
 local Balance = require(ReplicatedStorage.Shared.Balance)
 local ReefMath = require(ReplicatedStorage.Shared.ReefMath)
+local ReefLevel = require(ReplicatedStorage.Shared.ReefLevel)
 local ShopRotation = require(ReplicatedStorage.Shared.ShopRotation)
 local Book = require(script.Book)
 local CoralRenderer = require(script.CoralRenderer)
@@ -128,6 +129,55 @@ local nextLabel = make("TextLabel", {
 	Text = "",
 	Parent = gui,
 })
+
+-- Reef level badge with XP bar; tap it to see the next reward -------------
+
+local levelScale = make("UIScale", {})
+local xpFill = make("Frame", {
+	Size = UDim2.fromScale(0, 1),
+	BackgroundColor3 = Color3.fromRGB(120, 230, 255),
+	BorderSizePixel = 0,
+}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }) })
+local levelButton = make("TextButton", {
+	AnchorPoint = Vector2.new(1, 0),
+	Position = UDim2.new(0.5, -113, 0, 8),
+	Size = UDim2.fromOffset(86, 52),
+	BackgroundColor3 = COLORS.panel,
+	BackgroundTransparency = 0.15,
+	TextColor3 = Color3.fromRGB(150, 235, 255),
+	Font = Enum.Font.FredokaOne,
+	TextSize = 22,
+	TextYAlignment = Enum.TextYAlignment.Top,
+	Text = "Lv 1",
+	AutoButtonColor = false,
+	Parent = gui,
+}, {
+	corner(),
+	stroke(),
+	levelScale,
+	make("UIPadding", { PaddingTop = UDim.new(0, 6) }),
+	make("Frame", {
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.new(0.5, 0, 1, -8),
+		Size = UDim2.new(1, -16, 0, 8),
+		BackgroundColor3 = COLORS.locked,
+	}, { make("UICorner", { CornerRadius = UDim.new(1, 0) }), xpFill }),
+})
+local shownLevel = 0
+local function updateLevel()
+	local level = player:GetAttribute("Level") or 1
+	local xp = player:GetAttribute("XP") or 0
+	local xpNext = player:GetAttribute("XPNext") or 1
+	levelButton.Text = "Lv " .. level
+	TweenService:Create(xpFill, TweenInfo.new(0.3), { Size = UDim2.fromScale(math.clamp(xp / xpNext, 0, 1), 1) }):Play()
+	if shownLevel ~= 0 and level > shownLevel then
+		bump(levelScale, 1.4)
+	end
+	shownLevel = level
+end
+player:GetAttributeChangedSignal("Level"):Connect(updateLevel)
+player:GetAttributeChangedSignal("XP"):Connect(updateLevel)
+updateLevel()
 
 -- Shells counter (second currency) ---------------------------------------
 
@@ -259,6 +309,24 @@ Remotes:WaitForChild("Toast").OnClientEvent:Connect(function(text: string, kind:
 	toastLabel.Visible = true
 	bump(toastScale, 0.6)
 	task.delay(1.5, function()
+		if toastSerial == serial then
+			toastLabel.Visible = false
+		end
+	end)
+end)
+
+levelButton.Activated:Connect(function()
+	local level = player:GetAttribute("Level") or 1
+	local at, text = ReefLevel.nextReward(level, Balance.levels)
+	local xp, xpNext = player:GetAttribute("XP") or 0, player:GetAttribute("XPNext") or 1
+	local message = if at then string.format("%d/%d XP. Next reward at Lv %d: %s", xp, xpNext, at, text) else "Max reef level!"
+	toastSerial += 1
+	local serial = toastSerial
+	toastLabel.Text = message
+	toastLabel.TextColor3 = COLORS.text
+	toastLabel.Visible = true
+	bump(toastScale, 0.6)
+	task.delay(3, function()
 		if toastSerial == serial then
 			toastLabel.Visible = false
 		end

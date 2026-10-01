@@ -890,7 +890,8 @@
 				"minLevel": 1
 			}
 		],
-		"requiredSlotsPerLevel": 1
+		"requiredSlotsPerLevel": 1,
+		"badgeId": 0
 	},
 	"daily": {
 		"goalsPerDay": 3,
@@ -1068,5 +1069,78 @@
 			"speedups": 1
 		},
 		"autoHarvestSeconds": 15
+	},
+	"levels": {
+		"xpBase": 40,
+		"xpExponent": 1.6,
+		"plantXp": 2,
+		"feedXp": 5,
+		"maxLevel": 30,
+		"rewards": {
+			"2": {
+				"decor": "TreasureChest",
+				"text": "Treasure Chest decoration"
+			},
+			"3": {
+				"slot": 1,
+				"text": "A free plot slot"
+			},
+			"4": {
+				"decor": "SeaLantern",
+				"text": "Sea Lantern decoration"
+			},
+			"5": {
+				"zone": "KelpForest",
+				"shells": 30,
+				"text": "Kelp Forest zone + 30 shells"
+			},
+			"6": {
+				"decor": "ShellArch",
+				"text": "Shell Arch decoration"
+			},
+			"7": {
+				"slot": 1,
+				"text": "A free plot slot"
+			},
+			"8": {
+				"decor": "Anchor",
+				"text": "Anchor decoration"
+			},
+			"10": {
+				"zone": "Shipwreck",
+				"coral": "GlowingTube",
+				"text": "Shipwreck zone + Glowing Tube Coral"
+			},
+			"12": {
+				"decor": "CoralStatue",
+				"text": "Coral Statue decoration"
+			},
+			"13": {
+				"slot": 1,
+				"text": "A free plot slot"
+			},
+			"15": {
+				"zone": "DeepSea",
+				"coral": "Crystal",
+				"text": "Deep Sea zone + Crystal Coral"
+			},
+			"18": {
+				"decor": "BubbleFountain",
+				"text": "Bubble Fountain decoration"
+			},
+			"20": {
+				"slot": 1,
+				"shells": 200,
+				"text": "A free plot slot + 200 shells"
+			},
+			"25": {
+				"decor": "GoldenTrident",
+				"text": "Golden Trident decoration"
+			},
+			"30": {
+				"shells": 500,
+				"text": "500 shells"
+			}
+		}
 	}
 }
