@@ -12,6 +12,17 @@ local DecorModels = require(ReplicatedStorage.Shared.DecorModels)
 local SEED = 2026
 local SURFACE_HEIGHT = 95
 local KELP_ANIMATE_DISTANCE = 180
+
+-- Underwater mountains: a far ring of stepped peaks and some closer low hills.
+local MOUNTAIN_COUNT = 22
+local MOUNTAIN_MIN_RADIUS = 610
+local MOUNTAIN_MAX_RADIUS = 770
+local HILL_COUNT = 12
+local HILL_MIN_RADIUS = 290
+local HILL_MAX_RADIUS = 400
+local PEAK_CLEARANCE = 10 -- keep every peak this far below the water surface
+local ZONE_CLEARANCE = 110 -- radius around each deep zone's center to keep clear
+local PLACEMENT_TRIES = 25
 local KELP_FPS = 20
 
 -- Must match the plot layout in ReefService.luau.
@@ -397,6 +408,115 @@ local function buildDeepSea(rng: Random)
 	end
 end
 
+local MOUNTAIN_COLORS = {
+	Color3.fromRGB(62, 86, 116), -- slate blue
+	Color3.fromRGB(56, 104, 116), -- deep teal
+	Color3.fromRGB(78, 104, 130), -- lighter slate
+}
+
+-- True if a footprint of `radius` at `position` stays clear of the player
+-- plots, the spawn area, and every deep zone.
+local function clearOfPlotsAndZones(position: Vector3, radius: number): boolean
+	if not isClear(position, radius) then
+		return false
+	end
+	for zoneId in Balance.zones do
+		local flat = Vector3.new(position.X, 0, position.Z)
+		if (flat - zoneCenter(zoneId)).Magnitude < ZONE_CLEARANCE + radius + 20 then
+			return false
+		end
+	end
+	return true
+end
+
+-- A spot on a ring between two radii that passes clearOfPlotsAndZones,
+-- preferring `angle` and searching wider around it each time it's blocked.
+local function ringSpot(rng: Random, angle: number, minRadius: number, maxRadius: number, footprint: number): Vector3?
+	for attempt = 0, PLACEMENT_TRIES do
+		local spread = 0.25 * (1 + attempt / 5)
+		local a = angle + (if attempt == 0 then 0 else rng:NextNumber(-spread, spread))
+		local r = rng:NextNumber(minRadius, maxRadius)
+		local spot = Vector3.new(math.cos(a) * r, 0, math.sin(a) * r)
+		if clearOfPlotsAndZones(spot, footprint) then
+			return spot
+		end
+	end
+	return nil
+end
+
+-- A stepped mountain: stacked slabs that shrink toward a peak below the surface.
+local function buildMountain(rng: Random, base: Vector3)
+	local tiers = rng:NextInteger(4, 6)
+	local maxHeight = SURFACE_HEIGHT - PEAK_CLEARANCE
+	local height = rng:NextNumber(maxHeight * 0.55, maxHeight)
+	local width = rng:NextNumber(70, 110)
+	local depth = width * rng:NextNumber(0.75, 1)
+	local tierHeight = height / tiers
+	local y = 0
+	local center = base
+	local color = MOUNTAIN_COLORS[rng:NextInteger(1, #MOUNTAIN_COLORS)]
+	for tier = 1, tiers do
+		local w = width * (1 - (tier - 1) / tiers * 0.82)
+		local d = depth * (1 - (tier - 1) / tiers * 0.82)
+		newPart({
+			Name = "Mountain",
+			Size = Vector3.new(w, tierHeight, d),
+			CFrame = CFrame.new(center.X, y + tierHeight / 2, center.Z) * CFrame.Angles(0, rng:NextNumber(-0.25, 0.25), 0),
+			-- Lighter toward the peak, like light falling from above.
+			Color = color:Lerp(Color3.fromRGB(110, 150, 165), (tier - 1) / tiers * 0.5),
+			Material = Enum.Material.Slate,
+			CanCollide = true,
+		})
+		y += tierHeight
+		center += Vector3.new(rng:NextNumber(-w, w) * 0.06, 0, rng:NextNumber(-d, d) * 0.06)
+	end
+	-- A few kelp stalks around the base.
+	for _ = 1, rng:NextInteger(2, 4) do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local spot = base + Vector3.new(math.cos(a) * (width / 2 + 3), 0, math.sin(a) * (depth / 2 + 3))
+		addKelp(rng, spot, rng:NextInteger(6, 10), Color3.fromRGB(70, 140, 80))
+	end
+	return width / 2
+end
+
+-- A low terraced hill: 2-3 stacked discs, round so collisions match the look.
+local function buildHill(rng: Random, base: Vector3)
+	local tiers = rng:NextInteger(2, 3)
+	local diameter = rng:NextNumber(50, 90)
+	local tierHeight = rng:NextNumber(4, 7)
+	local color = MOUNTAIN_COLORS[rng:NextInteger(1, #MOUNTAIN_COLORS)]:Lerp(Color3.fromRGB(120, 150, 140), 0.25)
+	for tier = 1, tiers do
+		local d = diameter * (1 - (tier - 1) * 0.3)
+		newPart({
+			Name = "Hill",
+			Shape = Enum.PartType.Cylinder,
+			Size = Vector3.new(tierHeight, d, d),
+			CFrame = CFrame.new(base.X, (tier - 0.5) * tierHeight, base.Z) * CFrame.Angles(0, 0, math.pi / 2),
+			Color = color:Lerp(Color3.fromRGB(140, 170, 165), (tier - 1) * 0.15),
+			Material = Enum.Material.Slate,
+			CanCollide = true,
+		})
+	end
+	addKelp(rng, base + Vector3.new(diameter / 2 + 2, 0, 0), rng:NextInteger(5, 8), Color3.fromRGB(80, 150, 85))
+end
+
+local function buildMountains(rng: Random)
+	for i = 1, MOUNTAIN_COUNT do
+		local angle = i / MOUNTAIN_COUNT * math.pi * 2 + rng:NextNumber(-0.08, 0.08)
+		local spot = ringSpot(rng, angle, MOUNTAIN_MIN_RADIUS, MOUNTAIN_MAX_RADIUS, 55)
+		if spot then
+			buildMountain(rng, spot)
+		end
+	end
+	for i = 1, HILL_COUNT do
+		local angle = i / HILL_COUNT * math.pi * 2 + rng:NextNumber(-0.2, 0.2)
+		local spot = ringSpot(rng, angle, HILL_MIN_RADIUS, HILL_MAX_RADIUS, 45)
+		if spot then
+			buildHill(rng, spot)
+		end
+	end
+end
+
 -- Each zone tints the water while you're in it; the Deep Sea is dark.
 local function runZoneMood()
 	local tint = Instance.new("ColorCorrectionEffect")
@@ -439,6 +559,7 @@ function WorldDecor.start()
 	buildKelpForest(rng)
 	buildShipwreck(rng)
 	buildDeepSea(rng)
+	buildMountains(rng)
 	task.spawn(runZoneMood)
 	folder.Parent = workspace
 
