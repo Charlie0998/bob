@@ -93,7 +93,6 @@ function UIKit.corner(radius: number?): UICorner
 end
 
 local BLACK = Color3.new(0, 0, 0)
-local WHITE = Color3.new(1, 1, 1)
 
 -- How dark the bottom of the glossy shine gets (1 = no shading). A
 -- UIGradient tints an object's text as well as its background, so the shine
