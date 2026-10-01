@@ -171,7 +171,7 @@ local function buildBoard()
 	board.Name = "TopReefsBoard"
 	board.Anchored = true
 	board.Size = Vector3.new(14, 11, 0.6)
-	board.CFrame = CFrame.new(0, 7, -9)
+	board.CFrame = CFrame.new(0, 8.5, -9) -- standing on the raised Market floor
 	board.Color = Color3.fromRGB(20, 60, 80)
 	board.Material = Enum.Material.SmoothPlastic
 	local gui = Instance.new("SurfaceGui")

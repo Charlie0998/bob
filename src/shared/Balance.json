@@ -1688,7 +1688,7 @@
 		"plaza": {
 			"angle": 0,
 			"radius": 0,
-			"size": 30,
+			"size": 32,
 			"ringRadius": 70,
 			"ringWidth": 10
 		},

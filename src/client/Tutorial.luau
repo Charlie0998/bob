@@ -55,7 +55,7 @@ local function target(step: number): Vector3?
 		end
 	elseif step == 3 then
 		local a = math.rad(Balance.world.plaza.angle)
-		return Vector3.new(math.cos(a), 0, math.sin(a)) * Balance.world.plaza.radius + Vector3.new(0, 4, 0)
+		return Vector3.new(math.cos(a), 0, math.sin(a)) * Balance.world.plaza.radius + Vector3.new(0, 5.5, 0)
 	end
 	return nil
 end
@@ -227,7 +227,7 @@ function Tutorial.start(gui: ScreenGui, remotes: Instance)
 		end
 		local grow = (t * 0.8) % 1
 		-- Just above the surface under each target: slot shell, clam pad, plaza center tile.
-		local ringY = ({ 1.55, 1.55, 1.15, 1.45 })[step() + 1] or 1.45
+		local ringY = ({ 1.55, 1.55, 1.15, 2.75 })[step() + 1] or 2.75
 		ring.Size = Vector3.new(0.2, 3 + grow * 6, 3 + grow * 6)
 		ring.CFrame = CFrame.new(position.X, ringY, position.Z) * CFrame.Angles(0, 0, math.pi / 2)
 		ring.Transparency = 0.3 + grow * 0.7

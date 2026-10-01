@@ -236,13 +236,18 @@ local function buildPlaza()
 	local center = spot(WORLD.plaza.angle, WORLD.plaza.radius)
 	local model = group("MarketPlaza", center, true)
 	-- A round tiled floor with a sandstone rim.
-	-- A raised, solid stone floor (top 1.0) on a darker rim (top 0.6), well
-	-- clear of the sand so nothing flickers, and a teal tile in the middle
-	-- (top 1.3). Plain smooth stone: the patterned Pavement look rendered
-	-- with jagged edges on a floor this big.
-	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 57, 57), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(165, 140, 110), Material = Enum.Material.SmoothPlastic, CanCollide = true })
-	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 54, 54), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(225, 205, 170), Material = Enum.Material.SmoothPlastic, CanCollide = true })
-	part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.6, 18, 18), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = Color3.fromRGB(38, 172, 186), Material = Enum.Material.SmoothPlastic, CanCollide = true })
+	-- The plaza sits up on a low platform: three small steps (tops 0.9, 1.4,
+	-- 1.9) up to the floor (top 2.3), with a teal tile in the middle (top
+	-- 2.6). Every top is a different height, so nothing flickers. Plain
+	-- smooth stone: patterned materials looked jagged on discs this big.
+	local function disc(diameter: number, top: number, color: Color3)
+		part(model, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(top * 2, diameter, diameter), CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.pi / 2), Color = color, Material = Enum.Material.SmoothPlastic, CanCollide = true })
+	end
+	disc(64, 0.9, Color3.fromRGB(150, 125, 98))
+	disc(61, 1.4, Color3.fromRGB(170, 145, 115))
+	disc(58, 1.9, Color3.fromRGB(190, 165, 132))
+	disc(55, 2.3, Color3.fromRGB(225, 205, 170))
+	disc(18, 2.6, Color3.fromRGB(38, 172, 186))
 	-- Four stalls in an arc behind the plaza center, facing spawn.
 	-- Each stall sells one thing and opens just that Market tab.
 	local titles = { "Coral Shop", "Daily Deal", "Decor Shop", "Trade Post" }
@@ -258,10 +263,10 @@ local function buildPlaza()
 		-- In the gaps between the walkways that leave the plaza.
 		local angle = (i - 0.5) / Balance.world.plots.perRing * math.pi * 2
 		local frame = CFrame.lookAt(center + Vector3.new(math.cos(angle), 0, math.sin(angle)) * 20, center) -- counters face the plaza center
-		stall(model, CFrame.new(0, 1, 0) * frame * CFrame.Angles(0, math.pi, 0) --[[ on the raised floor ]], AWNINGS[i], titles[i], tabs[i])
+		stall(model, CFrame.new(0, 2.3, 0) * frame * CFrame.Angles(0, math.pi, 0) --[[ on the raised floor ]], AWNINGS[i], titles[i], tabs[i])
 		-- A shopkeeper behind every counter, facing the customers.
 		local keeper = KEEPERS[i]
-		buildPerson(model, frame * CFrame.Angles(0, math.pi, 0) * CFrame.new(0, 1, -3) * CFrame.Angles(0, math.pi, 0), {
+		buildPerson(model, frame * CFrame.Angles(0, math.pi, 0) * CFrame.new(0, 2.3, -3) * CFrame.Angles(0, math.pi, 0), {
 			shirt = keeper.shirt,
 			pants = Color3.fromRGB(60, 70, 110),
 			skin = SKINS[i],

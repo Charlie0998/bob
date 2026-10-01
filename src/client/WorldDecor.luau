@@ -661,7 +661,7 @@ function WorldDecor.start()
 	for i = 1, 8 do
 		table.insert(orbs, newPart({ Name = "SpawnOrb", Shape = Enum.PartType.Ball, Size = Vector3.one * 1.2, Color = Color3.fromHSV(i / 8, 0.45, 1), Material = Enum.Material.Neon }))
 	end
-	local column = newPart({ Name = "SpawnBubbles", Size = Vector3.one, CFrame = CFrame.new(0, 1.5, 0), Transparency = 1 })
+	local column = newPart({ Name = "SpawnBubbles", Size = Vector3.one, CFrame = CFrame.new(0, 2.8, 0), Transparency = 1 })
 	local bubbles = Instance.new("ParticleEmitter")
 	bubbles.Texture = "rbxasset://textures/particles/smoke_main.dds"
 	bubbles.Color = ColorSequence.new(Color3.fromRGB(230, 250, 255))
@@ -690,7 +690,7 @@ function WorldDecor.start()
 		local t = os.clock()
 		for i, orb in orbs do
 			local a = t * 0.4 + i / #orbs * math.pi * 2
-			orb.CFrame = CFrame.new(math.cos(a) * 12, 12 + math.sin(t * 1.5 + i) * 0.8, math.sin(a) * 12) -- above the Top Reefs board and shopkeepers
+			orb.CFrame = CFrame.new(math.cos(a) * 12, 13.5 + math.sin(t * 1.5 + i) * 0.8, math.sin(a) * 12) -- above the Top Reefs board and shopkeepers
 		end
 
 		-- Move every nearby kelp segment in one bulk call.
