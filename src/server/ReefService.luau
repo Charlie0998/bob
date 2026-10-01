@@ -371,7 +371,7 @@ local function buildPlot(player: Player, state: PlayerState)
 	nameLabel.Font = Enum.Font.FredokaOne
 	nameLabel.TextScaled = true
 	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	nameLabel.TextStrokeTransparency = 0.4
+	nameLabel.TextStrokeTransparency = 0
 	nameLabel.Text = player.DisplayName .. "'s Reef"
 	nameLabel.Parent = sign
 	sign.Parent = base

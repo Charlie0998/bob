@@ -60,7 +60,7 @@ local function floatingText(position: Vector3, text: string, color: Color3)
 	label.Font = Enum.Font.FredokaOne
 	label.TextScaled = true
 	label.TextColor3 = color
-	label.TextStrokeTransparency = 0.2
+	label.TextStrokeTransparency = 0
 	label.Text = text
 	label.Parent = gui
 	anchor.Parent = workspace

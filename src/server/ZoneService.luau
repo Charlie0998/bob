@@ -146,7 +146,7 @@ local function buildStall(zoneId: string)
 	label.Font = Enum.Font.FredokaOne
 	label.TextScaled = true
 	label.TextColor3 = Color3.fromRGB(255, 230, 150)
-	label.TextStrokeTransparency = 0.3
+	label.TextStrokeTransparency = 0
 	label.Text = zone.name .. " Market\nTap the counter"
 	label.Parent = sign
 	sign.Parent = counter

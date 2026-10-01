@@ -30,7 +30,7 @@ local function attach(player: Player, character: Model)
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.fromScale(1, 1)
 	label.BackgroundColor3 = Color3.fromRGB(20, 60, 80)
-	label.BackgroundTransparency = 0.25
+	label.BackgroundTransparency = 0 -- solid, so the text stays readable over anything
 	label.TextColor3 = if player:GetAttribute("Pass_VIP") then Color3.fromRGB(255, 205, 90) else Color3.fromRGB(255, 255, 255)
 	label.Font = Enum.Font.FredokaOne
 	label.TextScaled = true

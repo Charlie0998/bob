@@ -37,7 +37,8 @@ end
 
 -- The one place UI colors are defined (coral-reef palette): deep navy and
 -- teal panels, teal cards, sunny-gold buttons, coral-pink accents. The HUD,
--- Book, and panels all read from here.
+-- Book, and panels all read from here. Every text/background pair is kept
+-- at WCAG 4.5:1 or better; run tests/contrast_check.py after changing one.
 UIKit.COLORS = {
 	-- Surfaces
 	panel = Color3.fromRGB(12, 42, 60), -- deep navy-teal
@@ -51,13 +52,13 @@ UIKit.COLORS = {
 	goldText = Color3.fromRGB(60, 36, 0),
 	-- Buttons and accents
 	gold = Color3.fromRGB(255, 200, 60), -- sunny gold
-	accent = Color3.fromRGB(38, 172, 186), -- aqua (selected / primary)
-	coral = Color3.fromRGB(240, 96, 110), -- coral pink
-	pink = Color3.fromRGB(240, 96, 110),
-	purple = Color3.fromRGB(140, 92, 222),
-	blue = Color3.fromRGB(56, 132, 232),
-	green = Color3.fromRGB(58, 182, 108),
-	orange = Color3.fromRGB(245, 140, 48),
+	accent = Color3.fromRGB(27, 120, 130), -- deep aqua (selected / primary)
+	coral = Color3.fromRGB(182, 73, 84), -- coral pink
+	pink = Color3.fromRGB(182, 73, 84),
+	purple = Color3.fromRGB(127, 84, 202),
+	blue = Color3.fromRGB(46, 108, 190),
+	green = Color3.fromRGB(39, 124, 73),
+	orange = Color3.fromRGB(159, 91, 31),
 	-- Meters
 	xp = Color3.fromRGB(120, 230, 255),
 	healthStruggling = Color3.fromRGB(240, 110, 90),
@@ -94,23 +95,33 @@ end
 local BLACK = Color3.new(0, 0, 0)
 local WHITE = Color3.new(1, 1, 1)
 
--- The icon-tile look: a glossy gradient (light band on top, deeper at the
--- bottom) and a thick outline in a darker shade of the same color.
+-- How dark the bottom of the glossy shine gets (1 = no shading). A
+-- UIGradient tints an object's text as well as its background, so the shine
+-- is grayscale and gentle: it shades both equally and never tints the text.
+-- tests/contrast_check.py reads this value.
+UIKit.GLOSS_SHADE = 0.86
+
+-- The icon-tile look: a glossy shine (a bright band on top, a little deeper
+-- at the bottom) and a thick outline in a darker shade of the same color.
 function UIKit.gloss(object: GuiObject, color: Color3, radius: number?)
-	object.BackgroundColor3 = WHITE
+	object.BackgroundColor3 = color
 	object.BackgroundTransparency = 0
 	for _, old in object:GetChildren() do
 		if old:IsA("UIGradient") or old:IsA("UIStroke") or old:IsA("UICorner") then
 			old:Destroy()
 		end
 	end
+	local shade = UIKit.GLOSS_SHADE
+	local function gray(v: number): Color3
+		return Color3.new(v, v, v)
+	end
 	make("UIGradient", {
 		Rotation = 90,
 		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, color:Lerp(WHITE, 0.35)),
-			ColorSequenceKeypoint.new(0.42, color:Lerp(WHITE, 0.18)),
-			ColorSequenceKeypoint.new(0.46, color),
-			ColorSequenceKeypoint.new(1, color:Lerp(BLACK, 0.18)),
+			ColorSequenceKeypoint.new(0, gray(1)),
+			ColorSequenceKeypoint.new(0.44, gray(1 - (1 - shade) * 0.2)),
+			ColorSequenceKeypoint.new(0.47, gray(1 - (1 - shade) * 0.65)),
+			ColorSequenceKeypoint.new(1, gray(shade)),
 		}),
 		Parent = object,
 	})
