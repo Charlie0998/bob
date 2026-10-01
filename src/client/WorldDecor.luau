@@ -627,36 +627,33 @@ function WorldDecor.addSwaying(position: Vector3, segments: number, color: Color
 	return kelp.parts
 end
 
--- Big soft patches of lighter, darker, and pebbly sand break up the flat
--- seafloor. Low domes, so overlapping ones never flicker.
-local function buildGroundPatches(rng: Random)
-	local looks = {
-		{ Color3.fromRGB(214, 196, 150), Enum.Material.Sand },
-		{ Color3.fromRGB(176, 160, 124), Enum.Material.Sand },
-		{ Color3.fromRGB(160, 150, 130), Enum.Material.Pebble },
-		{ Color3.fromRGB(205, 182, 140), Enum.Material.Ground },
-	}
-	for _ = 1, 70 do
-		local spot = randomClearSpot(rng, 30, 520, 22) -- wide margin so patches never cover a walkway
+-- Clusters of round pebbles and little shells scattered over the sand. They
+-- are round on purpose: big flat shapes lying on the seafloor flickered
+-- against it (that was the "glitching floor").
+local function buildPebbles(rng: Random)
+	local stones = { Color3.fromRGB(150, 140, 125), Color3.fromRGB(120, 115, 110), Color3.fromRGB(185, 170, 145), Color3.fromRGB(105, 120, 125) }
+	for _ = 1, 80 do
+		local spot = randomClearSpot(rng, 30, 520, 6)
 		if spot then
-			local look = looks[rng:NextInteger(1, #looks)]
-			local p = newPart({
-				Name = "SandPatch",
-				Size = Vector3.new(rng:NextNumber(18, 40), rng:NextNumber(0.4, 0.8), rng:NextNumber(14, 30)),
-				CFrame = CFrame.new(spot) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0),
-				Color = look[1],
-				Material = look[2],
-			})
-			local mesh = Instance.new("SpecialMesh")
-			mesh.MeshType = Enum.MeshType.Sphere
-			mesh.Parent = p
+			for _ = 1, rng:NextInteger(4, 8) do
+				local size = rng:NextNumber(0.5, 1.6)
+				local p = newPart({
+					Name = "Pebble",
+					Shape = Enum.PartType.Ball,
+					Size = Vector3.one * size,
+					CFrame = CFrame.new(spot + Vector3.new(rng:NextNumber(-3, 3), size * 0.15, rng:NextNumber(-3, 3))),
+					Color = stones[rng:NextInteger(1, #stones)],
+					Material = Enum.Material.Slate,
+				})
+				p.CastShadow = false
+			end
 		end
 	end
 end
 
 function WorldDecor.start()
 	local rng = Random.new(SEED)
-	buildGroundPatches(rng)
+	buildPebbles(rng)
 	buildGarden(rng)
 	buildRocks(rng)
 	buildKelp(rng)

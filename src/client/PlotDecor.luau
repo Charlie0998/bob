@@ -6,7 +6,7 @@
 --     floating pearl on the buy pad
 --   * extra scenery as the reef grows (10 / 20 / 30 slots)
 --   * a glowing shell path from spawn to the plot (yours is gold and pulses)
---   * sand ripples, seashells, starfish, sea urchins, and swaying anemones
+--   * seashells, starfish, sea urchins, and swaying anemones
 -- Plots far from the camera are hidden.
 
 local CollectionService = game:GetService("CollectionService")
@@ -205,7 +205,7 @@ end
 
 local function starfish(parent: Instance, position: Vector3, yaw: number, color: Color3)
 	for i = 1, 5 do
-		ellipsoid(parent, Vector3.new(0.4, 0.15, 1.1), CFrame.new(position) * CFrame.Angles(0, yaw + i / 5 * math.pi * 2, 0) * CFrame.new(0, 0.08, -0.5), color)
+		ellipsoid(parent, Vector3.new(0.4, 0.15, 1.1), CFrame.new(position) * CFrame.Angles(0, yaw + i / 5 * math.pi * 2, 0) * CFrame.new(0, 0.12, -0.5), color)
 	end
 end
 
@@ -237,11 +237,6 @@ local function buildSurroundings(plot: Plot, base: BasePart)
 			else Vector3.new(along * hx, 0, -hz - out)
 		local p = (base.CFrame * CFrame.new(local_)).Position
 		return Vector3.new(p.X, 0, p.Z)
-	end
-	for _ = 1, 6 do
-		-- Sand ripples: long, low, lighter mounds.
-		local p = around()
-		ellipsoid(folder, Vector3.new(rng:NextNumber(8, 14), 0.25, 1.2), CFrame.new(p) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0), Color3.fromRGB(225, 205, 160))
 	end
 	for _ = 1, 6 do
 		local p = around()
