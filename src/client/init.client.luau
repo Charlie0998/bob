@@ -19,6 +19,7 @@ local Effects = require(script.Effects)
 local EventFX = require(script.EventFX)
 local Fish = require(script.Fish)
 local Panels = require(script.Panels)
+local UIKit = require(script.UIKit)
 local PetRenderer = require(script.PetRenderer)
 local PhotoMode = require(script.PhotoMode)
 local WorldDecor = require(script.WorldDecor)
@@ -159,6 +160,12 @@ local levelButton = make("TextButton", {
 	stroke(),
 	levelScale,
 	make("UIPadding", { PaddingTop = UDim.new(0, 6) }),
+	UIKit.icon("reef_level", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0, -4, 0, 14),
+		Size = UDim2.fromOffset(34, 34),
+		ZIndex = 2,
+	}) :: any,
 	make("Frame", {
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -8),
@@ -207,7 +214,7 @@ updateShells()
 local menu = make("Frame", {
 	AnchorPoint = Vector2.new(0, 0.5),
 	Position = UDim2.new(0, 12, 0.5, 0),
-	Size = UDim2.fromOffset(84, 320),
+	Size = UDim2.fromOffset(84, 500),
 	BackgroundTransparency = 1,
 	Parent = gui,
 }, {
@@ -215,18 +222,49 @@ local menu = make("Frame", {
 })
 
 -- Adds a big, thumb-friendly menu button. Other systems call this too.
-local function addMenuButton(text: string, onActivated: () -> ()): TextButton
+-- With its icon uploaded, a button is the icon with a small caption;
+-- otherwise it falls back to a text button.
+local function addMenuButton(text: string, onActivated: () -> (), iconName: string): GuiButton
 	local scale = make("UIScale", {})
-	local button = make("TextButton", {
-		Size = UDim2.fromOffset(84, 56),
-		BackgroundColor3 = COLORS.panel,
-		BackgroundTransparency = 0.1,
-		TextColor3 = COLORS.text,
-		Font = Enum.Font.FredokaOne,
-		TextSize = 18,
-		Text = text,
-		Parent = menu,
-	}, { corner(), stroke(), scale })
+	local image = UIKit.iconImage(iconName)
+	local button: GuiButton
+	if image then
+		button = make("ImageButton", {
+			Size = UDim2.fromOffset(76, 92),
+			BackgroundTransparency = 1,
+			Image = "",
+			Parent = menu,
+		}, {
+			scale,
+			make("ImageLabel", {
+				Size = UDim2.fromOffset(76, 76),
+				BackgroundTransparency = 1,
+				Image = image,
+				ScaleType = Enum.ScaleType.Fit,
+			}),
+			make("TextLabel", {
+				Position = UDim2.fromOffset(0, 72),
+				Size = UDim2.new(1, 0, 0, 20),
+				BackgroundTransparency = 1,
+				TextColor3 = COLORS.text,
+				TextStrokeTransparency = 0.4,
+				Font = Enum.Font.FredokaOne,
+				TextSize = 16,
+				Text = text,
+			}),
+		})
+	else
+		button = make("TextButton", {
+			Size = UDim2.fromOffset(84, 56),
+			BackgroundColor3 = COLORS.panel,
+			BackgroundTransparency = 0.1,
+			TextColor3 = COLORS.text,
+			Font = Enum.Font.FredokaOne,
+			TextSize = 18,
+			Text = text,
+			Parent = menu,
+		}, { corner(), stroke(), scale })
+	end
 	button.Activated:Connect(function()
 		bump(scale, 0.85)
 		onActivated()
@@ -237,11 +275,11 @@ end
 Book.start(gui, Remotes)
 -- Five buttons at most (design pillar: understood in 10 seconds). Tide Reset
 -- opens from the Shop.
-addMenuButton("Shop", Panels.shop(gui, Remotes, Panels.tide(gui, Remotes)))
-addMenuButton("Book", Book.toggle)
-addMenuButton("Travel", Panels.friends(gui, Remotes, Panels.trade(gui, Remotes)))
-addMenuButton("Goals", Panels.goals(gui, Remotes))
-addMenuButton("Photo", PhotoMode.start(gui))
+addMenuButton("Shop", Panels.shop(gui, Remotes, Panels.tide(gui, Remotes)), "shop")
+addMenuButton("Book", Book.toggle, "book")
+addMenuButton("Travel", Panels.friends(gui, Remotes, Panels.trade(gui, Remotes)), "travel")
+addMenuButton("Goals", Panels.goals(gui, Remotes), "goals")
+addMenuButton("Photo", PhotoMode.start(gui), "photo")
 Panels.project(gui)
 Panels.streakPopup(gui)
 Panels.zoneMarket(gui, Remotes)

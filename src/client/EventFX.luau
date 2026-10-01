@@ -151,9 +151,23 @@ function EventFX.start(gui: ScreenGui)
 		Parent = gui,
 	}, { UIKit.corner(10) })
 
+	local EVENT_ICONS = { Bloom = "event_coral_bloom", NightGlow = "event_night_glow", Storm = "event_storm" }
+	local bannerIcon: ImageLabel? = nil
 	local function onEventChanged()
 		local id = ReplicatedStorage:GetAttribute("EventId") or ""
 		banner.Visible = id ~= ""
+		if bannerIcon then
+			bannerIcon:Destroy()
+			bannerIcon = nil
+		end
+		if EVENT_ICONS[id] then
+			bannerIcon = UIKit.icon(EVENT_ICONS[id], {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(0, -4, 0.5, 0),
+				Size = UDim2.fromOffset(44, 44),
+				Parent = banner,
+			})
+		end
 		apply(id)
 	end
 	ReplicatedStorage:GetAttributeChangedSignal("EventId"):Connect(onEventChanged)

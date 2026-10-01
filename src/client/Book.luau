@@ -9,6 +9,7 @@ local Balance = require(ReplicatedStorage.Shared.Balance)
 local CoralModels = require(ReplicatedStorage.Shared.CoralModels)
 local CreatureModels = require(ReplicatedStorage.Shared.CreatureModels)
 local CreatureRules = require(ReplicatedStorage.Shared.CreatureRules)
+local UIKit = require(script.Parent.UIKit)
 
 local player = Players.LocalPlayer
 
@@ -166,6 +167,10 @@ function Book.start(gui: ScreenGui, remotes: Instance)
 			Text = page.title,
 			Parent = tabs,
 		}, { corner(10), make("UIPadding", { PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }) })
+		local tabIcons = { corals = "tab_corals", reefFish = "tab_reef_regulars", visitors = "tab_visitors", rare = "tab_rare_finds", zones = "zone_deep_sea" }
+		if tabIcons[page.id] then
+			UIKit.addIcon(tab, tabIcons[page.id])
+		end
 		tab.Activated:Connect(function()
 			currentPage = i
 			Book.refresh()

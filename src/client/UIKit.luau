@@ -1,7 +1,39 @@
 -- Shared GUI helpers: the look (colors, corners, strokes) and a modal panel
 -- with a title, close button, and a scrolling body.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Icons = require(ReplicatedStorage.Shared.Icons)
+
 local UIKit = {}
+
+-- The image for an icon in assets/icons, or nil until its upload ID is set
+-- in src/shared/Icons.json. Loading through rbxthumb works whether the ID
+-- is an Image or a Decal asset.
+function UIKit.iconImage(name: string): string?
+	local id = (Icons :: any)[name]
+	if type(id) ~= "number" or id == 0 then
+		return nil
+	end
+	return string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", id)
+end
+
+-- An ImageLabel for an icon, or nil when the icon isn't uploaded yet, so
+-- every caller can fall back to its text-only look.
+function UIKit.icon(name: string, props: { [string]: any }?): ImageLabel?
+	local image = UIKit.iconImage(name)
+	if not image then
+		return nil
+	end
+	local label = Instance.new("ImageLabel")
+	label.BackgroundTransparency = 1
+	label.Image = image
+	label.ScaleType = Enum.ScaleType.Fit
+	for key, value in (props or {}) :: { [string]: any } do
+		(label :: any)[key] = value
+	end
+	return label
+end
 
 UIKit.COLORS = {
 	panel = Color3.fromRGB(20, 60, 80),
@@ -68,12 +100,29 @@ function UIKit.button(text: string, style: string?, props: { [string]: any }?): 
 	return button
 end
 
+-- Puts an icon on the left of a button (no-op until the icon is uploaded).
+function UIKit.addIcon(button: GuiObject, name: string)
+	local icon = UIKit.icon(name, {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 4, 0.5, 0),
+		Size = UDim2.new(0, 0, 1, -6),
+		SizeConstraint = Enum.SizeConstraint.RelativeYY,
+		Parent = button,
+	})
+	if icon then
+		icon.Size = UDim2.fromScale(0.85, 0.85)
+		local padding = button:FindFirstChildOfClass("UIPadding") or Instance.new("UIPadding")
+		padding.PaddingLeft = UDim.new(0, button.AbsoluteSize.Y > 0 and button.AbsoluteSize.Y or 40)
+		padding.Parent = button
+	end
+end
+
 export type Panel = { frame: Frame, body: ScrollingFrame, title: TextLabel, toggle: () -> (), isOpen: () -> boolean }
 
 -- A centered modal panel. Opening one panel closes any other.
 local openPanels: { Frame } = {}
 
-function UIKit.panel(gui: ScreenGui, titleText: string, onOpen: (() -> ())?): Panel
+function UIKit.panel(gui: ScreenGui, titleText: string, onOpen: (() -> ())?, iconName: string?): Panel
 	local colors = UIKit.COLORS
 	local frame = make("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -89,9 +138,12 @@ function UIKit.panel(gui: ScreenGui, titleText: string, onOpen: (() -> ())?): Pa
 		make("UIStroke", { Color = Color3.fromRGB(150, 230, 240), Thickness = 2 }),
 	})
 	table.insert(openPanels, frame)
+	local titleIcon = if iconName
+		then UIKit.icon(iconName, { Position = UDim2.fromOffset(12, 8), Size = UDim2.fromOffset(40, 40), Parent = frame })
+		else nil
 	local title = UIKit.label(titleText, {
-		Position = UDim2.fromOffset(16, 10),
-		Size = UDim2.new(1, -90, 0, 36),
+		Position = UDim2.fromOffset(if titleIcon then 60 else 16, 10),
+		Size = UDim2.new(1, if titleIcon then -134 else -90, 0, 36),
 		TextSize = 26,
 		Parent = frame,
 	})

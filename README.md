@@ -93,6 +93,19 @@ Everything in the design doc's launch scope and Updates 2 and 3 is built. All tu
 
 The menu keeps to five buttons: Shop, Book, Travel, Goals, Photo. Tide Reset opens from the Shop; friends, trading, and zones are in Travel.
 
+### Icons
+
+The 31 UI icons are in `assets/icons` (cut from the icon sheet, transparent corners). They're wired into the menu, level badge, Shop, Travel, Trade, Market, Goals, Tide, Book tabs, event banner, and daily reward popup. Until an icon is uploaded, that spot keeps its text-only look.
+
+To upload them all at once, create an Open Cloud API key with the Assets API (Read and Write) in [Creator Hub](https://create.roblox.com) → Open Cloud → API Keys, then run:
+
+```sh
+python3 tools/upload_icons.py --api-key YOUR_KEY --user-id YOUR_USER_ID
+rojo build -o ReefKeepers.rbxl
+```
+
+The script writes the IDs into `src/shared/Icons.json`. To do it by hand instead, upload each PNG in Studio (Asset Manager → Bulk Import), copy each asset ID, and paste it into `Icons.json`.
+
 ### Setting up purchases
 
 All items show "Not set up" until you add their IDs:

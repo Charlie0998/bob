@@ -26,6 +26,7 @@ function Panels.goals(gui: ScreenGui, remotes: Instance): () -> ()
 		local streak = player:GetAttribute("Streak") or 0
 		local today = player:GetAttribute("StreakDay") or 1
 		local streakCard = UIKit.card(panel.body, 104, 0)
+		UIKit.icon("daily_reward", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 2), Size = UDim2.fromOffset(28, 28), Parent = streakCard })
 		UIKit.label(string.format("Login streak: %d day%s. Come back every day!", streak, if streak == 1 then "" else "s"), {
 			Position = UDim2.fromOffset(12, 2),
 			Size = UDim2.new(1, -24, 0, 26),
@@ -88,7 +89,7 @@ function Panels.goals(gui: ScreenGui, remotes: Instance): () -> ()
 			end)
 		end
 	end
-	panel = UIKit.panel(gui, "Daily Goals", refresh)
+	panel = UIKit.panel(gui, "Daily Goals", refresh, "goals")
 	player.AttributeChanged:Connect(function(name)
 		if string.sub(name, 1, 4) == "Goal" or name == "Streak" or name == "StreakDay" then
 			refresh()
@@ -176,7 +177,7 @@ function Panels.tide(gui: ScreenGui, remotes: Instance): () -> ()
 			end)
 		end
 	end
-	panel = UIKit.panel(gui, "Tide Reset", refresh)
+	panel = UIKit.panel(gui, "Tide Reset", refresh, "tide_reset")
 	player.AttributeChanged:Connect(function(name)
 		if name == "TideLevel" or name == "TideRequiredSlots" or name == "Slots" or name == "Shells" then
 			refresh()
@@ -210,6 +211,7 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 			{ Position = UDim2.fromOffset(12, 4), Size = UDim2.new(1, -24, 0, 54), TextSize = 15, Parent = top }
 		)
 		local home = UIKit.button("Go home", "accent", { Position = UDim2.fromOffset(12, 60), Parent = top })
+		UIKit.addIcon(home, "go_home")
 		home.Activated:Connect(function()
 			visitRemote:FireServer(nil)
 			panel.toggle()
@@ -232,6 +234,7 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 				if open then "gold" else "muted",
 				{ Size = UDim2.new(1 / 3, -4, 0, 56), TextSize = 15, TextWrapped = true, Parent = zoneRow }
 			)
+			UIKit.addIcon(button, ({ KelpForest = "zone_kelp_forest", Shipwreck = "zone_shipwreck", DeepSea = "zone_deep_sea" })[zoneId])
 			button.Activated:Connect(function()
 				travelRemote:FireServer(zoneId)
 				if open then
@@ -240,6 +243,7 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 			end)
 		end
 		local invite = UIKit.button("Invite friends", "gold", { Position = UDim2.fromOffset(184, 60), Parent = top })
+		UIKit.addIcon(invite, "invite_friends")
 		invite.Activated:Connect(function()
 			pcall(SocialService.PromptGameInvite, SocialService, player)
 		end)
@@ -271,6 +275,7 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 				Size = UDim2.fromOffset(88, 46),
 				Parent = card,
 			})
+			UIKit.addIcon(trade, "trade")
 			trade.Activated:Connect(function()
 				onTrade(other.UserId)
 			end)
@@ -280,6 +285,7 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 				Size = UDim2.fromOffset(88, 46),
 				Parent = card,
 			})
+			UIKit.addIcon(visit, "visit")
 			visit.Activated:Connect(function()
 				visitRemote:FireServer(other.UserId)
 				panel.toggle()
@@ -290,12 +296,13 @@ function Panels.friends(gui: ScreenGui, remotes: Instance, onTrade: (userId: num
 				Size = UDim2.fromOffset(88, 46),
 				Parent = card,
 			})
+			UIKit.addIcon(like, "like")
 			like.Activated:Connect(function()
 				likeRemote:FireServer(other.UserId)
 			end)
 		end
 	end
-	panel = UIKit.panel(gui, "Travel", refresh)
+	panel = UIKit.panel(gui, "Travel", refresh, "travel")
 	Players.PlayerAdded:Connect(refresh)
 	Players.PlayerRemoving:Connect(function()
 		task.defer(refresh)
@@ -411,7 +418,7 @@ function Panels.trade(gui: ScreenGui, remotes: Instance): (userId: number) -> ()
 		end)
 	end
 
-	panel = UIKit.panel(gui, "Trade", refresh)
+	panel = UIKit.panel(gui, "Trade", refresh, "trade")
 	-- Closing the window (the panel's X, its only direct TextButton) cancels the trade.
 	panel.frame:FindFirstChildWhichIsA("TextButton").Activated:Connect(function()
 		if state then
@@ -480,11 +487,13 @@ function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () 
 	local config = Balance.monetization
 	local panel
 
-	local function itemRow(order: number, title: string, description: string, buttonText: string, style: string, onBuy: (() -> ())?)
+	local function itemRow(order: number, title: string, description: string, buttonText: string, style: string, onBuy: (() -> ())?, iconName: string?)
 		local card = UIKit.card(panel.body, 64, order)
-		UIKit.label(title, { Position = UDim2.fromOffset(12, 4), Size = UDim2.new(1, -190, 0, 26), Parent = card })
+		local icon = if iconName then UIKit.icon(iconName, { Position = UDim2.fromOffset(6, 4), Size = UDim2.fromOffset(56, 56), Parent = card }) else nil
+		local left = if icon then 68 else 12
+		UIKit.label(title, { Position = UDim2.fromOffset(left, 4), Size = UDim2.new(1, -190 - left + 12, 0, 26), Parent = card })
 		UIKit.label(description, {
-			Position = UDim2.fromOffset(12, 30),
+			Position = UDim2.fromOffset(left, 30),
 			Size = UDim2.new(1, -190, 0, 30),
 			TextSize = 13,
 			TextColor3 = COLORS.hint,
@@ -529,22 +538,24 @@ function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () 
 				if not bought then
 					(remotes:WaitForChild("BuyDailyCoral") :: RemoteEvent):FireServer()
 				end
-			end
+			end,
+			"rare_coral_bundle"
 		)
 
 		local speedups = player:GetAttribute("SpeedUps") or 0
 		itemRow(nextOrder(), string.format("Growth speed-ups: %d", speedups), "Instantly finishes the coral closest to ready", "Use one", if speedups > 0 then "accent" else "muted", function()
 			useSpeedUp:FireServer()
-		end)
+		end, "growth_speed_up")
 		local adReady = config.rewardedAd.productId ~= 0
 		itemRow(nextOrder(), config.rewardedAd.name, "Free. Watch a short video ad", if adReady then "Watch ad" else "Not set up", if adReady then "accent" else "muted", function()
 			if adReady then
 				watchAd:FireServer()
 			end
-		end)
-		itemRow(nextOrder(), "Tide Reset", "Reset your reef for a permanent pearl bonus, and the prestige shop", "Open", "accent", openTide)
+		end, "watch_ad")
+		itemRow(nextOrder(), "Tide Reset", "Reset your reef for a permanent pearl bonus, and the prestige shop", "Open", "accent", openTide, "tide_reset")
 
 		UIKit.label("Passes (one-time, permanent)", { Size = UDim2.new(1, -8, 0, 30), TextSize = 20, LayoutOrder = nextOrder(), Parent = panel.body })
+		local passIcons = { Pearls2x = "double_pearls", AutoHarvest = "auto_harvest", ExtraSlots = "extra_plot_slots", VIP = "vip_reef_pack" }
 		for _, key in { "Pearls2x", "AutoHarvest", "ExtraSlots", "VIP" } do
 			local pass = config.passes[key]
 			local has = player:GetAttribute("Pass_" .. key) == true
@@ -558,7 +569,8 @@ function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () 
 					if not has and pass.id ~= 0 then
 						MarketplaceService:PromptGamePassPurchase(player, pass.id)
 					end
-				end
+				end,
+				passIcons[key]
 			)
 		end
 
@@ -578,11 +590,12 @@ function Panels.shop(gui: ScreenGui, remotes: Instance, openTide: () -> ()): () 
 					if product.id ~= 0 then
 						MarketplaceService:PromptProductPurchase(player, product.id)
 					end
-				end
+				end,
+				if product.speedups then "growth_speed_up" else "rare_coral_bundle"
 			)
 		end
 	end
-	panel = UIKit.panel(gui, "Shop", refresh)
+	panel = UIKit.panel(gui, "Shop", refresh, "shop")
 	player.AttributeChanged:Connect(function(name)
 		if name == "SpeedUps" or name == "DailyCoralDay" or name == "Shells" or string.sub(name, 1, 5) == "Pass_" then
 			refresh()
@@ -640,7 +653,7 @@ function Panels.zoneMarket(gui: ScreenGui, remotes: Instance)
 			end)
 		end
 	end
-	panel = UIKit.panel(gui, "Market", refresh)
+	panel = UIKit.panel(gui, "Market", refresh, "market")
 	openRemote.OnClientEvent:Connect(function(id: string)
 		zoneId = id
 		if not panel.isOpen() then
@@ -675,6 +688,8 @@ function Panels.streakPopup(gui: ScreenGui)
 		TextXAlignment = Enum.TextXAlignment.Center,
 		Parent = popup,
 	})
+	-- The gift icon pops up above the card.
+	UIKit.icon("daily_reward", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 30), Size = UDim2.fromOffset(84, 84), Parent = popup })
 	local ok = UIKit.button("Collect!", "gold", { AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -12), Parent = popup })
 	ok.Activated:Connect(function()
 		popup.Visible = false
