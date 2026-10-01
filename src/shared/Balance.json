@@ -943,5 +943,15 @@
 				"shells": 20
 			}
 		]
+	},
+	"social": {
+		"visitorPearls": 30,
+		"hostPearls": 15,
+		"rewardedVisitsPerDay": 5,
+		"hostedRewardsPerDay": 20,
+		"friendBoostPerFriend": 0.05,
+		"friendBoostMaxFriends": 3,
+		"boardSize": 10,
+		"boardRefreshSeconds": 120
 	}
 }

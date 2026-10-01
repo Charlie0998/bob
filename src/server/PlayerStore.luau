@@ -39,6 +39,7 @@ export type PlayerData = {
 		streak: number,
 		lastLoginDay: number,
 	},
+	social: { day: number, visitsRewarded: number, hostRewarded: number, liked: { [string]: boolean }, likesReceived: number },
 }
 
 type Profile = { data: PlayerData, key: string }
@@ -76,6 +77,7 @@ local function newData(): PlayerData
 		bookClaimed = {},
 		prestige = { level = 0 },
 		daily = { day = -1, goals = {}, streak = 0, lastLoginDay = -1 },
+		social = { day = -1, visitsRewarded = 0, hostRewarded = 0, liked = {}, likesReceived = 0 },
 	}
 	-- First session: the player spawns with one starter coral already growing.
 	data.corals["1"] = { type = Balance.starterCoral, plantedAt = os.time(), bornAt = os.time() }

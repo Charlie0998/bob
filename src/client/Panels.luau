@@ -161,4 +161,92 @@ function Panels.tide(gui: ScreenGui, remotes: Instance): () -> ()
 	return panel.toggle
 end
 
+function Panels.friends(gui: ScreenGui, remotes: Instance): () -> ()
+	local SocialService = game:GetService("SocialService")
+	local visitRemote = remotes:WaitForChild("VisitReef") :: RemoteEvent
+	local likeRemote = remotes:WaitForChild("LikeReef") :: RemoteEvent
+	local config = Balance.social
+	local friendCache: { [number]: boolean } = {}
+	local panel
+	local function refresh()
+		if not panel or not panel.isOpen() then
+			return
+		end
+		UIKit.clear(panel.body)
+		local here = player:GetAttribute("FriendsHere") or 0
+		local boost = 1 + math.min(here, config.friendBoostMaxFriends) * config.friendBoostPerFriend
+		local top = UIKit.card(panel.body, 112, 0)
+		UIKit.label(
+			string.format(
+				"Friends on this server: %d (pearl boost x%.2f)\nYour reef has %d likes. Visiting a reef pays you both a pearl bonus.",
+				here,
+				boost,
+				player:GetAttribute("LikesReceived") or 0
+			),
+			{ Position = UDim2.fromOffset(12, 4), Size = UDim2.new(1, -24, 0, 54), TextSize = 15, Parent = top }
+		)
+		local home = UIKit.button("Go home", "accent", { Position = UDim2.fromOffset(12, 60), Parent = top })
+		home.Activated:Connect(function()
+			visitRemote:FireServer(nil)
+		end)
+		local invite = UIKit.button("Invite friends", "gold", { Position = UDim2.fromOffset(184, 60), Parent = top })
+		invite.Activated:Connect(function()
+			pcall(SocialService.PromptGameInvite, SocialService, player)
+		end)
+
+		local others = {}
+		for _, other in Players:GetPlayers() do
+			if other ~= player then
+				table.insert(others, other)
+			end
+		end
+		if #others == 0 then
+			local empty = UIKit.card(panel.body, 50, 1)
+			UIKit.label("Nobody else is here yet. Invite a friend!", { Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), Parent = empty })
+		end
+		for i, other in others do
+			if friendCache[other.UserId] == nil then
+				local ok, isFriend = pcall(player.IsFriendsWithAsync, player, other.UserId)
+				friendCache[other.UserId] = ok and isFriend
+			end
+			local card = UIKit.card(panel.body, 60, i + 1)
+			UIKit.label(other.DisplayName .. (if friendCache[other.UserId] then "  (friend)" else ""), {
+				Position = UDim2.fromOffset(12, 0),
+				Size = UDim2.new(1, -250, 1, 0),
+				Parent = card,
+			})
+			local visit = UIKit.button("Visit", "accent", {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -124, 0.5, 0),
+				Size = UDim2.fromOffset(110, 46),
+				Parent = card,
+			})
+			visit.Activated:Connect(function()
+				visitRemote:FireServer(other.UserId)
+				panel.toggle()
+			end)
+			local like = UIKit.button("Like", "gold", {
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -8, 0.5, 0),
+				Size = UDim2.fromOffset(110, 46),
+				Parent = card,
+			})
+			like.Activated:Connect(function()
+				likeRemote:FireServer(other.UserId)
+			end)
+		end
+	end
+	panel = UIKit.panel(gui, "Friends & Visits", refresh)
+	Players.PlayerAdded:Connect(refresh)
+	Players.PlayerRemoving:Connect(function()
+		task.defer(refresh)
+	end)
+	player.AttributeChanged:Connect(function(name)
+		if name == "FriendsHere" or name == "LikesReceived" then
+			refresh()
+		end
+	end)
+	return panel.toggle
+end
+
 return Panels
